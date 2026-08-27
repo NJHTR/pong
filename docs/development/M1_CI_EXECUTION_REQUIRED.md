@@ -1,5 +1,18 @@
 # M1 Native CI Execution Required
 
+**Run #3 audit update (2026-08-27):** workflow run `33085292318` at commit
+`60913c0179731d9fed1a052f9a190c8fa4f5a56e` produced complete Linux and macOS
+artifacts. Stable/MSRV fmt/check/clippy and focused M1 suites passed on both;
+both full test commands exited `101` in `artifact_consistency` because the
+run consumed committed LF evidence while the references still described prior
+Windows working-tree bytes. Linux ZIP SHA-256 is
+`D8C255461BA1A64C712B55D79837F59B4B15E63A7D2A2341F4B86B54BCA57E0E`; macOS
+ZIP SHA-256 is
+`3C16C855381479C30B86BF6E3061818306F23DC55C7F9E11240178000A4A5692`.
+The macOS runner's filesystem metadata is `unknown`, so it is not recorded as
+APFS evidence. Run #3 remains `FAIL`; a fresh dispatch after the repository
+byte-boundary correction is required.
+
 **Updated on 2026-08-27:** the first manual dispatch completed as workflow run
 `33074865773` on commit `1212930d5d4faab9ca6b66cb8745475ad9a6de46`. Both native
 artifacts were downloaded and retained under
@@ -19,12 +32,16 @@ The portability correction was committed as `359abc306b554d592b532ebc182e543f974
 the evidence metadata was rebound in `2310c822a6f5d3f942067e0ec7a322369f03df8a`,
 and the bundle-wide byte-preservation fix is in `96a2f8c`. Workflow
 capture-boundary hardening is included in `2cf136e99091d8d074d1a0e597f72f06bd2d52f7`
-and is pushed to `origin/dev`. A fresh manual dispatch is still required.
+and is pushed to `origin/dev`. This close-out additionally broadens the
+`.gitattributes` byte boundary to all `artifacts/**` and points PT-13/FI-10 at
+the release-log copy; those changes are committed locally as `3aaa3cb` and
+must be pushed before the next dispatch. A fresh manual dispatch is still
+required.
 
 ```text
-PUSH_REQUIRED = false
+PUSH_REQUIRED = true
 RERUN_REQUIRED = true
-PUSHED_HEAD = 2cf136e99091d8d074d1a0e597f72f06bd2d52f7
+PUSHED_HEAD = 3aaa3cb (local; push required)
 ```
 
 ## Required external steps
@@ -62,7 +79,7 @@ Until a successful rerun and retained artifacts exist, the authoritative state
 remains:
 
 ```text
-Native Linux = FAIL (runs 33074865773, 33080915116); rerun required
-Native macOS = FAIL (runs 33074865773, 33080915116); rerun required
+Native Linux = FAIL (runs 33074865773, 33080915116, 33085292318); rerun required
+Native macOS = FAIL (runs 33074865773, 33080915116, 33085292318); rerun required
 M1 Release Gate = NOT PASSED
 ```

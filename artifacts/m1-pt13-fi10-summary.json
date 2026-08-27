@@ -23,7 +23,7 @@
       0,
       0
     ],
-    "raw_log": "artifacts/m1-pt13-fi10-summary.log",
+    "raw_log": "artifacts/m1-release-evidence/logs/m1-pt13-fi10-summary.log",
     "raw_log_sha256": "E93313C73852962400B1412A7966350328D4FD68209BC8B4768AF4E49D19AF2D",
     "tests": [
       "fi10_repeated_crash_reopen_is_idempotent",

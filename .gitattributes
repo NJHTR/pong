@@ -1,8 +1,4 @@
-# Evidence logs preserve captured terminal bytes, including CRLF/LF endings,
-# ANSI padding, and trailing spaces. They are binary evidence for hashing, not
-# source text that Git may normalize during a cross-platform checkout.
-artifacts/**/*.log -text -diff
-# Release evidence manifests and retained native-run bundles are hashed byte
-# records too; prevent checkout-time line-ending conversion for every file.
-artifacts/m1-release-evidence/** -text -diff
-artifacts/m1-platform-runs/** -text -diff
+# Evidence artifacts are byte-addressed records. Preserve captured terminal
+# bytes, JSON formatting, exit-code files, and manifest bytes across checkouts;
+# their SHA-256 references must describe the bytes CI actually reads.
+artifacts/** -text -diff

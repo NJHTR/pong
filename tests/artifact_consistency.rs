@@ -192,6 +192,28 @@ fn assert_native_failure_artifacts(root: &Path, run_id: &str, macos_complete: bo
     .expect("native CI download metadata JSON");
     assert_eq!(metadata["workflow_run_id"], run_id);
     assert_eq!(metadata["status"], "failure");
+    if run_id == "33085292318" {
+        for platform in ["linux", "macos"] {
+            let commands = metadata["command_disposition"][platform]
+                .as_array()
+                .unwrap_or_else(|| {
+                    panic!("run {run_id} is missing {platform} command disposition")
+                });
+            assert_eq!(
+                commands.len(),
+                13,
+                "run {run_id} must retain all native command dispositions for {platform}"
+            );
+            assert!(
+                commands.iter().all(|command| {
+                    command.get("label").and_then(Value::as_str).is_some()
+                        && command.get("command").and_then(Value::as_str).is_some()
+                        && command.get("exit_code").and_then(Value::as_i64).is_some()
+                }),
+                "run {run_id} contains an incomplete {platform} command disposition"
+            );
+        }
+    }
     let linux_root = run.join("linux");
     assert!(linux_root.join("platform/platform-metadata.json").is_file());
     assert!(linux_root.join("artifact-manifest.json").is_file());
@@ -334,6 +356,7 @@ fn retained_m1_raw_logs_and_fault_matrix_references_are_consistent() {
     collect_raw_log_records(&root, &root.join("artifacts"));
     assert_native_failure_artifacts(&root, "33074865773", true);
     assert_native_failure_artifacts(&root, "33080915116", false);
+    assert_native_failure_artifacts(&root, "33085292318", true);
 
     let matrix_path = root.join("artifacts/m1-fault-matrix.json");
     let matrix: Value =

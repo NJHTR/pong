@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased - M1 evidence close-out (2026-08-27)
+
+- Retained GitHub Actions native evidence run `33085292318` for Linux and macOS; both artifacts are complete but remain `FAIL` because full tests detected committed evidence byte/hash drift.
+- Extended artifact consistency coverage to the third native failure run and fixed the evidence byte boundary with `artifacts/** -text -diff` plus an explicit PT-13/FI-10 release-log reference.
+- Rebuilt the release bundle references and `SHA256SUMS`; M1 remains `NOT PASSED` and a fresh native rerun is required.
+
 ## Unreleased - Phase 0 (2026-08-19)
 
 - Established Pong scope as agent execution versioning and coordination infrastructure.

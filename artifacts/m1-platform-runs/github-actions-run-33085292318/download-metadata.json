@@ -1,0 +1,62 @@
+{
+  "record_version": "m1-native-platform-download-0.1",
+  "workflow": "M1 release evidence",
+  "workflow_run_id": "33085292318",
+  "workflow_run_attempt": "1",
+  "commit": "60913c0179731d9fed1a052f9a190c8fa4f5a56e",
+  "branch": "dev",
+  "status": "failure",
+  "jobs": {
+    "linux-native / stable + Rust 1.78": "failure",
+    "macos-native / stable + Rust 1.78": "failure"
+  },
+  "command_disposition": {
+    "linux": [
+      {"label":"stable-fmt","command":"cargo +stable fmt --all -- --check","exit_code":0},
+      {"label":"stable-check","command":"cargo +stable check --locked","exit_code":0},
+      {"label":"stable-test","command":"cargo +stable test --locked","exit_code":101},
+      {"label":"stable-clippy","command":"cargo +stable clippy --locked --all-targets -- -D warnings","exit_code":0},
+      {"label":"msrv-178-fmt","command":"cargo +1.78.0 fmt --all -- --check","exit_code":0},
+      {"label":"msrv-178-check","command":"cargo +1.78.0 check --locked","exit_code":0},
+      {"label":"msrv-178-test","command":"cargo +1.78.0 test --locked","exit_code":101},
+      {"label":"msrv-178-clippy","command":"cargo +1.78.0 clippy --locked --all-targets -- -D warnings","exit_code":0},
+      {"label":"pt13-fi10","command":"cargo +stable test --locked --test pt13_fi10 -- --nocapture","exit_code":0},
+      {"label":"migration","command":"cargo +stable test --locked --test repository_migration -- --nocapture","exit_code":0},
+      {"label":"recovery","command":"cargo +stable test --locked --test recovery_boundaries -- --nocapture","exit_code":0},
+      {"label":"compatibility","command":"cargo +stable test --locked --test compatibility_boundaries -- --nocapture","exit_code":0},
+      {"label":"cold-reopen","command":"cargo +stable test --locked -- --nocapture cold_reopen","exit_code":0}
+    ],
+    "macos": [
+      {"label":"stable-fmt","command":"cargo +stable fmt --all -- --check","exit_code":0},
+      {"label":"stable-check","command":"cargo +stable check --locked","exit_code":0},
+      {"label":"stable-test","command":"cargo +stable test --locked","exit_code":101},
+      {"label":"stable-clippy","command":"cargo +stable clippy --locked --all-targets -- -D warnings","exit_code":0},
+      {"label":"msrv-178-fmt","command":"cargo +1.78.0 fmt --all -- --check","exit_code":0},
+      {"label":"msrv-178-check","command":"cargo +1.78.0 check --locked","exit_code":0},
+      {"label":"msrv-178-test","command":"cargo +1.78.0 test --locked","exit_code":101},
+      {"label":"msrv-178-clippy","command":"cargo +1.78.0 clippy --locked --all-targets -- -D warnings","exit_code":0},
+      {"label":"pt13-fi10","command":"cargo +stable test --locked --test pt13_fi10 -- --nocapture","exit_code":0},
+      {"label":"migration","command":"cargo +stable test --locked --test repository_migration -- --nocapture","exit_code":0},
+      {"label":"recovery","command":"cargo +stable test --locked --test recovery_boundaries -- --nocapture","exit_code":0},
+      {"label":"compatibility","command":"cargo +stable test --locked --test compatibility_boundaries -- --nocapture","exit_code":0},
+      {"label":"cold-reopen","command":"cargo +stable test --locked -- --nocapture cold_reopen","exit_code":0}
+    ]
+  },
+  "artifacts": [
+    {
+      "name": "m1-linux-native-evidence",
+      "downloaded_from": "C:/Users/NJHTR/Downloads/m1-linux-native-evidence (2).zip",
+      "sha256": "D8C255461BA1A64C712B55D79837F59B4B15E63A7D2A2341F4B86B54BCA57E0E"
+    },
+    {
+      "name": "m1-macos-native-evidence",
+      "downloaded_from": "C:/Users/NJHTR/Downloads/m1-macos-native-evidence (2).zip",
+      "sha256": "3C16C855381479C30B86BF6E3061818306F23DC55C7F9E11240178000A4A5692"
+    }
+  ],
+  "disposition": "retained_failure_evidence; both native artifacts complete but bundle byte/hash drift remains and a fresh rerun is required",
+  "observed": {
+    "linux": "stable/MSRV fmt/check/clippy, full test, focused M1 suites, and cold-reopen command records are present; native artifact validation failed because committed evidence bytes did not match artifact references",
+    "macos": "stable/MSRV fmt/check/clippy, full test, focused M1 suites, and cold-reopen command records are present; native artifact validation failed because committed evidence bytes did not match artifact references; filesystem metadata reports unknown"
+  }
+}

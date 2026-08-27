@@ -1,0 +1,74 @@
+[1m[92m   Compiling[0m cfg-if v1.0.4
+[1m[92m   Compiling[0m version_check v0.9.5
+[1m[92m   Compiling[0m libc v0.2.189
+[1m[92m   Compiling[0m zerocopy v0.8.56
+[1m[92m   Compiling[0m proc-macro2 v1.0.107
+[1m[92m   Compiling[0m unicode-ident v1.0.24
+[1m[92m   Compiling[0m quote v1.0.47
+[1m[92m   Compiling[0m generic-array v0.14.7
+[1m[92m   Compiling[0m getrandom v0.3.4
+[1m[92m   Compiling[0m ahash v0.8.12
+[1m[92m   Compiling[0m find-msvc-tools v0.1.11
+[1m[92m   Compiling[0m once_cell v1.21.4
+[1m[92m   Compiling[0m shlex v2.0.1
+[1m[92m   Compiling[0m typenum v1.20.1
+[1m[92m   Compiling[0m cc v1.4.3
+[1m[92m   Compiling[0m syn v3.0.3
+[1m[92m   Compiling[0m pkg-config v0.3.34
+[1m[92m   Compiling[0m serde_core v1.0.229
+[1m[92m   Compiling[0m bitflags v2.13.1
+[1m[92m   Compiling[0m vcpkg v0.2.15
+[1m[92m   Compiling[0m rand_core v0.9.5
+[1m[92m   Compiling[0m zmij v1.0.23
+[1m[92m   Compiling[0m autocfg v1.5.1
+[1m[92m   Compiling[0m libsqlite3-sys v0.30.1
+[1m[92m   Compiling[0m num-traits v0.2.19
+[1m[92m   Compiling[0m crypto-common v0.1.7
+[1m[92m   Compiling[0m block-buffer v0.10.4
+[1m[92m   Compiling[0m hashbrown v0.14.5
+[1m[92m   Compiling[0m rustix v0.38.44
+[1m[92m   Compiling[0m serde v1.0.229
+[1m[92m   Compiling[0m thiserror v2.0.20
+[1m[92m   Compiling[0m serde_json v1.0.151
+[1m[92m   Compiling[0m hashlink v0.9.1
+[1m[92m   Compiling[0m digest v0.10.7
+[1m[92m   Compiling[0m ppv-lite86 v0.2.21
+[1m[92m   Compiling[0m serde_derive v1.0.229
+[1m[92m   Compiling[0m thiserror-impl v2.0.20
+[1m[92m   Compiling[0m linux-raw-sys v0.4.15
+[1m[92m   Compiling[0m memchr v2.8.3
+[1m[92m   Compiling[0m fallible-iterator v0.3.0
+[1m[92m   Compiling[0m cpufeatures v0.2.17
+[1m[92m   Compiling[0m itoa v1.0.18
+[1m[92m   Compiling[0m fallible-streaming-iterator v0.1.9
+[1m[92m   Compiling[0m smallvec v1.15.2
+[1m[92m   Compiling[0m sha2 v0.10.9
+[1m[92m   Compiling[0m rand_chacha v0.9.0
+[1m[92m   Compiling[0m rand v0.9.5
+[1m[92m   Compiling[0m rand_xorshift v0.4.0
+[1m[92m   Compiling[0m getrandom v0.2.17
+[1m[92m   Compiling[0m fs2 v0.4.3
+[1m[92m   Compiling[0m unarray v0.1.4
+[1m[92m   Compiling[0m fastrand v2.5.0
+[1m[92m   Compiling[0m hex v0.4.3
+[1m[92m   Compiling[0m regex-syntax v0.8.11
+[1m[92m   Compiling[0m lazy_static v1.5.0
+[1m[92m   Compiling[0m tempfile v3.15.0
+[1m[92m   Compiling[0m proptest v1.8.0
+[1m[92m   Compiling[0m rusqlite v0.32.1
+[1m[92m   Compiling[0m pong-core v0.1.0 (/home/runner/work/pong/pong)
+[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 11.90s
+[1m[92m     Running[0m tests/pt13_fi10.rs (target/m1-ci-focused/debug/deps/pt13_fi10-42e28da7c2647eb8)
+
+running 8 tests
+test fi10_repeated_crash_reopen_is_idempotent ... ok
+test pt13_generation_assertions_fail_closed_and_matching_identity_succeeds ... ok
+test pt13_duplicate_event_identity_and_stale_cursor_fail_closed ... ok
+test pt13_malformed_envelope_and_corrupted_projection_fail_closed ... ok
+test pt13_migration_a_to_b_preserves_projection_semantics_and_source_events ... ok
+test pt13_source_generation_remains_available_for_audit_after_b_is_active ... ok
+test fi10_projection_failpoint_schedule_converges_to_clean_replay_after_reopen ... ok
+test fi10_migration_interruption_keeps_generation_and_projection_aligned ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s
+

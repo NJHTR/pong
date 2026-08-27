@@ -174,9 +174,9 @@
     },
     {
       "platform": "macOS arm64",
-      "environment": "GitHub Actions macOS 14 native runner; workflow run 33080915116",
+      "environment": "GitHub Actions macOS 14 native runner; filesystem metadata unavailable; workflow run 33080915116",
       "kernel": "unavailable: platform identity capture did not complete",
-      "filesystem": "unavailable: platform identity capture did not complete",
+      "filesystem": "unknown",
       "architecture": "arm64 (job target)",
       "rust": [
         "1.78.0"
@@ -197,6 +197,76 @@
         "45F115543A320D15D2B880CE7C037BA182C326CCC0E769BF17F4AA2F8F9A38CF"
       ],
       "note": "Focused M1 suites passed. Artifact is incomplete: platform identity, stable logs, and artifact-manifest are absent. Rust 1.78 test failed in artifact-consistency (exit 101), while clippy exited 0; native macOS support cannot be accepted from this run."
+    },
+    {
+      "platform": "Linux x86_64 GNU",
+      "environment": "GitHub Actions Ubuntu 24.04 native runner; workflow run 33085292318",
+      "kernel": "Linux 6.17.0-1022-azure",
+      "filesystem": "ext4",
+      "architecture": "x86_64",
+      "rust": [
+        "1.98.0",
+        "1.78.0"
+      ],
+      "status": "FAIL",
+      "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "artifacts/m1-platform-runs/github-actions-run-33085292318/linux/platform/platform-metadata.json",
+        "artifacts/m1-platform-runs/github-actions-run-33085292318/linux/artifact-manifest.json",
+        "artifacts/m1-platform-runs/github-actions-run-33085292318/linux/build/stable-test.log",
+        "artifacts/m1-platform-runs/github-actions-run-33085292318/linux/build/msrv-178-test.log"
+      ],
+      "sha256": [
+        "760C40EDB25C2080A4CF27AA88BB6098AA8684320D7D0ADB166A78AE494B5324",
+        "58BF51CF17BA38EEED99D847AE1495EA7295CDED8649A61CF3292B33FAEDB035",
+        "9E3F9091D3584AE128FA21FD7ECE7258111BD1846B2731E3A1E1C50265595DCA",
+        "66D70DF80BA7DEDD85F605AF68357399727C2C13E95FC3195B25B6B5090ABA56"
+      ],
+      "note": "Complete native Linux artifact. Stable/MSRV fmt/check/clippy and focused M1 suites passed, but both full tests exited 101 in artifact-consistency because committed evidence bytes differed from references. Retained as FAIL evidence; rerun after the repository-wide byte-preservation fix is required."
+    },
+    {
+      "platform": "macOS arm64",
+      "environment": "GitHub Actions macOS 14 native runner; workflow run 33085292318",
+      "kernel": "Darwin 23.6.0",
+      "filesystem": "unknown",
+      "architecture": "arm64",
+      "rust": [
+        "1.98.0",
+        "1.78.0"
+      ],
+      "status": "FAIL",
+      "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "artifacts/m1-platform-runs/github-actions-run-33085292318/macos/platform/platform-metadata.json",
+        "artifacts/m1-platform-runs/github-actions-run-33085292318/macos/artifact-manifest.json",
+        "artifacts/m1-platform-runs/github-actions-run-33085292318/macos/build/stable-test.log",
+        "artifacts/m1-platform-runs/github-actions-run-33085292318/macos/build/msrv-178-test.log"
+      ],
+      "sha256": [
+        "19CC88E2EAF1BCAEE7152EDF9BC74A1E43AFE9C132AEF438D5F6E8844C6396BE",
+        "37AA3EEFD72DF1EA8CBC61C7839AFC0EC209D94F65ED76A8B2AB004E5F3CECD9",
+        "0916E78A41BFE3653382D373AEDE278B15F676F1F23800A2D47DAF1CB4FD3894",
+        "83631AA3EFBE6A5457FC72FAF5C9012B6F09F18A0018EF802D812A2321EEC192"
+      ],
+      "note": "Complete native macOS artifact. Stable/MSRV fmt/check/clippy and focused M1 suites passed, but both full tests exited 101 in artifact-consistency because committed evidence bytes differed from references. The runner reports filesystem metadata as unknown, not APFS. Retained as FAIL evidence; rerun required."
     }
   ]
 }

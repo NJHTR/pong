@@ -32,9 +32,12 @@ Run `33080915116` was retained after the first correction: Linux still failed
 both full tests in `artifact_consistency`, and macOS produced an incomplete
 artifact while its MSRV test path failed (MSRV clippy exited zero). Both
 failures are retained.
-The bundle-wide byte-preservation correction is pushed at `96a2f8c`; workflow
-capture-boundary hardening is pushed at `2cf136e99091d8d074d1a0e597f72f06bd2d52f7`.
-A fresh manual dispatch is required. Follow
+The earlier bundle-wide byte-preservation correction is pushed at `96a2f8c`;
+workflow capture-boundary hardening is pushed at
+`2cf136e99091d8d074d1a0e597f72f06bd2d52f7`. This close-out additionally
+widens the Git byte boundary to all `artifacts/**` and fixes the PT-13/FI-10
+release-log reference; commit and push these local changes before dispatching
+the workflow again. Follow
 [`M1_CI_EXECUTION_REQUIRED.md`](../development/M1_CI_EXECUTION_REQUIRED.md)
 for the external execution handoff.
 
@@ -58,6 +61,18 @@ the handoff table, or record an owner-approved bounded exception. The ADR-0015
 performance decision and ADR-0016 projection contract remain proposed/pending
 release-owner acceptance.
 
+Run `33085292318` at commit `60913c0179731d9fed1a052f9a190c8fa4f5a56e` is
+retained as the third native failure record. Both Linux and macOS artifacts
+are complete; stable/MSRV fmt/check/clippy, focused M1 suites, and cold reopen
+passed, but both full test commands exited `101` in `artifact_consistency`
+because committed LF evidence bytes differed from the references used by that
+run. The macOS runner reports filesystem metadata as `unknown`. The artifact
+ZIP hashes are retained in the run download metadata. The repository-wide
+`artifacts/** -text -diff` rule and explicit release-log reference now fix the
+byte boundary; these changes are committed locally as `3aaa3cb` and must be
+pushed before dispatching the workflow again. A fresh native dispatch remains
+required.
+
 The retained Windows stable property evidence includes PT-01/02/03/04/05/06/
 07/08/11/12 at 10,000 cases each, PT-09 and PT-10 at 10,000 cases each, and the
 PT-14 normative rerun at 10,008 executed cases across nine migration failpoints:
@@ -77,11 +92,13 @@ release-owner requirements.
 The 2026-08-27 close-out reran the complete Windows stable Rust 1.95.0 and
 Rust 1.78.0 MSRV gates in independent target directories; every command
 returned exit code `0`. Git traceability is available (`dev` at
-`359abc306b554d592b532ebc182e543f97489043`, remote `origin`); the working tree
-is clean, but no release tag or owner-approved release commit exists. The
-retained executable evidence was captured before this closeout commit; retain
-that snapshot relationship with the exact commands, toolchain identity, test
-results, and artifact hashes for external review.
+`359abc306b554d592b532ebc182e543f97489043`, remote `origin`); the pre-closeout
+working tree was clean, but no release tag or owner-approved release commit
+exists. The retained executable evidence was captured before this closeout
+commit; retain that snapshot relationship with the exact commands, toolchain
+identity, test results, and artifact hashes for external review. The current
+working tree contains the Run #3 retention and byte-boundary close-out in local
+commit `3aaa3cb`; push it before the next native dispatch.
 
 **Definition of Done:** Every M1 MUST-PASS row has platform-specific executable
 evidence or an explicitly accepted ADR disposition. The evidence report says

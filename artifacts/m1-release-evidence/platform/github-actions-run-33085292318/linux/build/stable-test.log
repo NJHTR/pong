@@ -1,0 +1,153 @@
+[1m[92m Downloading[0m crates ...
+[1m[92m  Downloaded[0m tempfile v3.15.0
+[1m[92m  Downloaded[0m getrandom v0.3.4
+[1m[92m  Downloaded[0m rand_chacha v0.9.0
+[1m[92m  Downloaded[0m errno v0.3.14
+[1m[92m  Downloaded[0m num-traits v0.2.19
+[1m[92m  Downloaded[0m ppv-lite86 v0.2.21
+[1m[92m  Downloaded[0m rand_core v0.9.5
+[1m[92m  Downloaded[0m rand_xorshift v0.4.0
+[1m[92m  Downloaded[0m autocfg v1.5.1
+[1m[92m  Downloaded[0m rand v0.9.5
+[1m[92m  Downloaded[0m fastrand v2.5.0
+[1m[92m  Downloaded[0m rustix v0.38.44
+[1m[92m  Downloaded[0m regex-syntax v0.8.11
+[1m[92m  Downloaded[0m lazy_static v1.5.0
+[1m[92m  Downloaded[0m unarray v0.1.4
+[1m[92m  Downloaded[0m getrandom v0.2.17
+[1m[92m  Downloaded[0m proptest v1.8.0
+[1m[92m  Downloaded[0m linux-raw-sys v0.4.15
+[1m[92m   Compiling[0m cfg-if v1.0.4
+[1m[92m   Compiling[0m libc v0.2.189
+[1m[92m   Compiling[0m zerocopy v0.8.56
+[1m[92m   Compiling[0m getrandom v0.3.4
+[1m[92m   Compiling[0m typenum v1.20.1
+[1m[92m   Compiling[0m once_cell v1.21.4
+[1m[92m   Compiling[0m bitflags v2.13.1
+[1m[92m   Compiling[0m autocfg v1.5.1
+[1m[92m   Compiling[0m generic-array v0.14.7
+[1m[92m   Compiling[0m num-traits v0.2.19
+[1m[92m   Compiling[0m rand_core v0.9.5
+[1m[92m   Compiling[0m serde_core v1.0.229
+[1m[92m   Compiling[0m crypto-common v0.1.7
+[1m[92m   Compiling[0m block-buffer v0.10.4
+[1m[92m   Compiling[0m rustix v0.38.44
+[1m[92m   Compiling[0m digest v0.10.7
+[1m[92m   Compiling[0m libsqlite3-sys v0.30.1
+[1m[92m   Compiling[0m zmij v1.0.23
+[1m[92m   Compiling[0m memchr v2.8.3
+[1m[92m   Compiling[0m itoa v1.0.18
+[1m[92m   Compiling[0m smallvec v1.15.2
+[1m[92m   Compiling[0m fallible-iterator v0.3.0
+[1m[92m   Compiling[0m linux-raw-sys v0.4.15
+[1m[92m   Compiling[0m fallible-streaming-iterator v0.1.9
+[1m[92m   Compiling[0m cpufeatures v0.2.17
+[1m[92m   Compiling[0m serde_json v1.0.151
+[1m[92m   Compiling[0m ahash v0.8.12
+[1m[92m   Compiling[0m ppv-lite86 v0.2.21
+[1m[92m   Compiling[0m hashbrown v0.14.5
+[1m[92m   Compiling[0m sha2 v0.10.9
+[1m[92m   Compiling[0m hashlink v0.9.1
+[1m[92m   Compiling[0m rand_chacha v0.9.0
+[1m[92m   Compiling[0m serde v1.0.229
+[1m[92m   Compiling[0m rusqlite v0.32.1
+[1m[92m   Compiling[0m thiserror v2.0.20
+[1m[92m   Compiling[0m rand_xorshift v0.4.0
+[1m[92m   Compiling[0m rand v0.9.5
+[1m[92m   Compiling[0m fs2 v0.4.3
+[1m[92m   Compiling[0m getrandom v0.2.17
+[1m[92m   Compiling[0m fastrand v2.5.0
+[1m[92m   Compiling[0m hex v0.4.3
+[1m[92m   Compiling[0m lazy_static v1.5.0
+[1m[92m   Compiling[0m unarray v0.1.4
+[1m[92m   Compiling[0m regex-syntax v0.8.11
+[1m[92m   Compiling[0m pong-core v0.1.0 (/home/runner/work/pong/pong)
+[1m[92m   Compiling[0m tempfile v3.15.0
+[1m[92m   Compiling[0m proptest v1.8.0
+[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 12.29s
+[1m[92m     Running[0m unittests src/lib.rs (target/m1-ci-stable/debug/deps/pong_core-57e9fdca252e059e)
+
+running 49 tests
+test canonical::tests::domain_is_unambiguous ... ok
+test canonical::tests::equivalent_object_order_has_identical_bytes_and_digest ... ok
+test canonical::tests::object_keys_are_sorted_recursively ... ok
+test canonical::tests::strings_use_json_escaping ... ok
+test atomic_replace::tests::no_replace_directory_publish_preserves_an_existing_destination ... ok
+test cas::tests::configured_secret_is_rejected_before_cas_publication ... ok
+test cas::tests::digest_includes_domain_separator_and_exact_bytes ... ok
+test atomic_replace::tests::atomic_replace_overwrites_existing_file ... ok
+test atomic_replace::tests::sync_directory_accepts_an_existing_directory ... ok
+test cas::tests::injected_directory_sync_failure_leaves_a_retryable_published_object ... ok
+test cas::tests::injected_permission_failure_is_stable_without_changing_host_acl ... ok
+test cas::tests::existing_secret_bytes_block_cas_startup ... ok
+test cas::tests::injected_quota_failure_cleans_partial_staging_bytes ... ok
+test cas::tests::injected_short_write_cleans_staging_and_publishes_nothing ... ok
+test cas::tests::injected_publication_failure_cleans_staging ... ok
+test cas::tests::malformed_digest_and_domain_are_rejected ... ok
+test cas::tests::wrong_expected_digest_is_rejected_before_publication ... ok
+test environment::tests::capture_is_allowlisted_and_deterministic ... ok
+test cas::tests::put_get_and_repeat_are_verified ... ok
+test cas::tests::injected_startup_scan_failure_does_not_disable_normal_reopen ... ok
+test error::tests::permission_denied_io_has_a_stable_domain_code ... ok
+test error::tests::protected_permission_retains_an_available_raw_os_error ... ok
+test error::tests::sqlite_full_has_a_stable_domain_code ... ok
+test error::tests::sqlite_read_only_has_a_stable_domain_code ... ok
+test cas::tests::tampering_is_integrity_error_and_quarantined ... ok
+test metadata::tests::duplicate_event_id_with_changed_metadata_is_rejected ... ok
+test metadata::tests::duplicate_intent_with_changed_content_is_rejected ... ok
+test metadata::tests::events_have_monotonic_stream_sequences_and_deduplicate ... ok
+test metadata::tests::idempotency_returns_original_result_and_rejects_changed_digest ... ok
+test metadata::tests::opening_database_with_existing_secret_fails_closed ... ok
+test metadata::tests::ref_compare_and_swap_rejects_stale_writer ... ok
+test metadata::tests::legacy_repository_without_profile_metadata_fails_closed ... ok
+test metadata::tests::repository_format_is_pinned ... ok
+test metadata::tests::unfinished_intent_is_visible_for_recovery ... ok
+test redaction::tests::byte_scan_fails_closed_without_disclosing_secret ... ok
+test redaction::tests::debug_representation_does_not_expose_registered_secrets ... ok
+test redaction::tests::redaction_is_deterministic_and_recursive ... ok
+test redaction::tests::secret_bearing_object_keys_are_replaced_without_collisions ... ok
+test redaction::tests::short_registered_secrets_are_rejected ... ok
+test environment::tests::persisted_environment_identity_is_immutable ... ok
+test repository::tests::init_creates_durable_layout_and_marker ... ok
+test repository::tests::missing_marker_is_not_treated_as_an_initialized_repository ... ok
+test metadata::tests::redaction_profile_is_pinned_across_reopen ... ok
+test repository::tests::init_is_idempotent_and_open_reuses_the_same_format ... ok
+test metadata::tests::registered_secret_never_reaches_sqlite_or_wal_bytes ... ok
+test repository::tests::opening_repository_classifies_orphan_intents_as_unknown ... ok
+test repository::tests::startup_does_not_recreate_missing_cas_directories ... ok
+test repository::tests::unsupported_marker_fails_before_metadata_open ... ok
+test repository::tests::repository_wires_one_redaction_policy_into_metadata_and_cas ... ok
+
+test result: ok. 49 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+[1m[92m     Running[0m tests/artifact_consistency.rs (target/m1-ci-stable/debug/deps/artifact_consistency-b81bb7313297fa44)
+
+running 2 tests
+test release_bundle_checksums_and_status_matrix_are_consistent ... FAILED
+test retained_m1_raw_logs_and_fault_matrix_references_are_consistent ... FAILED
+
+failures:
+
+---- release_bundle_checksums_and_status_matrix_are_consistent stdout ----
+
+thread 'release_bundle_checksums_and_status_matrix_are_consistent' (3832) panicked at tests/artifact_consistency.rs:157:9:
+assertion `left == right` failed: bundle hash drift: build-metadata.json
+  left: "5E1561C7C3E32AF94B36D271700A50C41371920B3FFE6DEF5E634E8F77B134A5"
+ right: "BF4AD3F6FA334833D420DDB954AC94EFBEB70450B632DCDEC3ACBFB8990B5DE1"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- retained_m1_raw_logs_and_fault_matrix_references_are_consistent stdout ----
+
+thread 'retained_m1_raw_logs_and_fault_matrix_references_are_consistent' (3833) panicked at tests/artifact_consistency.rs:61:5:
+assertion `left == right` failed: raw log hash drift for /home/runner/work/pong/pong/artifacts/m1-release-evidence/logs/m1-pt13-fi10-summary.json
+  left: "2884CDDBF959EA86D00F78FFBB5C5076CECBA63EF95686EC599CF8ABC34D6C40"
+ right: "E93313C73852962400B1412A7966350328D4FD68209BC8B4768AF4E49D19AF2D"
+
+
+failures:
+    release_bundle_checksums_and_status_matrix_are_consistent
+    retained_m1_raw_logs_and_fault_matrix_references_are_consistent
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+[1m[91merror[0m: test failed, to rerun pass `--test artifact_consistency`
