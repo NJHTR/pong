@@ -1,10 +1,11 @@
 M1 release traceability, 2026-08-27
 Branch: dev
-HEAD: 2da6cf1037acf054b33b23b07c27388be1807690
+HEAD: d56b924990da2f47ede7a018ddac0915503f334b
 Remote: https://github.com/NJHTR/pong.git
 Tags: none
-Working tree: DIRTY
-Release candidate commit: none
+Working tree: CLEAN
+Release candidate commit: d56b924990da2f47ede7a018ddac0915503f334b
 Release candidate tag: none
 Release owner approval: PENDING
-Result: BLOCKED; no commit or tag was created automatically.
+Evidence snapshot commit: 2da6cf1037acf054b33b23b07c27388be1807690 (captured before closeout commit)
+Result: BLOCKED; closeout commit exists, but no release tag or owner approval.

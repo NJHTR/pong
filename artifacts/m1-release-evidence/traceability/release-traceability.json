@@ -4,13 +4,18 @@
   "repository_root": "D:/pong",
   "remote": "https://github.com/NJHTR/pong.git",
   "branch": "dev",
-  "head": "2da6cf1037acf054b33b23b07c27388be1807690",
+  "head": "d56b924990da2f47ede7a018ddac0915503f334b",
   "tags": [],
-  "working_tree": "DIRTY",
+  "working_tree": "CLEAN",
+  "evidence_snapshot": {
+    "captured_before_commit": "2da6cf1037acf054b33b23b07c27388be1807690",
+    "post_commit_head": "d56b924990da2f47ede7a018ddac0915503f334b",
+    "post_commit_verification": "metadata-only; no test evidence was rerun after the commit"
+  },
   "release_candidate": {
     "status": "BLOCKED",
     "version": null,
-    "commit": null,
+    "commit": "d56b924990da2f47ede7a018ddac0915503f334b",
     "tag": null,
     "owner_approval": "PENDING"
   },
@@ -22,5 +27,5 @@
     "git tag --list",
     "git ls-remote --tags origin"
   ],
-  "reason": "The checkout contains the unreleased evidence/core changes and has no clean release commit or approved tag."
+  "reason": "The M1 closeout commit exists and the working tree is clean, but no release tag or release-owner approval exists. Evidence commands and retained artifacts were captured before this commit and are bound by evidence_snapshot."
 }

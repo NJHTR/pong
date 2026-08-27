@@ -543,7 +543,7 @@
       "status": "PASS",
       "release_status": "BLOCKED",
       "scope": "repository metadata",
-      "note": "Git repository exists on branch dev at HEAD 2da6cf1037acf054b33b23b07c27388be1807690 with origin remote; working tree is dirty and no release tag/commit is accepted.",
+      "note": "Git repository exists on branch dev at HEAD d56b924990da2f47ede7a018ddac0915503f334b with origin remote; the working tree is clean, but no release tag or release-owner-approved commit is accepted. Evidence commands were captured before this closeout commit.",
       "environment": "repository metadata",
       "exit_codes": [
         0

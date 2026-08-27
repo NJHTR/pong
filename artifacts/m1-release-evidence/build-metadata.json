@@ -4,11 +4,16 @@
   "repository": {
     "root": "D:/pong",
     "branch": "dev",
-    "head": "2da6cf1037acf054b33b23b07c27388be1807690",
+    "head": "d56b924990da2f47ede7a018ddac0915503f334b",
     "remote": "https://github.com/NJHTR/pong.git",
-    "working_tree": "DIRTY",
+    "working_tree": "CLEAN",
     "release_tag": null,
-    "release_commit": null
+    "release_commit": null,
+    "evidence_snapshot": {
+      "captured_before_commit": "2da6cf1037acf054b33b23b07c27388be1807690",
+      "closeout_commit": "d56b924990da2f47ede7a018ddac0915503f334b",
+      "post_commit_verification": "metadata-only; build/test evidence was not rerun after the commit"
+    }
   },
   "crate": {
     "name": "pong-core",
@@ -82,7 +87,7 @@
       "log": "build/windows-msrv-178-clippy.log"
     }
   ],
-  "scope_note": "Windows executable evidence only; Linux, old-reader, real power-loss, native disk-full, budget acceptance, clean release tree, and owner sign-off remain open.",
+  "scope_note": "Windows executable evidence only, captured before the closeout commit; Linux, old-reader, real power-loss, native disk-full, budget acceptance, release tag, and owner sign-off remain open.",
   "release_candidate": {
     "status": "BLOCKED",
     "version": null,

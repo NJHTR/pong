@@ -18,7 +18,7 @@ and accepted.
 | Old Reader | BLOCKED | Compatibility absence record | No released v0.1 binary or tag | Independent binary, hash, fixture, read/write probe |
 | Native Linux | BLOCKED | Workflow prepared; no runner artifact | `.github/workflows/m1-release-evidence.yml` | Execute on native Linux runner and retain metadata/logs |
 | Native macOS | BLOCKED | Workflow prepared; no runner artifact | GitHub Actions `macos-14` | Execute on macOS runner and retain metadata/logs |
-| Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json` | `dev` at current HEAD; dirty tree | Clean reviewed release commit/tag |
+| Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json` | `dev` at `d56b924`; clean tree; no release tag | Release-owner-approved release tag |
 
 This is an evidence report, not a release claim. It separates executable
 evidence from implementation that still lacks the platform, compatibility,
@@ -322,12 +322,12 @@ the commands and retains its logs, filesystem identity, and hashes.
 These are recorded as unavailable evidence, not as passing assumptions.
 
 The supplied workspace is a Git repository on branch `dev` at HEAD
-`2da6cf1037acf054b33b23b07c27388be1807690`, with remote
-`https://github.com/NJHTR/pong.git`. The working tree is dirty because this
-audit is being assembled, and there is no release tag or accepted release
-commit. Evidence is traceable by exact path, command, toolchain, platform, test
-result, and retained artifact hash; the dirty tree prevents a clean release
-artifact claim.
+`d56b924990da2f47ede7a018ddac0915503f334b`, with remote
+`https://github.com/NJHTR/pong.git`. The working tree is clean and there is no
+release tag or owner-approved release commit. The retained executable evidence
+was captured before this closeout commit; that relationship is recorded in the
+bundle's `evidence_snapshot` fields. Evidence remains traceable by exact path,
+command, toolchain, platform, test result, and retained artifact hash.
 
 ### External verification handoff
 

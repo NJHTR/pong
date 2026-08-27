@@ -68,10 +68,11 @@ release-owner requirements.
 The 2026-08-27 close-out reran the complete Windows stable Rust 1.95.0 and
 Rust 1.78.0 MSRV gates in independent target directories; every command
 returned exit code `0`. Git traceability is available (`dev` at
-`2da6cf1037acf054b33b23b07c27388be1807690`, remote `origin`), but the working
-tree is dirty and no release tag/commit has been accepted; retain exact
-commands, toolchain identity, test results, and artifact hashes for external
-review.
+`d56b924990da2f47ede7a018ddac0915503f334b`, remote `origin`); the working tree
+is clean, but no release tag or owner-approved release commit exists. The
+retained executable evidence was captured before this closeout commit; retain
+that snapshot relationship with the exact commands, toolchain identity, test
+results, and artifact hashes for external review.
 
 **Definition of Done:** Every M1 MUST-PASS row has platform-specific executable
 evidence or an explicitly accepted ADR disposition. The evidence report says
