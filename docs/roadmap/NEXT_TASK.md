@@ -69,8 +69,8 @@ because committed LF evidence bytes differed from the references used by that
 run. The macOS runner reports filesystem metadata as `unknown`. The artifact
 ZIP hashes are retained in the run download metadata. The repository-wide
 `artifacts/** -text -diff` rule and explicit release-log reference now fix the
-byte boundary; these changes are committed locally as `3aaa3cb` and must be
-pushed before dispatching the workflow again. A fresh native dispatch remains
+byte boundary; these changes are committed and pushed in
+`258a0c9cccfe11e994a6032a106644b4dcf90804`. A fresh native dispatch remains
 required.
 
 The retained Windows stable property evidence includes PT-01/02/03/04/05/06/
@@ -97,8 +97,9 @@ working tree was clean, but no release tag or owner-approved release commit
 exists. The retained executable evidence was captured before this closeout
 commit; retain that snapshot relationship with the exact commands, toolchain
 identity, test results, and artifact hashes for external review. The current
-working tree contains the Run #3 retention and byte-boundary close-out in local
-commit `3aaa3cb`; push it before the next native dispatch.
+working tree contains the Run #3 retention and byte-boundary close-out in
+pushed commit `258a0c9cccfe11e994a6032a106644b4dcf90804`; dispatch the workflow
+against the current branch head before accepting either native row.
 
 **Definition of Done:** Every M1 MUST-PASS row has platform-specific executable
 evidence or an explicitly accepted ADR disposition. The evidence report says

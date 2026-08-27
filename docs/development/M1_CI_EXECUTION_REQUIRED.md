@@ -34,14 +34,14 @@ and the bundle-wide byte-preservation fix is in `96a2f8c`. Workflow
 capture-boundary hardening is included in `2cf136e99091d8d074d1a0e597f72f06bd2d52f7`
 and is pushed to `origin/dev`. This close-out additionally broadens the
 `.gitattributes` byte boundary to all `artifacts/**` and points PT-13/FI-10 at
-the release-log copy; those changes are committed locally as `3aaa3cb` and
-must be pushed before the next dispatch. A fresh manual dispatch is still
+the release-log copy; those changes are committed and pushed in
+`258a0c9cccfe11e994a6032a106644b4dcf90804`. A fresh manual dispatch is still
 required.
 
 ```text
 PUSH_REQUIRED = true
 RERUN_REQUIRED = true
-PUSHED_HEAD = 3aaa3cb (local; push required)
+PUSHED_HEAD = 258a0c9cccfe11e994a6032a106644b4dcf90804
 ```
 
 ## Required external steps
