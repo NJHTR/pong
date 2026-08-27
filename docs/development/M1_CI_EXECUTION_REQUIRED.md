@@ -39,7 +39,7 @@ the release-log copy; those changes are committed and pushed in
 required.
 
 ```text
-PUSH_REQUIRED = true
+PUSH_REQUIRED = false
 RERUN_REQUIRED = true
 PUSHED_HEAD = 258a0c9cccfe11e994a6032a106644b4dcf90804
 ```
