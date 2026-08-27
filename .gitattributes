@@ -2,3 +2,7 @@
 # ANSI padding, and trailing spaces. They are binary evidence for hashing, not
 # source text that Git may normalize during a cross-platform checkout.
 artifacts/**/*.log -text -diff
+# Release evidence manifests and retained native-run bundles are hashed byte
+# records too; prevent checkout-time line-ending conversion for every file.
+artifacts/m1-release-evidence/** -text -diff
+artifacts/m1-platform-runs/** -text -diff
