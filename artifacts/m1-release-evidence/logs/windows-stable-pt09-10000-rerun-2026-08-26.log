@@ -1,0 +1,70 @@
+   Compiling cfg-if v1.0.4
+   Compiling version_check v0.9.5
+   Compiling zerocopy v0.8.56
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling getrandom v0.3.4
+   Compiling windows_x86_64_msvc v0.52.6
+   Compiling once_cell v1.21.4
+   Compiling find-msvc-tools v0.1.11
+   Compiling typenum v1.20.1
+   Compiling shlex v2.0.1
+   Compiling serde_core v1.0.229
+   Compiling vcpkg v0.2.15
+   Compiling pkg-config v0.3.34
+   Compiling zmij v1.0.23
+   Compiling autocfg v1.5.1
+   Compiling winapi v0.3.9
+   Compiling libc v0.2.189
+   Compiling thiserror v2.0.20
+   Compiling serde v1.0.229
+   Compiling bitflags v2.13.1
+   Compiling serde_json v1.0.151
+   Compiling smallvec v1.15.2
+   Compiling cpufeatures v0.2.17
+   Compiling memchr v2.8.3
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling fallible-iterator v0.3.0
+   Compiling itoa v1.0.18
+   Compiling regex-syntax v0.8.11
+   Compiling lazy_static v1.5.0
+   Compiling unarray v0.1.4
+   Compiling getrandom v0.2.17
+   Compiling hex v0.4.3
+   Compiling fastrand v2.5.0
+   Compiling generic-array v0.14.7
+   Compiling ahash v0.8.12
+   Compiling cc v1.4.3
+   Compiling num-traits v0.2.19
+   Compiling libsqlite3-sys v0.30.1
+   Compiling windows-targets v0.52.6
+   Compiling rand_core v0.9.5
+   Compiling windows-sys v0.59.0
+   Compiling rand v0.9.5
+   Compiling rand_xorshift v0.4.0
+   Compiling syn v3.0.3
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling fs2 v0.4.3
+   Compiling ppv-lite86 v0.2.21
+   Compiling tempfile v3.15.0
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.9
+   Compiling hashbrown v0.14.5
+   Compiling rand_chacha v0.9.0
+   Compiling proptest v1.8.0
+   Compiling hashlink v0.9.1
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling rusqlite v0.32.1
+   Compiling pong-core v0.1.0 (D:\pong)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 35.84s
+     Running tests\property_recovery_migration.rs (target/windows-stable-pt09-10000-rerun-2026-08-26\debug\deps\property_recovery_migration-232da1aaf019057e.exe)
+
+running 1 test
+test pt09_recovery_converges_across_interleavings_and_commit_boundaries has been running for over 60 seconds
+test pt09_recovery_converges_across_interleavings_and_commit_boundaries ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 1081.76s
+

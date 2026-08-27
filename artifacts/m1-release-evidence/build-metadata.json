@@ -1,0 +1,92 @@
+{
+  "record_version": "m1-build-metadata-0.1",
+  "generated_on": "2026-08-27",
+  "repository": {
+    "root": "D:/pong",
+    "branch": "dev",
+    "head": "2da6cf1037acf054b33b23b07c27388be1807690",
+    "remote": "https://github.com/NJHTR/pong.git",
+    "working_tree": "DIRTY",
+    "release_tag": null,
+    "release_commit": null
+  },
+  "crate": {
+    "name": "pong-core",
+    "version": "0.1.0",
+    "rust_version": "1.78",
+    "cargo_lock_sha256": "108E191A65F726519CF76791A080058887B4CF1EDBBF9D428BBF5553774DC2DE",
+    "target_triples": [
+      "x86_64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu"
+    ]
+  },
+  "toolchains": {
+    "stable": {
+      "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+      "target_directory": "target/m1-release-stable-20260827"
+    },
+    "msrv": {
+      "rustc": "rustc 1.78.0 (9b00956e5 2024-04-29)",
+      "cargo": "cargo 1.78.0 (54d8815d0 2024-03-26)",
+      "target_directory": "target/m1-release-msrv-178-20260827"
+    }
+  },
+  "commands": [
+    {
+      "toolchain": "stable",
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "log": "build/windows-stable-fmt.log"
+    },
+    {
+      "toolchain": "stable",
+      "command": "cargo check --locked",
+      "exit_code": 0,
+      "log": "build/windows-stable-check.log"
+    },
+    {
+      "toolchain": "stable",
+      "command": "cargo test --locked",
+      "exit_code": 0,
+      "log": "build/windows-stable-test.log"
+    },
+    {
+      "toolchain": "stable",
+      "command": "cargo clippy --locked --all-targets -- -D warnings",
+      "exit_code": 0,
+      "log": "build/windows-stable-clippy.log"
+    },
+    {
+      "toolchain": "msrv",
+      "command": "cargo +1.78.0 fmt --all -- --check",
+      "exit_code": 0,
+      "log": "build/windows-msrv-178-fmt.log"
+    },
+    {
+      "toolchain": "msrv",
+      "command": "cargo +1.78.0 check --locked",
+      "exit_code": 0,
+      "log": "build/windows-msrv-178-check.log"
+    },
+    {
+      "toolchain": "msrv",
+      "command": "cargo +1.78.0 test --locked",
+      "exit_code": 0,
+      "log": "build/windows-msrv-178-test.log"
+    },
+    {
+      "toolchain": "msrv",
+      "command": "cargo +1.78.0 clippy --locked --all-targets -- -D warnings",
+      "exit_code": 0,
+      "log": "build/windows-msrv-178-clippy.log"
+    }
+  ],
+  "scope_note": "Windows executable evidence only; Linux, old-reader, real power-loss, native disk-full, budget acceptance, clean release tree, and owner sign-off remain open.",
+  "release_candidate": {
+    "status": "BLOCKED",
+    "version": null,
+    "tag": null,
+    "owner_approval": "PENDING"
+  }
+}

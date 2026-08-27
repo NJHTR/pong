@@ -2,10 +2,41 @@
 
 **Status: M1 Release Gate NOT PASSED.**
 
+The auditable close-out bundle is
+[`artifacts/m1-release-evidence/`](../../artifacts/m1-release-evidence/), with
+the normalized matrix, build metadata, retained raw evidence, source
+references, and `SHA256SUMS`. Its scoped `PASS` entries are evidence claims;
+the release decision remains `NOT PASSED` until the blocked rows are supplied
+and accepted.
+
+## Current closure status
+
+| Gate | Status | Evidence | Environment | Remaining |
+| --- | --- | --- | --- | --- |
+| PT-13 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, three reruns | Native-platform and owner acceptance |
+| FI-10 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, A-J and repeated crash | Native filesystem/power-loss and owner acceptance |
+| Old Reader | BLOCKED | Compatibility absence record | No released v0.1 binary or tag | Independent binary, hash, fixture, read/write probe |
+| Native Linux | BLOCKED | Workflow prepared; no runner artifact | `.github/workflows/m1-release-evidence.yml` | Execute on native Linux runner and retain metadata/logs |
+| Native macOS | BLOCKED | Workflow prepared; no runner artifact | GitHub Actions `macos-14` | Execute on macOS runner and retain metadata/logs |
+| Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json` | `dev` at current HEAD; dirty tree | Clean reviewed release commit/tag |
+
 This is an evidence report, not a release claim. It separates executable
 evidence from implementation that still lacks the platform, compatibility,
 fault, or performance acceptance required by
 [`M1_DURABLE_PRIMITIVES_GATE.md`](M1_DURABLE_PRIMITIVES_GATE.md).
+
+The workflow definition was audited on 2026-08-27. It now prepares stable and
+Rust 1.78 quality gates in independent target directories, pins test
+repositories to a workspace-local temporary directory, records per-command
+exit codes, runs the focused M1 and `cold_reopen` suites, captures the actual
+runner and test-repository filesystems, and uploads `m1-linux-native-evidence` or
+`m1-macos-native-evidence` with a structured metadata/manifest/checksum set.
+GitHub's unauthenticated API currently reports no workflow, run, or release
+for `NJHTR/pong`, so this remains a preparation artifact rather than native
+platform evidence. See
+[`M1_CI_EXECUTION_REQUIRED.md`](M1_CI_EXECUTION_REQUIRED.md) for the minimum
+external handoff. The remote API currently has no workflow or run,
+so `PUSH_REQUIRED = true`; no push is performed by this audit.
 
 ## Reproduction
 
@@ -169,10 +200,11 @@ The following claims have executable evidence in the current implementation:
 | Migration atomicity | `tests/repository_migration.rs`, `tests/process_kill_migration.rs`, and `tests/property_recovery_migration.rs` exercise SQLite Online Backup, target verification, selector replacement, child termination, retry idempotency, and old-only/new-only visibility. No test adopts a merely existing partial generation. |
 | Recovery and WAL | Child-process termination after intent/outcome boundaries, SQLite WAL-tail truncation, repeated recovery, and unknown-outcome preservation pass on Windows and Linux Rust 1.78. |
 | CAS and security | CAS digest/immutability, quarantine, short-write and synthetic quota/permission paths pass. Generation identity, manifest identity, redaction profile, wrong-valid-database replacement, and full `.pong` byte scans fail closed. `foreign_valid_generation_database_cannot_replace_the_active_identity` additionally replaces the active file with a separately valid 0.2 database carrying a different generation/migration identity and observes `INTEGRITY_ERROR`. `artifact_consistency.rs` verifies retained raw-log hashes and FI-matrix artifact paths without changing acceptance status. |
-| Property subsets | PT-01/02/03/04/05/06/07/08/11/12 each have a retained 10,000-case Windows stable run. PT-09 has a completed Windows stable rerun: 10,000/10,000 passed in 1,081.76 seconds, retained at [`windows-stable-pt09-10000-rerun-2026-08-26.json`](../../artifacts/m1-property-runs/windows-stable-pt09-10000-rerun-2026-08-26.json). PT-10 also has a completed Windows stable rerun: 10,000/10,000 passed in 1,325.25 seconds with exit code `0`, retained at [`windows-stable-pt10-10000-rerun-2026-08-26.json`](../../artifacts/m1-property-runs/windows-stable-pt10-10000-rerun-2026-08-26.json). PT-14 now has a completed Windows stable normative rerun: requested 10,000, harness executed 10,008 cases across 9 migration failpoints, `1 passed; 0 failed`, exit code `0`, with no observed host error or mixed-generation state; the structured record and raw log are [`JSON`](../../artifacts/m1-property-runs/windows-stable-pt14-10000-rerun-2026-08-27.json) / [`raw log`](../../artifacts/m1-property-runs/windows-stable-pt14-10000-rerun-2026-08-27.log). Focused/concurrent diagnostic records remain supplemental, and normative runs on other accepted platform/filesystem rows are still absent. The earlier PT-09 no-result record [`windows-stable-pt09-10000-2026-08-26.json`](../../artifacts/m1-property-runs/windows-stable-pt09-10000-2026-08-26.json) and aggregate PT-10/PT-14 no-result record [`windows-stable-properties-10000-2026-08-26.json`](../../artifacts/m1-property-runs/windows-stable-properties-10000-2026-08-26.json) are retained as historical audit evidence. PT-13 migration semantics and FI-10 projection crash schedules remain unevidenced. These are implementation/property evidence only, not release-owner acceptance of the full normative property gate. |
+| Property subsets | PT-01/02/03/04/05/06/07/08/11/12 each have a retained 10,000-case Windows stable run. PT-09 has a completed Windows stable rerun: 10,000/10,000 passed in 1,081.76 seconds, retained at [`windows-stable-pt09-10000-rerun-2026-08-26.json`](../../artifacts/m1-property-runs/windows-stable-pt09-10000-rerun-2026-08-26.json). PT-10 also has a completed Windows stable rerun: 10,000/10,000 passed in 1,325.25 seconds with exit code `0`, retained at [`windows-stable-pt10-10000-rerun-2026-08-26.json`](../../artifacts/m1-property-runs/windows-stable-pt10-10000-rerun-2026-08-26.json). PT-14 now has a completed Windows stable normative rerun: requested 10,000, harness executed 10,008 cases across 9 migration failpoints, `1 passed; 0 failed`, exit code `0`, with no observed host error or mixed-generation state; the structured record and raw log are [`JSON`](../../artifacts/m1-property-runs/windows-stable-pt14-10000-rerun-2026-08-27.json) / [`raw log`](../../artifacts/m1-property-runs/windows-stable-pt14-10000-rerun-2026-08-27.log). Focused/concurrent diagnostic records remain supplemental, and normative runs on other accepted platform/filesystem rows are still absent. The earlier PT-09 no-result record [`windows-stable-pt09-10000-2026-08-26.json`](../../artifacts/m1-property-runs/windows-stable-pt09-10000-2026-08-26.json) and aggregate PT-10/PT-14 no-result record [`windows-stable-properties-10000-2026-08-26.json`](../../artifacts/m1-property-runs/windows-stable-properties-10000-2026-08-26.json) are retained as historical audit evidence. PT-13 migration semantics and FI-10 projection crash schedules have current-host evidence in `artifacts/m1-pt13-fi10-summary.json`; cross-platform runs and release-owner acceptance remain open. These are implementation/property evidence only, not release-owner acceptance of the full normative property gate. |
 | Windows FI-13 | Real NTFS ACL revocation returned kernel error 5 and Pong `PERMISSION_DENIED`; committed ref/CAS data remained readable after ACL restoration and cold reopen. The retained stdout and structured record are in [`artifacts/m1-fault-runs/`](../../artifacts/m1-fault-runs/). |
 | Linux FI-14 | Three retained pinned Rust 1.78 Docker `tmpfs` runs reached real Linux `errno=28` for CAS, metadata, and journal writes and returned Pong `RESOURCE_EXHAUSTED`; committed history, failed-write visibility, staging cleanup, and cold reopen assertions passed. Records: CAS [`JSON`](../../artifacts/m1-fault-runs/linux-fi14-cas-2026-08-26.json) / [`raw log`](../../artifacts/m1-fault-runs/linux-fi14-cas-2026-08-26.log), metadata [`JSON`](../../artifacts/m1-fault-runs/linux-fi14-metadata-2026-08-26.json) / [`raw log`](../../artifacts/m1-fault-runs/linux-fi14-metadata-2026-08-26.log), and journal [`JSON`](../../artifacts/m1-fault-runs/linux-fi14-journal-2026-08-26.json) / [`raw log`](../../artifacts/m1-fault-runs/linux-fi14-journal-2026-08-26.log). This remains partial platform evidence and is not Windows native disk-full coverage. |
 | Performance measurement | `artifacts/m1-performance.json` (Rust 1.78), `artifacts/m1-performance-windows-stable.json` (Rust 1.95), and nine retained raw runs under `artifacts/m1-performance-runs/` record repeatable Windows and pinned Linux-overlay samples. `m1-perf-0.3` includes p50/p95/p99/max for repeated timing operations and migration; CAS and snapshot measurements remain workload-scoped evidence. They are measurement evidence only. |
+| PT-13 / FI-10 projection evidence | `tests/pt13_fi10.rs` passes eight migration, generation-isolation, malformed/corrupt-state, interruption, A-J failpoint, repeated-crash, and golden-state tests in three repeated Windows runs; Rust 1.78 isolated check/test/clippy also pass. Structured evidence and raw log are retained in `artifacts/m1-pt13-fi10-summary.json` and `artifacts/m1-pt13-fi10-summary.log`. This is current-host implementation evidence, not cross-platform or release-owner acceptance. |
 
 The PT-14 raw log was reconstructed from the captured command-output chunks in
 the audit session rather than produced by a fresh `Tee-Object` rerun; the
@@ -181,10 +213,19 @@ once to completion with exit code `0`, and the retained log hash is verified by
 the artifact-consistency test.
 
 Projection status correction: the property row above predates the projection
-core implementation. The envelope, cursor, handler, and rebuild APIs now exist;
-only the PT-13 migration and FI-10 crash evidence remain open.
+core implementation. The envelope, cursor, handler, rebuild APIs, and the
+current-host PT-13/FI-10 migration/crash fixture evidence now exist. External
+platform and release-owner acceptance remain open.
+
+The dedicated eight-test, three-rerun row above is authoritative for PT-13/FI-10
+current-host evidence. Earlier audit wording is historical only; cross-platform
+and release-owner acceptance remain open.
 
 ## B. IMPLEMENTED BUT INSUFFICIENT EVIDENCE
+
+Projection evidence note: current-host executable PT-13/FI-10 evidence is
+retained in `artifacts/m1-pt13-fi10-summary.json` and the matching raw log;
+external platform and release-owner acceptance remain open.
 
 These capabilities exist in code or focused tests, but the normative M1 gate
 does not accept them as complete yet:
@@ -204,23 +245,29 @@ does not accept them as complete yet:
    power-loss behavior is not directly testable here. The machine-readable
    [`artifacts/m1-fault-matrix.json`](../../artifacts/m1-fault-matrix.json)
    records each row's test names, observed disposition, and remaining gap;
-   FI-10 projection crash coverage is not yet evidenced and FI-13/FI-14 remain partial platform
-   matrices. The three Linux FI-14 raw/structured records are retained under
+   FI-13/FI-14 remain partial platform matrices. The three Linux FI-14
+   raw/structured records are retained under
    [`artifacts/m1-fault-runs/`](../../artifacts/m1-fault-runs/), but they do
    not close the cross-platform fault matrix.
 4. **Property coverage.** The event envelope/projection core now provides a
    versioned source envelope, project-local cursor, generation-bound projection
    rows, idempotent handler application, degraded unknown-event handling, and
-   atomic rebuild. PT-13 still lacks the required forward/backward migration
-   fixtures and FI-10 crash schedule. PT-03/04/05/06
+   atomic rebuild. PT-13 and FI-10 now have the required current-host
+   forward/backward migration fixtures and crash schedule; native power-loss,
+   cross-platform, and release-owner acceptance remain open. PT-03/04/05/06
    are current-port properties, not a language-neutral multi-adapter matrix.
    PT-14 has a completed Windows stable normative rerun plus focused,
    bounded diagnostic and concurrent runs; its selector sync/journal
    publication access-denied classification is fixed for the exercised
    Windows path, while broader filesystem coverage is still missing. A
-   projection-scope audit is now narrowed to migration/rebuild evidence: the
-   implementation exists, but FI-10/PT-13 remain insufficiently evidenced and
-   are not release claims.
+   projection-scope audit is now narrowed to migration/rebuild evidence. The
+   targeted PT-13/FI-10 fixture suite is retained at
+   [`artifacts/m1-pt13-fi10-summary.json`](../../artifacts/m1-pt13-fi10-summary.json)
+   with three successful eight-test reruns and raw output in
+   [`artifacts/m1-pt13-fi10-summary.log`](../../artifacts/m1-pt13-fi10-summary.log).
+   This closes the current-host implementation evidence gap, but does not
+   constitute release-owner acceptance or native power-loss/filesystem
+   coverage.
    PT-09 and PT-10 now each have a completed Windows stable 10,000-case
    record; their earlier bounded/aggregate no-result records remain retained
    as historical audit evidence. The retained Windows PT-14 normative record
@@ -248,9 +295,10 @@ does not accept them as complete yet:
    the reconciled envelope. The implementation includes a projection schema,
    in-process handler registry, durable project-local cursor, idempotent apply,
    degraded status, and atomic rebuild bound to generation and redaction
-   identity. This closes the design gap at the core layer, but does not provide
-   the required crash and migration evidence. PT-13 and FI-10 therefore remain
-   evidence gaps and M1 remains **not passed**. The proposed
+   identity. This closes the design gap at the core layer. PT-13 and FI-10 now
+   have executable current-host migration/interruption/rebuild evidence
+   retained in the `m1-pt13-fi10` artifacts, while cross-platform and
+   release-owner acceptance remain open. M1 remains **not passed**. The proposed
      [`ADR-0016`](../decisions/ADR/ADR-0016-projection-contract.md) records the
      generation-bound projection contract required for the evidence work;
      it is not an accepted M1 decision.
@@ -267,12 +315,19 @@ The following evidence cannot be honestly produced in this workspace:
   SQLite/CAS corruption cases, and a complete external-process kill schedule;
 - an independent acceptance decision for performance/capacity budgets.
 
+The native-platform workflow is now prepared for external execution, but a
+workflow definition is not platform evidence until a hosted runner completes
+the commands and retains its logs, filesystem identity, and hashes.
+
 These are recorded as unavailable evidence, not as passing assumptions.
 
-The supplied workspace has no `.git` directory, so `git status`, `git diff`,
-and commit identity cannot be reproduced here. Evidence in this package is
-therefore traceable by exact path, command, toolchain, platform, test result,
-and retained artifact hash; no commit-level claim is made.
+The supplied workspace is a Git repository on branch `dev` at HEAD
+`2da6cf1037acf054b33b23b07c27388be1807690`, with remote
+`https://github.com/NJHTR/pong.git`. The working tree is dirty because this
+audit is being assembled, and there is no release tag or accepted release
+commit. Evidence is traceable by exact path, command, toolchain, platform, test
+result, and retained artifact hash; the dirty tree prevents a clean release
+artifact claim.
 
 ### External verification handoff
 
@@ -351,8 +406,8 @@ scope or exception; a green local test alone is insufficient.
 
 The gate remains blocked by the missing separately released old-reader matrix,
 unaccepted supported-platform/cold-restart matrix, incomplete real fault
-matrix, unevidenced FI-10/PT-13 projection migration scope, and absent
-accepted performance/capacity budgets. The historical
+matrix, current-host-only FI-10/PT-13 projection migration evidence, and
+absent accepted performance/capacity budgets. The historical
 Windows PT-14 selector/journal publication error now has a reproduced root
 cause, an error-mapping fix, and stable/MSRV/concurrent rerun evidence;
 cross-platform directory-sync coverage is still not complete.
@@ -360,7 +415,8 @@ The current implementation is useful internal Rust evidence, but it is not a
 released Pong Core or a stable public API. Existing M2/M3 slices are frozen
 and do not authorize further phase work until M1 is accepted.
 
-The next release-gate action is to create an auditable platform/old-binary
-compatibility package and an explicit performance-budget ADR, then rerun the
-remaining host fault schedules. Until those artifacts are accepted, the
-roadmap must not advance to public API, SDK, CLI, or framework adapters.
+The next release-gate action is external review and evidence collection: attach
+the separately released old reader, native platform rows, native disk-full and
+power-loss-like schedules, and an accepted ADR-0015 budget, then record a named
+release-owner decision. Until those artifacts are accepted, the roadmap must
+not advance to public API, SDK, CLI, or framework adapters.

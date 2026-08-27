@@ -1,0 +1,26 @@
+{
+  "record_version": "m1-release-traceability-0.1",
+  "generated_on": "2026-08-27",
+  "repository_root": "D:/pong",
+  "remote": "https://github.com/NJHTR/pong.git",
+  "branch": "dev",
+  "head": "2da6cf1037acf054b33b23b07c27388be1807690",
+  "tags": [],
+  "working_tree": "DIRTY",
+  "release_candidate": {
+    "status": "BLOCKED",
+    "version": null,
+    "commit": null,
+    "tag": null,
+    "owner_approval": "PENDING"
+  },
+  "commands": [
+    "git status --short --branch",
+    "git diff --stat",
+    "git log --oneline --decorate -20",
+    "git remote -v",
+    "git tag --list",
+    "git ls-remote --tags origin"
+  ],
+  "reason": "The checkout contains the unreleased evidence/core changes and has no clean release commit or approved tag."
+}

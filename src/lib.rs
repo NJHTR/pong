@@ -19,9 +19,10 @@ pub use error::PongError;
 pub use metadata::{
     EnvironmentRecord, EventEnvelope, EventRecord, LeaseRecord, LeaseToken, MetadataFailpoint,
     MetadataFailpoints, NewEvent, NewEventEnvelope, OperationEnvelope, OperationError,
-    OperationOutcome, OperationRecord, OperationRef, ProjectionCursor, ProjectionDefinition,
-    ProjectionHandler, ProjectionRecord, WorkspaceRecord, WorkspaceUpdate,
-    EVENT_ENVELOPE_SCHEMA_VERSION, OPERATION_SCHEMA_VERSION, PROJECTION_SCHEMA_VERSION,
+    OperationOutcome, OperationRecord, OperationRef, ProjectionAppliedEvent, ProjectionCursor,
+    ProjectionDefinition, ProjectionFailpoint, ProjectionFailpoints, ProjectionHandler,
+    ProjectionRecord, WorkspaceRecord, WorkspaceUpdate, EVENT_ENVELOPE_SCHEMA_VERSION,
+    OPERATION_SCHEMA_VERSION, PROJECTION_SCHEMA_VERSION,
 };
 pub use repository::{
     MigrationFailpoint, MigrationFailpoints, MigrationOutcome, MigrationSpec, Repository,

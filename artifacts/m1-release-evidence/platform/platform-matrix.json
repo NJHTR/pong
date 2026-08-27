@@ -1,0 +1,111 @@
+{
+  "record_version": "m1-platform-matrix-0.1",
+  "generated_on": "2026-08-27",
+  "status_vocabulary": [
+    "PASS",
+    "FAIL",
+    "BLOCKED",
+    "NOT_APPLICABLE"
+  ],
+  "entries": [
+    {
+      "platform": "Windows x86_64 MSVC",
+      "environment": "Windows development host; NTFS",
+      "kernel": "Windows; exact kernel retained in host audit logs",
+      "filesystem": "NTFS",
+      "architecture": "x86_64",
+      "rust": [
+        "1.95.0",
+        "1.78.0"
+      ],
+      "status": "PASS",
+      "commands": [
+        "cargo fmt --all -- --check",
+        "cargo check --locked",
+        "cargo test --locked",
+        "cargo clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "build/windows-stable-fmt.log",
+        "build/windows-stable-check.log",
+        "build/windows-stable-test.log",
+        "build/windows-stable-clippy.log",
+        "build/windows-msrv-178-fmt.log",
+        "build/windows-msrv-178-check.log",
+        "build/windows-msrv-178-test.log",
+        "build/windows-msrv-178-clippy.log"
+      ],
+      "sha256": [
+        "C1E97067C5F479A44A6F57297A0A8F87A59D181C3C529910F8BF059094BC3ABB",
+        "28A033D6068960385F4CCFEEACD3DA6FEC86EE568CD1D648A1B77C589E9331CF",
+        "A33BA3210113A11DD93C2E8DC108B26027E85105CFEA679C81FF80563F6A0BD8",
+        "FF1764549D050B6C673A0638B253213C01B49431832F29A879011D13EDABFFFE",
+        "C1E97067C5F479A44A6F57297A0A8F87A59D181C3C529910F8BF059094BC3ABB",
+        "5928E6715D80D5053EC02A6FCA6FA3D9030AABED683020A84644B6796C48B510",
+        "54A57D99F6EB255BEDB5320707413DB1E8B837425867478E63DC7517B7EA2784",
+        "FA328A7892EEA4994C7E0AF5B242B369DDC4DC5402631C52B609EC3B4DC22FD1"
+      ]
+    },
+    {
+      "platform": "Linux x86_64 GNU",
+      "environment": "Pinned Docker rust:1.78-slim-bookworm; overlay filesystem",
+      "kernel": "Docker VM kernel; retained in source platform logs",
+      "filesystem": "overlay",
+      "architecture": "x86_64",
+      "rust": [
+        "1.78.0"
+      ],
+      "status": "PASS",
+      "commands": [
+        "cargo fmt --all -- --check",
+        "cargo check --locked",
+        "cargo test --locked",
+        "cargo clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "artifacts/m1-platform-runs/README.md"
+      ],
+      "sha256": [
+        "F28BEE955A37352C78A7304E6A747D411903CEB7631BE9025A075D478024C78C"
+      ]
+    },
+    {
+      "platform": "Linux x86_64 GNU",
+      "environment": "Native Linux runner workflow prepared; no completed runner artifact in this workspace",
+      "kernel": null,
+      "filesystem": "unknown until runner execution",
+      "architecture": "x86_64",
+      "rust": [
+        "1.78.0"
+      ],
+      "status": "BLOCKED",
+      "commands": [
+        ".github/workflows/m1-release-evidence.yml"
+      ],
+      "artifacts": [],
+      "sha256": [],
+      "note": "A GitHub Actions job is defined but has not run or produced retained evidence."
+    },
+    {
+      "platform": "macOS arm64",
+      "environment": "GitHub Actions macos-14 workflow prepared; no completed runner artifact in this workspace",
+      "kernel": null,
+      "filesystem": "unknown until runner execution",
+      "architecture": "arm64",
+      "rust": [
+        "1.78.0"
+      ],
+      "status": "BLOCKED",
+      "commands": [
+        ".github/workflows/m1-release-evidence.yml"
+      ],
+      "artifacts": [],
+      "sha256": [],
+      "note": "A GitHub Actions job is defined but has not run or produced retained evidence."
+    }
+  ]
+}

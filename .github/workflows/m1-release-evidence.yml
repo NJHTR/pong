@@ -1,0 +1,267 @@
+name: M1 release evidence
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/m1-release-evidence.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  native-platform:
+    name: ${{ matrix.platform }} / stable + Rust 1.78
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-native
+            artifact: m1-linux-native-evidence
+          - os: macos-14
+            platform: macos-native
+            artifact: m1-macos-native-evidence
+
+    env:
+      M1_TMPDIR: ${{ github.workspace }}/.m1-tmp
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install Rust 1.78 MSRV
+        uses: dtolnay/rust-toolchain@1.78.0
+        with:
+          components: rustfmt, clippy
+
+      - name: Install Python for manifest generation
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Capture platform identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/build evidence/logs evidence/platform
+          mkdir -p "${M1_TMPDIR}"
+          if [[ "${RUNNER_OS}" == "Linux" ]]; then
+            filesystem_type="$(df -T "${GITHUB_WORKSPACE}" | awk 'NR==2 {print $2}')"
+            repository_filesystem_type="$(df -T "${M1_TMPDIR}" | awk 'NR==2 {print $2}')"
+            os_version="$(. /etc/os-release && printf '%s %s' "${NAME}" "${VERSION_ID}")"
+          else
+            filesystem_type="$(stat -f '%T' "${GITHUB_WORKSPACE}")"
+            repository_filesystem_type="$(stat -f '%T' "${M1_TMPDIR}")"
+            os_version="$(sw_vers -productVersion)"
+          fi
+          printf '%s\n' \
+            "runner_os=${RUNNER_OS}" \
+            "runner_arch=${RUNNER_ARCH}" \
+            "os_version=${os_version}" \
+            "kernel=$(uname -sr)" \
+            "architecture=$(uname -m)" \
+            "filesystem_type=${filesystem_type}" \
+            "repository_filesystem_type=${repository_filesystem_type}" \
+            "tmpdir=${M1_TMPDIR}" \
+            "workspace=${GITHUB_WORKSPACE}" \
+            "commit=${GITHUB_SHA}" \
+            "run_id=${GITHUB_RUN_ID}" \
+            "run_attempt=${GITHUB_RUN_ATTEMPT}" | tee evidence/platform/platform.txt
+          rustc +stable --version --verbose | tee evidence/platform/rust-stable.txt
+          cargo +stable --version | tee evidence/platform/cargo-stable.txt
+          rustc +1.78.0 --version --verbose | tee evidence/platform/rust-msrv-178.txt
+          cargo +1.78.0 --version | tee evidence/platform/cargo-msrv-178.txt
+
+      - name: Run stable quality gates
+        shell: bash
+        env:
+          CARGO_TARGET_DIR: target/m1-ci-stable
+          TMPDIR: ${{ github.workspace }}/.m1-tmp
+        run: |
+          set -o pipefail
+          mkdir -p evidence/build
+          overall=0
+          run_record() {
+            local label="$1"
+            local command="$2"
+            printf '%s\t%s\n' "${label}" "${command}" >> evidence/commands.tsv
+            set +e
+            bash -c "${command}" 2>&1 | tee "evidence/build/${label}.log"
+            local status=${PIPESTATUS[0]}
+            set -e
+            printf '%s\n' "${status}" > "evidence/build/${label}.exit"
+            if [[ "${status}" -ne 0 ]]; then overall=1; fi
+          }
+          run_record stable-fmt 'cargo +stable fmt --all -- --check'
+          run_record stable-check 'cargo +stable check --locked'
+          run_record stable-test 'cargo +stable test --locked'
+          run_record stable-clippy 'cargo +stable clippy --locked --all-targets -- -D warnings'
+          exit "${overall}"
+
+      - name: Run Rust 1.78 MSRV quality gates
+        if: always()
+        shell: bash
+        env:
+          CARGO_TARGET_DIR: target/m1-ci-msrv-178
+          TMPDIR: ${{ github.workspace }}/.m1-tmp
+        run: |
+          set -o pipefail
+          mkdir -p evidence/build
+          overall=0
+          run_record() {
+            local label="$1"
+            local command="$2"
+            printf '%s\t%s\n' "${label}" "${command}" >> evidence/commands.tsv
+            set +e
+            bash -c "${command}" 2>&1 | tee "evidence/build/${label}.log"
+            local status=${PIPESTATUS[0]}
+            set -e
+            printf '%s\n' "${status}" > "evidence/build/${label}.exit"
+            if [[ "${status}" -ne 0 ]]; then overall=1; fi
+          }
+          run_record msrv-178-fmt 'cargo +1.78.0 fmt --all -- --check'
+          run_record msrv-178-check 'cargo +1.78.0 check --locked'
+          run_record msrv-178-test 'cargo +1.78.0 test --locked'
+          run_record msrv-178-clippy 'cargo +1.78.0 clippy --locked --all-targets -- -D warnings'
+          exit "${overall}"
+
+      - name: Run M1 focused and cold-reopen evidence
+        if: always()
+        shell: bash
+        env:
+          CARGO_TARGET_DIR: target/m1-ci-focused
+          TMPDIR: ${{ github.workspace }}/.m1-tmp
+        run: |
+          set -o pipefail
+          mkdir -p evidence/logs
+          overall=0
+          run_record() {
+            local label="$1"
+            local command="$2"
+            printf '%s\t%s\n' "${label}" "${command}" >> evidence/commands.tsv
+            set +e
+            bash -c "${command}" 2>&1 | tee "evidence/logs/${label}.log"
+            local status=${PIPESTATUS[0]}
+            set -e
+            printf '%s\n' "${status}" > "evidence/logs/${label}.exit"
+            if [[ "${status}" -ne 0 ]]; then overall=1; fi
+          }
+          run_record pt13-fi10 'cargo +stable test --locked --test pt13_fi10 -- --nocapture'
+          run_record migration 'cargo +stable test --locked --test repository_migration -- --nocapture'
+          run_record recovery 'cargo +stable test --locked --test recovery_boundaries -- --nocapture'
+          run_record compatibility 'cargo +stable test --locked --test compatibility_boundaries -- --nocapture'
+          run_record cold-reopen 'cargo +stable test --locked -- --nocapture cold_reopen'
+          exit "${overall}"
+
+      - name: Build structured evidence manifest
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("evidence")
+          identity = {}
+          for line in (root / "platform" / "platform.txt").read_text().splitlines():
+              key, value = line.split("=", 1)
+              identity[key] = value
+
+          def text(path):
+              return Path(path).read_text().strip()
+
+          commands = []
+          command_file = root / "commands.tsv"
+          if command_file.exists():
+              for line in command_file.read_text().splitlines():
+                  label, command = line.split("\t", 1)
+                  exit_path = next(root.rglob(f"{label}.exit"), None)
+                  commands.append({
+                      "label": label,
+                      "command": command,
+                      "exit_code": int(text(exit_path)) if exit_path else None,
+                  })
+
+          metadata = {
+              "record_version": "m1-native-platform-evidence-0.2",
+              "environment": {
+                  "runner": os.environ["RUNNER_NAME"],
+                  "runner_os": identity.get("runner_os"),
+                  "runner_arch": identity.get("runner_arch"),
+                  "os_version": identity.get("os_version"),
+                  "kernel": identity.get("kernel"),
+                  "architecture": identity.get("architecture"),
+                  "filesystem": identity.get("filesystem_type"),
+                  "repository_filesystem": identity.get("repository_filesystem_type"),
+                  "tmpdir": identity.get("tmpdir"),
+                  "workspace": identity.get("workspace"),
+              },
+              "rust": {
+                  "stable": text(root / "platform" / "rust-stable.txt"),
+                  "msrv": text(root / "platform" / "rust-msrv-178.txt"),
+              },
+              "cargo": {
+                  "stable": text(root / "platform" / "cargo-stable.txt"),
+                  "msrv": text(root / "platform" / "cargo-msrv-178.txt"),
+              },
+              "commit": identity.get("commit"),
+              "workflow_run_id": identity.get("run_id"),
+              "workflow_run_attempt": identity.get("run_attempt"),
+              "commands": commands,
+          }
+          (root / "platform" / "platform-metadata.json").write_text(
+              json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+          )
+
+          files = []
+          for path in sorted(root.rglob("*")):
+              if path.is_file() and path.name not in {"artifact-manifest.json", "SHA256SUMS"}:
+                  files.append({
+                      "path": path.relative_to(root).as_posix(),
+                      "bytes": path.stat().st_size,
+                  })
+          manifest = {
+              "record_version": "m1-native-platform-artifact-0.2",
+              "platform": metadata["environment"],
+              "commit": metadata["commit"],
+              "files": files,
+          }
+          (root / "artifact-manifest.json").write_text(
+              json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+          )
+          PY
+
+      - name: Hash evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > evidence/SHA256SUMS
+          while IFS= read -r file; do
+            if [[ "${RUNNER_OS}" == "Linux" ]]; then
+              sha256sum "${file}"
+            else
+              shasum -a 256 "${file}"
+            fi
+          done < <(find evidence -type f ! -name SHA256SUMS -print | sort) | tee evidence/SHA256SUMS
+
+      - name: Upload native platform evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: evidence
+          if-no-files-found: error

@@ -1,0 +1,3 @@
+# Evidence logs preserve captured terminal bytes, including ANSI padding and
+# trailing spaces. Keep them byte-exact while reviewing the text/source diff.
+artifacts/m1-release-evidence/**/*.log -diff

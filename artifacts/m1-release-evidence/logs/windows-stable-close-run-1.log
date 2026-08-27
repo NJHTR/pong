@@ -1,0 +1,10 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running tests\performance_measurements.rs (target\m1-release-stable-20260827\debug\deps\performance_measurements-6917ddceb46af410.exe)
+
+running 1 test
+wrote C:\Users\NJHTR\AppData\Local\Temp\pong-m1-performance-closeout\windows-stable-close-run-1.json
+test m1_performance_probe_writes_reproducible_record ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.32s
+
+EXIT_CODE=0

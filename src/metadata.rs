@@ -46,6 +46,78 @@ pub enum MetadataFailpoint {
     AfterSqliteCommit,
 }
 
+/// Projection-specific interruption boundaries used by the FI-10 harness.
+/// Boundaries before the SQLite commit roll back the complete projection
+/// state/cursor/ledger transaction; the post-commit boundary reports an
+/// unconfirmed result while leaving the committed state durable.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProjectionFailpoint {
+    BeforeApply,
+    AfterValidation,
+    AfterIdempotencyCheck,
+    AfterStateMutation,
+    BeforeCursorUpdate,
+    AfterCursorUpdate,
+    BeforeLedgerCommit,
+    AfterLedgerCommit,
+    BeforeTransactionCommit,
+    AfterTransactionCommit,
+}
+
+impl ProjectionFailpoint {
+    fn label(self) -> &'static str {
+        match self {
+            Self::BeforeApply => "fi10_a_before_projection_apply",
+            Self::AfterValidation => "fi10_b_after_event_validation",
+            Self::AfterIdempotencyCheck => "fi10_c_after_idempotency_check",
+            Self::AfterStateMutation => "fi10_d_after_state_mutation",
+            Self::BeforeCursorUpdate => "fi10_e_before_cursor_update",
+            Self::AfterCursorUpdate => "fi10_f_after_cursor_update",
+            Self::BeforeLedgerCommit => "fi10_g_before_applied_event_ledger_commit",
+            Self::AfterLedgerCommit => "fi10_h_after_applied_event_ledger_commit",
+            Self::BeforeTransactionCommit => "fi10_i_before_transaction_commit",
+            Self::AfterTransactionCommit => "fi10_j_after_transaction_commit",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ProjectionFailpoints {
+    armed: Option<ProjectionFailpoint>,
+}
+
+impl ProjectionFailpoints {
+    pub const fn disabled() -> Self {
+        Self { armed: None }
+    }
+
+    pub const fn once(point: ProjectionFailpoint) -> Self {
+        Self { armed: Some(point) }
+    }
+
+    pub fn arm(&mut self, point: ProjectionFailpoint) {
+        self.armed = Some(point);
+    }
+
+    pub fn disarm(&mut self) {
+        self.armed = None;
+    }
+
+    pub const fn armed(&self) -> Option<ProjectionFailpoint> {
+        self.armed
+    }
+
+    fn take_if(&mut self, point: ProjectionFailpoint) -> Option<ProjectionFailpoint> {
+        if self.armed == Some(point) {
+            let armed = self.armed;
+            self.armed = None;
+            armed
+        } else {
+            None
+        }
+    }
+}
+
 impl MetadataFailpoint {
     fn label(self) -> &'static str {
         match self {
@@ -168,6 +240,12 @@ pub struct NewEventEnvelope {
     pub parent_event_ids: Vec<String>,
     pub capture_confidence: Option<String>,
     pub redaction_status: String,
+    /// Optional caller assertion. When present it must match the metadata
+    /// generation currently opened by this store.
+    #[serde(default)]
+    pub generation_id: Option<String>,
+    #[serde(default)]
+    pub migration_id: Option<String>,
     pub payload: Value,
 }
 
@@ -207,6 +285,10 @@ pub struct ProjectionDefinition {
     pub projection_id: String,
     pub project_id: String,
     pub schema_version: String,
+    /// Optional caller assertion for cross-generation isolation tests and
+    /// migration tooling. The durable row is always bound to the opened store.
+    pub generation_id: Option<String>,
+    pub migration_id: Option<String>,
     pub initial_state: Value,
 }
 
@@ -233,6 +315,13 @@ pub struct ProjectionRecord {
     pub state_digest: String,
     pub cursor: Option<ProjectionCursor>,
     pub event_count: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectionAppliedEvent {
+    pub event_id: String,
+    pub payload_digest: String,
+    pub applied_at: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -545,6 +634,16 @@ fn inject_after_commit(
     Ok(())
 }
 
+fn inject_projection(
+    failpoints: &mut ProjectionFailpoints,
+    point: ProjectionFailpoint,
+) -> Result<(), PongError> {
+    if let Some(fired) = failpoints.take_if(point) {
+        return Err(PongError::FaultInjected(fired.label().into()));
+    }
+    Ok(())
+}
+
 /// Local-first transactional metadata and event store.
 ///
 /// The connection is intentionally owned by one repository handle. Callers that
@@ -554,6 +653,7 @@ pub struct MetadataStore {
     connection: Connection,
     redactor: Redactor,
     failpoints: MetadataFailpoints,
+    projection_failpoints: ProjectionFailpoints,
     projection_handlers: HashMap<String, ProjectionHandler>,
 }
 
@@ -563,6 +663,7 @@ impl fmt::Debug for MetadataStore {
             .debug_struct("MetadataStore")
             .field("redaction_profile", &self.redactor.profile())
             .field("failpoints", &self.failpoints)
+            .field("projection_failpoints", &self.projection_failpoints)
             .field(
                 "projection_handlers",
                 &self.projection_handlers.keys().collect::<Vec<_>>(),
@@ -637,6 +738,7 @@ impl MetadataStore {
             connection,
             redactor,
             failpoints: MetadataFailpoints::disabled(),
+            projection_failpoints: ProjectionFailpoints::disabled(),
             projection_handlers: HashMap::new(),
         };
         store.configure_read_only()?;
@@ -678,6 +780,7 @@ impl MetadataStore {
             connection,
             redactor,
             failpoints,
+            projection_failpoints: ProjectionFailpoints::disabled(),
             projection_handlers: HashMap::new(),
         };
         store.configure()?;
@@ -703,6 +806,14 @@ impl MetadataStore {
 
     pub fn failpoints(&self) -> MetadataFailpoints {
         self.failpoints
+    }
+
+    pub fn set_projection_failpoints(&mut self, failpoints: ProjectionFailpoints) {
+        self.projection_failpoints = failpoints;
+    }
+
+    pub fn projection_failpoints(&self) -> ProjectionFailpoints {
+        self.projection_failpoints
     }
 
     fn configure(&mut self) -> Result<(), PongError> {
@@ -1329,6 +1440,18 @@ impl MetadataStore {
                 "projection {projection_id} is not bound to the active generation"
             )));
         }
+        let mut statement = self
+            .connection
+            .prepare("SELECT projection_id FROM projections ORDER BY projection_id")?;
+        let projection_ids = statement
+            .query_map([], |row| row.get::<_, String>(0))?
+            .collect::<Result<Vec<_>, _>>()?;
+        for projection_id in projection_ids {
+            let record = self.projection_record(&projection_id)?.ok_or_else(|| {
+                PongError::Integrity("projection disappeared during validation".into())
+            })?;
+            validate_projection_record_integrity(&self.connection, &record)?;
+        }
         Ok(())
     }
 
@@ -1924,6 +2047,13 @@ impl MetadataStore {
     ) -> Result<EventEnvelope, PongError> {
         let event = redact_event_envelope(&self.redactor, event);
         validate_event_envelope(&event)?;
+        let expected_identity = self.projection_identity()?;
+        validate_identity_assertion(
+            event.generation_id.as_deref(),
+            event.migration_id.as_deref(),
+            &expected_identity,
+            "event envelope",
+        )?;
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -2037,6 +2167,8 @@ impl MetadataStore {
                 parent_event_ids: Vec::new(),
                 capture_confidence: Some("observed".into()),
                 redaction_status: "redacted".into(),
+                generation_id: None,
+                migration_id: None,
                 payload: event.payload.clone(),
             },
         )?;
@@ -2089,6 +2221,12 @@ impl MetadataStore {
         let initial_state_json = canonical_json_value(&definition.initial_state)?;
         let state_digest = digest_text(&initial_state_json);
         let (generation_id, migration_id) = self.projection_identity()?;
+        validate_identity_assertion(
+            definition.generation_id.as_deref(),
+            definition.migration_id.as_deref(),
+            &(generation_id.clone(), migration_id.clone()),
+            "projection definition",
+        )?;
         let profile = self.redactor.profile();
         let transaction = self
             .connection
@@ -2138,6 +2276,24 @@ impl MetadataStore {
             .map_err(PongError::from)
     }
 
+    pub fn projection_applied_events(
+        &self,
+        projection_id: &str,
+    ) -> Result<Vec<ProjectionAppliedEvent>, PongError> {
+        let mut statement = self.connection.prepare(
+            "SELECT event_id, payload_digest, applied_at FROM projection_events
+             WHERE projection_id = ?1 ORDER BY rowid ASC",
+        )?;
+        let rows = statement.query_map([projection_id], |row| {
+            Ok(ProjectionAppliedEvent {
+                event_id: row.get(0)?,
+                payload_digest: row.get(1)?,
+                applied_at: row.get(2)?,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(PongError::from)
+    }
+
     /// Apply all source envelopes after the durable cursor in one metadata
     /// transaction. Unknown event types are preserved and mark the projection
     /// `degraded`; they are never silently reported as `ready`.
@@ -2166,6 +2322,10 @@ impl MetadataStore {
         updated_at: String,
         rebuild: bool,
     ) -> Result<ProjectionRecord, PongError> {
+        inject_projection(
+            &mut self.projection_failpoints,
+            ProjectionFailpoint::BeforeApply,
+        )?;
         let existing = self
             .projection_record(projection_id)?
             .ok_or_else(|| PongError::NotFound(format!("projection {projection_id}")))?;
@@ -2183,6 +2343,7 @@ impl MetadataStore {
                 "projection redaction profile does not match metadata".into(),
             ));
         }
+        validate_projection_record_integrity(&self.connection, &existing)?;
         let initial_state = if rebuild {
             self.connection.query_row(
                 "SELECT initial_state_json FROM projections WHERE projection_id = ?1",
@@ -2203,6 +2364,10 @@ impl MetadataStore {
                 .map_or(0, |cursor| cursor.project_sequence)
         };
         let envelopes = self.list_event_envelopes(&existing.project_id, start_sequence)?;
+        inject_projection(
+            &mut self.projection_failpoints,
+            ProjectionFailpoint::AfterValidation,
+        )?;
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -2218,17 +2383,25 @@ impl MetadataStore {
             existing.cursor.clone()
         };
         let mut count = if rebuild { 0 } else { existing.event_count };
-        let mut degraded = existing.status == "degraded";
+        let mut degraded = if rebuild {
+            false
+        } else {
+            existing.status == "degraded"
+        };
         for event in envelopes {
-            if let Some(applied_digest) = transaction
+            let applied_digest = transaction
                 .query_row(
                     "SELECT payload_digest FROM projection_events
                      WHERE projection_id = ?1 AND event_id = ?2",
                     params![projection_id, event.event_id],
                     |row| row.get::<_, String>(0),
                 )
-                .optional()?
-            {
+                .optional()?;
+            inject_projection(
+                &mut self.projection_failpoints,
+                ProjectionFailpoint::AfterIdempotencyCheck,
+            )?;
+            if let Some(applied_digest) = applied_digest {
                 if applied_digest != event.payload_digest {
                     return Err(PongError::Integrity(format!(
                         "projection event {} was reused with a different payload digest",
@@ -2243,6 +2416,23 @@ impl MetadataStore {
             } else {
                 degraded = true;
             }
+            inject_projection(
+                &mut self.projection_failpoints,
+                ProjectionFailpoint::AfterStateMutation,
+            )?;
+            inject_projection(
+                &mut self.projection_failpoints,
+                ProjectionFailpoint::BeforeCursorUpdate,
+            )?;
+            cursor = Some(event_cursor(&event));
+            inject_projection(
+                &mut self.projection_failpoints,
+                ProjectionFailpoint::AfterCursorUpdate,
+            )?;
+            inject_projection(
+                &mut self.projection_failpoints,
+                ProjectionFailpoint::BeforeLedgerCommit,
+            )?;
             transaction.execute(
                 "INSERT INTO projection_events(projection_id, event_id, payload_digest, applied_at)
                  VALUES (?1, ?2, ?3, ?4)",
@@ -2253,8 +2443,11 @@ impl MetadataStore {
                     updated_at
                 ],
             )?;
+            inject_projection(
+                &mut self.projection_failpoints,
+                ProjectionFailpoint::AfterLedgerCommit,
+            )?;
             count += 1;
-            cursor = Some(event_cursor(&event));
         }
         let state_json = canonical_json_value(&state)?;
         let state_digest = digest_text(&state_json);
@@ -2279,8 +2472,16 @@ impl MetadataStore {
                 projection_id,
             ],
         )?;
+        inject_projection(
+            &mut self.projection_failpoints,
+            ProjectionFailpoint::BeforeTransactionCommit,
+        )?;
         inject_before_commit(&mut self.failpoints, MetadataFailpoint::BeforeSqliteCommit)?;
         transaction.commit()?;
+        inject_projection(
+            &mut self.projection_failpoints,
+            ProjectionFailpoint::AfterTransactionCommit,
+        )?;
         inject_after_commit(&mut self.failpoints, MetadataFailpoint::AfterSqliteCommit)?;
         self.projection_record(projection_id)?
             .ok_or_else(|| PongError::Integrity("projection disappeared after apply".into()))
@@ -2289,7 +2490,7 @@ impl MetadataStore {
     fn projection_identity(&self) -> Result<(String, String), PongError> {
         Ok(self
             .generation_identity()?
-            .unwrap_or_else(|| ("unbound".into(), "unbound".into())))
+            .unwrap_or_else(|| ("legacy-v0.1".into(), "legacy".into())))
     }
 
     pub fn list_event_envelopes(
@@ -3352,6 +3553,8 @@ fn append_operation_event(
             parent_event_ids: Vec::new(),
             capture_confidence: Some("observed".into()),
             redaction_status: "redacted".into(),
+            generation_id: None,
+            migration_id: None,
             payload: payload.clone(),
         },
     )?;
@@ -3469,8 +3672,41 @@ fn redact_event_envelope(redactor: &Redactor, event: NewEventEnvelope) -> NewEve
             .as_deref()
             .map(|v| redactor.redact_text(v)),
         redaction_status: redactor.redact_text(&event.redaction_status),
+        generation_id: event
+            .generation_id
+            .as_deref()
+            .map(|v| redactor.redact_text(v)),
+        migration_id: event
+            .migration_id
+            .as_deref()
+            .map(|v| redactor.redact_text(v)),
         payload: redactor.redact_value(&event.payload),
     }
+}
+
+fn validate_identity_assertion(
+    generation_id: Option<&str>,
+    migration_id: Option<&str>,
+    expected: &(String, String),
+    subject: &str,
+) -> Result<(), PongError> {
+    if let Some(provided) = generation_id {
+        if provided != expected.0 {
+            return Err(PongError::Integrity(format!(
+                "{subject} generation identity {provided:?} does not match metadata identity {:?}",
+                expected.0
+            )));
+        }
+    }
+    if let Some(provided) = migration_id {
+        if provided != expected.1 {
+            return Err(PongError::Integrity(format!(
+                "{subject} migration identity {provided:?} does not match metadata identity {:?}",
+                expected.1
+            )));
+        }
+    }
+    Ok(())
 }
 
 fn validate_event_envelope(event: &NewEventEnvelope) -> Result<(), PongError> {
@@ -3739,6 +3975,99 @@ fn validate_projection_definition(definition: &ProjectionDefinition) -> Result<(
     validate_non_empty(&definition.projection_id, "projection_id")?;
     validate_non_empty(&definition.project_id, "project_id")?;
     validate_non_empty(&definition.schema_version, "projection schema_version")
+}
+
+fn validate_projection_record_integrity(
+    connection: &Connection,
+    record: &ProjectionRecord,
+) -> Result<(), PongError> {
+    let state: Value = serde_json::from_str(&record.state_json).map_err(|error| {
+        PongError::Integrity(format!(
+            "projection {} state is not valid JSON: {error}",
+            record.projection_id
+        ))
+    })?;
+    let canonical_state = canonical_json_value(&state)?;
+    if canonical_state != record.state_json
+        || digest_text(&record.state_json) != record.state_digest
+    {
+        return Err(PongError::Integrity(format!(
+            "projection {} state digest does not match canonical state",
+            record.projection_id
+        )));
+    }
+
+    let ledger_count: i64 = connection.query_row(
+        "SELECT COUNT(*) FROM projection_events WHERE projection_id = ?1",
+        [&record.projection_id],
+        |row| row.get(0),
+    )?;
+    if ledger_count != record.event_count {
+        return Err(PongError::Integrity(format!(
+            "projection {} event count does not match applied-event ledger",
+            record.projection_id
+        )));
+    }
+
+    let invalid_ledger_event: Option<String> = connection
+        .query_row(
+            "SELECT pe.event_id
+             FROM projection_events pe
+             LEFT JOIN event_envelopes ee ON ee.event_id = pe.event_id
+             WHERE pe.projection_id = ?1
+               AND (ee.event_id IS NULL OR ee.project_id != ?2 OR ee.payload_digest != pe.payload_digest)
+             LIMIT 1",
+            params![record.projection_id, record.project_id],
+            |row| row.get(0),
+        )
+        .optional()?;
+    if let Some(event_id) = invalid_ledger_event {
+        return Err(PongError::Integrity(format!(
+            "projection {} applied-event ledger conflicts with source event {}",
+            record.projection_id, event_id
+        )));
+    }
+
+    let max_applied_sequence: Option<i64> = connection.query_row(
+        "SELECT MAX(ee.project_sequence)
+             FROM projection_events pe
+             JOIN event_envelopes ee ON ee.event_id = pe.event_id
+            WHERE pe.projection_id = ?1",
+        [&record.projection_id],
+        |row| row.get::<_, Option<i64>>(0),
+    )?;
+    match (&record.cursor, max_applied_sequence) {
+        (None, None) => {}
+        (Some(cursor), Some(max_sequence)) if cursor.project_sequence == max_sequence => {
+            let cursor_matches_source: i64 = connection.query_row(
+                "SELECT COUNT(*) FROM event_envelopes
+                 WHERE event_id = ?1 AND project_id = ?2 AND project_sequence = ?3
+                   AND stream_id = ?4 AND sequence = ?5 AND payload_digest = ?6",
+                params![
+                    cursor.event_id,
+                    record.project_id,
+                    cursor.project_sequence,
+                    cursor.stream_id,
+                    cursor.sequence,
+                    cursor.payload_digest,
+                ],
+                |row| row.get(0),
+            )?;
+            if cursor_matches_source != 1 {
+                return Err(PongError::Integrity(format!(
+                    "projection {} cursor does not match its source event",
+                    record.projection_id
+                )));
+            }
+        }
+        _ => {
+            return Err(PongError::Integrity(format!(
+                "projection {} cursor is inconsistent with its applied-event ledger",
+                record.projection_id
+            )));
+        }
+    }
+    Ok(())
 }
 
 fn digest_text(value: &str) -> String {

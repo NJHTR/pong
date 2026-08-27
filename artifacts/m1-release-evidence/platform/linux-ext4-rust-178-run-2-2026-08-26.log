@@ -1,0 +1,461 @@
+record_version=m1-platform-run-0.2
+platform=linux-x86_64-gnu
+filesystem=ext4-backed Docker named volume
+toolchain=Rust 1.78.0
+image=rust:1.78-slim-bookworm@sha256:0fea967628dc796a2b9d1d57ddb3af3b3f0a35b6c8c0e23690dbe0ceb71a2dc9
+source_volume=pong-linux-ext4-audit-repo
+target_volume=pong-linux-ext4-audit-build
+target_directory=/build/pong-target-ext4
+TMPDIR=/repo/tmp
+Filesystem     Type  1K-blocks     Used Available Use% Mounted on
+/dev/sdf       ext4 1055762868 35331104 966728292   4% /repo
+/dev/sdf       ext4 1055762868 35331104 966728292   4% /repo
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded smallvec v1.15.2
+  Downloaded sha2 v0.10.9
+  Downloaded once_cell v1.21.4
+  Downloaded hashlink v0.9.1
+  Downloaded ahash v0.8.12
+  Downloaded version_check v0.9.5
+  Downloaded block-buffer v0.10.4
+  Downloaded cpufeatures v0.2.17
+  Downloaded pkg-config v0.3.34
+  Downloaded generic-array v0.14.7
+  Downloaded crypto-common v0.1.7
+  Downloaded itoa v1.0.18
+  Downloaded unicode-ident v1.0.24
+  Downloaded hex v0.4.3
+  Downloaded find-msvc-tools v0.1.11
+  Downloaded thiserror v2.0.20
+  Downloaded fallible-iterator v0.3.0
+  Downloaded digest v0.10.7
+  Downloaded zmij v1.0.23
+  Downloaded thiserror-impl v2.0.20
+  Downloaded cfg-if v1.0.4
+  Downloaded fs2 v0.4.3
+  Downloaded fallible-streaming-iterator v0.1.9
+  Downloaded serde_core v1.0.229
+  Downloaded shlex v2.0.1
+  Downloaded bitflags v2.13.1
+  Downloaded serde_derive v1.0.229
+  Downloaded quote v1.0.47
+  Downloaded serde v1.0.229
+  Downloaded proc-macro2 v1.0.107
+  Downloaded memchr v2.8.3
+  Downloaded typenum v1.20.1
+  Downloaded cc v1.4.3
+  Downloaded hashbrown v0.14.5
+  Downloaded serde_json v1.0.151
+  Downloaded rusqlite v0.32.1
+  Downloaded libc v0.2.189
+  Downloaded zerocopy v0.8.56
+  Downloaded vcpkg v0.2.15
+  Downloaded syn v3.0.3
+  Downloaded libsqlite3-sys v0.30.1
+   Compiling version_check v0.9.5
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling zerocopy v0.8.56
+   Compiling shlex v2.0.1
+    Checking cfg-if v1.0.4
+   Compiling find-msvc-tools v0.1.11
+    Checking typenum v1.20.1
+   Compiling pkg-config v0.3.34
+    Checking once_cell v1.21.4
+   Compiling vcpkg v0.2.15
+   Compiling serde_core v1.0.229
+   Compiling libc v0.2.189
+   Compiling zmij v1.0.23
+   Compiling serde v1.0.229
+   Compiling thiserror v2.0.20
+   Compiling serde_json v1.0.151
+    Checking bitflags v2.13.1
+    Checking smallvec v1.15.2
+    Checking itoa v1.0.18
+    Checking memchr v2.8.3
+    Checking fallible-iterator v0.3.0
+    Checking cpufeatures v0.2.17
+    Checking fallible-streaming-iterator v0.1.9
+    Checking hex v0.4.3
+   Compiling cc v1.4.3
+   Compiling generic-array v0.14.7
+   Compiling ahash v0.8.12
+   Compiling syn v3.0.3
+    Checking crypto-common v0.1.7
+    Checking block-buffer v0.10.4
+    Checking digest v0.10.7
+    Checking sha2 v0.10.9
+   Compiling libsqlite3-sys v0.30.1
+    Checking fs2 v0.4.3
+   Compiling thiserror-impl v2.0.20
+   Compiling serde_derive v1.0.229
+    Checking hashbrown v0.14.5
+    Checking hashlink v0.9.1
+    Checking rusqlite v0.32.1
+    Checking pong-core v0.1.0 (/repo)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.18s
+ Downloading crates ...
+  Downloaded rand_chacha v0.9.0
+  Downloaded getrandom v0.3.4
+  Downloaded unarray v0.1.4
+  Downloaded rand_xorshift v0.4.0
+  Downloaded fastrand v2.5.0
+  Downloaded getrandom v0.2.17
+  Downloaded lazy_static v1.5.0
+  Downloaded autocfg v1.5.1
+  Downloaded errno v0.3.14
+  Downloaded tempfile v3.15.0
+  Downloaded rand_core v0.9.5
+  Downloaded ppv-lite86 v0.2.21
+  Downloaded num-traits v0.2.19
+  Downloaded rand v0.9.5
+  Downloaded proptest v1.8.0
+  Downloaded regex-syntax v0.8.11
+  Downloaded rustix v0.38.44
+  Downloaded linux-raw-sys v0.4.15
+   Compiling cfg-if v1.0.4
+   Compiling getrandom v0.3.4
+   Compiling typenum v1.20.1
+   Compiling once_cell v1.21.4
+   Compiling bitflags v2.13.1
+   Compiling autocfg v1.5.1
+   Compiling rustix v0.38.44
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling itoa v1.0.18
+   Compiling smallvec v1.15.2
+   Compiling linux-raw-sys v0.4.15
+   Compiling cpufeatures v0.2.17
+   Compiling memchr v2.8.3
+   Compiling fallible-iterator v0.3.0
+   Compiling regex-syntax v0.8.11
+   Compiling hex v0.4.3
+   Compiling fastrand v2.5.0
+   Compiling libc v0.2.189
+   Compiling zerocopy v0.8.56
+   Compiling unarray v0.1.4
+   Compiling lazy_static v1.5.0
+   Compiling serde_core v1.0.229
+   Compiling zmij v1.0.23
+   Compiling libsqlite3-sys v0.30.1
+   Compiling thiserror v2.0.20
+   Compiling num-traits v0.2.19
+   Compiling generic-array v0.14.7
+   Compiling getrandom v0.2.17
+   Compiling fs2 v0.4.3
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling rand_core v0.9.5
+   Compiling digest v0.10.7
+   Compiling rand v0.9.5
+   Compiling rand_xorshift v0.4.0
+   Compiling sha2 v0.10.9
+   Compiling tempfile v3.15.0
+   Compiling serde_json v1.0.151
+   Compiling serde v1.0.229
+   Compiling ahash v0.8.12
+   Compiling ppv-lite86 v0.2.21
+   Compiling hashbrown v0.14.5
+   Compiling rand_chacha v0.9.0
+   Compiling proptest v1.8.0
+   Compiling hashlink v0.9.1
+   Compiling rusqlite v0.32.1
+   Compiling pong-core v0.1.0 (/repo)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.01s
+     Running unittests src/lib.rs (/build/pong-target-ext4/debug/deps/pong_core-a888a928acab2603)
+
+running 48 tests
+test canonical::tests::domain_is_unambiguous ... ok
+test canonical::tests::object_keys_are_sorted_recursively ... ok
+test canonical::tests::strings_use_json_escaping ... ok
+test canonical::tests::equivalent_object_order_has_identical_bytes_and_digest ... ok
+test cas::tests::digest_includes_domain_separator_and_exact_bytes ... ok
+test atomic_replace::tests::no_replace_directory_publish_preserves_an_existing_destination ... ok
+test cas::tests::configured_secret_is_rejected_before_cas_publication ... ok
+test environment::tests::capture_is_allowlisted_and_deterministic ... ok
+test error::tests::sqlite_read_only_has_a_stable_domain_code ... ok
+test error::tests::permission_denied_io_has_a_stable_domain_code ... ok
+test error::tests::sqlite_full_has_a_stable_domain_code ... ok
+test redaction::tests::byte_scan_fails_closed_without_disclosing_secret ... ok
+test redaction::tests::redaction_is_deterministic_and_recursive ... ok
+test redaction::tests::debug_representation_does_not_expose_registered_secrets ... ok
+test redaction::tests::secret_bearing_object_keys_are_replaced_without_collisions ... ok
+test redaction::tests::short_registered_secrets_are_rejected ... ok
+test metadata::tests::duplicate_intent_with_changed_content_is_rejected ... ok
+test metadata::tests::ref_compare_and_swap_rejects_stale_writer ... ok
+test metadata::tests::repository_format_is_pinned ... ok
+test metadata::tests::duplicate_event_id_with_changed_metadata_is_rejected ... ok
+test metadata::tests::events_have_monotonic_stream_sequences_and_deduplicate ... ok
+test metadata::tests::unfinished_intent_is_visible_for_recovery ... ok
+test metadata::tests::idempotency_returns_original_result_and_rejects_changed_digest ... ok
+test cas::tests::injected_quota_failure_cleans_partial_staging_bytes ... ok
+test cas::tests::malformed_digest_and_domain_are_rejected ... ok
+test cas::tests::wrong_expected_digest_is_rejected_before_publication ... ok
+test cas::tests::injected_permission_failure_is_stable_without_changing_host_acl ... ok
+test cas::tests::injected_short_write_cleans_staging_and_publishes_nothing ... ok
+test atomic_replace::tests::sync_directory_accepts_an_existing_directory ... ok
+test atomic_replace::tests::atomic_replace_overwrites_existing_file ... ok
+test cas::tests::injected_directory_sync_failure_leaves_a_retryable_published_object ... ok
+test cas::tests::injected_publication_failure_cleans_staging ... ok
+test repository::tests::missing_marker_is_not_treated_as_an_initialized_repository ... ok
+test cas::tests::existing_secret_bytes_block_cas_startup ... ok
+test cas::tests::injected_startup_scan_failure_does_not_disable_normal_reopen ... ok
+test cas::tests::put_get_and_repeat_are_verified ... ok
+test cas::tests::tampering_is_integrity_error_and_quarantined ... ok
+test metadata::tests::opening_database_with_existing_secret_fails_closed ... ok
+test metadata::tests::legacy_repository_without_profile_metadata_fails_closed ... ok
+test environment::tests::persisted_environment_identity_is_immutable ... ok
+test metadata::tests::redaction_profile_is_pinned_across_reopen ... ok
+test metadata::tests::registered_secret_never_reaches_sqlite_or_wal_bytes ... ok
+test repository::tests::startup_does_not_recreate_missing_cas_directories ... ok
+test repository::tests::unsupported_marker_fails_before_metadata_open ... ok
+test repository::tests::init_creates_durable_layout_and_marker ... ok
+test repository::tests::init_is_idempotent_and_open_reuses_the_same_format ... ok
+test repository::tests::opening_repository_classifies_orphan_intents_as_unknown ... ok
+test repository::tests::repository_wires_one_redaction_policy_into_metadata_and_cas ... ok
+
+test result: ok. 48 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/cas_failpoints.rs (/build/pong-target-ext4/debug/deps/cas_failpoints-28c4728d07534f32)
+
+running 1 test
+test fi08_directory_sync_fault_cold_reopen_verifies_object_and_retry_is_idempotent ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/compatibility_boundaries.rs (/build/pong-target-ext4/debug/deps/compatibility_boundaries-757a1597ea39abc0)
+
+running 9 tests
+test previous_event_schema_is_read_without_rewriting_opaque_fields ... ok
+test legacy_metadata_without_profile_is_rejected_before_schema_mutation ... ok
+test unsupported_metadata_format_is_rejected_before_schema_mutation ... ok
+test incompatible_operations_object_fails_before_additive_schema_mutation ... ok
+test v01_database_cold_open_keeps_legacy_rows_and_adds_additive_tables ... ok
+test current_marker_fixture_round_trips_with_additive_fields ... ok
+test unsupported_marker_version_fails_before_repository_is_healthy ... ok
+test redaction_profile_mismatch_requires_explicit_compatibility_choice ... ok
+test migration_backs_up_raw_v01_without_mutating_source_schema ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/host_resource_faults.rs (/build/pong-target-ext4/debug/deps/host_resource_faults-7839e4a562b54731)
+
+running 3 tests
+test fi_14_real_enospc_during_cas_write_preserves_committed_history ... ignored, FI-14 host evidence: run on an empty <=64MiB tmpfs via PONG_HOST_FAULT_ROOT
+test fi_14_real_enospc_during_journal_write_preserves_committed_history ... ignored, FI-14 host evidence: run on an empty <=64MiB tmpfs via PONG_HOST_FAULT_ROOT
+test fi_14_real_enospc_during_metadata_write_preserves_committed_history ... ignored, FI-14 host evidence: run on an empty <=64MiB tmpfs via PONG_HOST_FAULT_ROOT
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/m1_primitives.rs (/build/pong-target-ext4/debug/deps/m1_primitives-0c0a30e09390ed6e)
+
+running 2 tests
+test event_and_idempotency_records_are_replay_safe ... ok
+test cas_and_metadata_ports_share_m1_identity_rules ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/metadata_failpoints.rs (/build/pong-target-ext4/debug/deps/metadata_failpoints-5076907db9718e56)
+
+running 6 tests
+test outcome_boundaries_preserve_pre_state_or_post_state ... ok
+test failpoints_are_disabled_by_default_and_one_shot ... ok
+test recovery_boundaries_never_fabricate_success_and_converge_to_unknown ... ok
+test intent_after_commit_returns_fault_but_survives_cold_reopen ... ok
+test fi01_before_intent_commit_cold_reopen_preserves_pre_state_and_retry_publishes_once ... ok
+test sqlite_commit_failpoints_cover_wal_pre_and_post_visibility ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/migration_fixtures.rs (/build/pong-target-ext4/debug/deps/migration_fixtures-69fd969e43dba789)
+
+running 2 tests
+test migration_interruption_fixture_requires_cold_reopen_and_forbids_mixed_state ... ok
+test previous_generation_fixture_preserves_identity_and_opaque_data ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/operation_ledger.rs (/build/pong-target-ext4/debug/deps/operation_ledger-6feebb8df3ff6b08)
+
+running 8 tests
+test operation_request_retry_is_idempotent_but_changed_content_is_rejected ... ok
+test operation_start_finish_is_durable_and_emits_ordered_events ... ok
+test terminal_outcome_is_idempotent_and_cannot_be_rewritten ... ok
+test cancelled_unknown_and_recording_quality_are_explicit_states ... ok
+test operation_bindings_require_existing_same_project_records ... ok
+test operation_commit_faults_are_pre_or_post_state_after_cold_reopen ... ok
+test operation_finish_commit_faults_preserve_pre_or_post_state ... ok
+test operation_redaction_applies_before_sqlite_and_event_persistence ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/performance_measurements.rs (/build/pong-target-ext4/debug/deps/performance_measurements-125a017cb62360a9)
+
+running 1 test
+test m1_performance_probe_writes_reproducible_record ... ignored, measurement-only; run explicitly with --ignored
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/process_kill_migration.rs (/build/pong-target-ext4/debug/deps/process_kill_migration-ba1b0b16874f5662)
+
+running 3 tests
+test child_migration_entrypoint ... ok
+
+running 1 test
+
+running 1 test
+test process_kill_before_selector_leaves_legacy_only ... ok
+test process_kill_after_selector_uses_new_generation_only ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/process_kill_recovery.rs (/build/pong-target-ext4/debug/deps/process_kill_recovery-4135845d96366c99)
+
+running 3 tests
+test child_process_entrypoint ... ok
+
+running 1 test
+
+running 1 test
+test process_kill_after_outcome_keeps_republishable_outbox ... ok
+test process_kill_after_intent_never_becomes_success ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/property_corpus.rs (/build/pong-target-ext4/debug/deps/property_corpus-26281cdb3fcaa957)
+
+running 10 tests
+test pt04_generated_ref_writer_order_has_one_cas_winner ... ok
+test pt08_key_reuse_is_rejected_and_scopes_do_not_alias ... ok
+test pt02_concurrent_identical_cas_puts_converge ... ok
+test pt07_same_key_and_digest_has_one_idempotency_transition ... ok
+test pt06_duplicate_event_permutations_converge_in_the_event_store ... ok
+test pt05_event_sequences_are_contiguous_per_stream_and_duplicates_converge ... ok
+test pt12_redaction_is_deterministic_and_uses_an_opaque_fixed_marker ... ok
+test pt01_canonical_json_and_covered_bytes_have_one_identity ... ok
+test pt11_registered_secrets_are_closed_over_persisted_metadata_and_cas ... ok
+test pt03_metadata_commit_boundary_is_pre_or_post_state ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.39s
+
+     Running tests/property_recovery_migration.rs (/build/pong-target-ext4/debug/deps/property_recovery_migration-633b452d0f5fe7f4)
+
+running 3 tests
+test pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently ... ok
+test pt10_crash_schedules_never_turn_an_unresolved_intent_into_success ... ok
+test pt09_recovery_converges_across_interleavings_and_commit_boundaries ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.07s
+
+     Running tests/recovery_boundaries.rs (/build/pong-target-ext4/debug/deps/recovery_boundaries-7ce5d63fc229d517)
+
+running 7 tests
+test outcome_durable_rows_remain_available_for_publication_recovery ... ok
+test outcome_and_published_transitions_are_idempotent ... ok
+test orphan_intents_are_marked_unknown_once_and_keep_the_intent_payload ... ok
+test corrupt_cas_object_is_quarantined_and_never_read_as_success ... ok
+test unsupported_repository_format_is_rejected_before_open ... ok
+test committed_metadata_survives_reopen_and_uses_full_wal_durability ... ok
+test idempotency_record_survives_restart_without_second_mutation ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/repository_failpoints.rs (/build/pong-target-ext4/debug/deps/repository_failpoints-7a1ecc41b25e361e)
+
+running 2 tests
+test repository_cas_quota_fixture_is_one_shot_and_cleans_staging ... ok
+test startup_recovery_fault_is_retried_after_cold_reopen_and_converges ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/repository_migration.rs (/build/pong-target-ext4/debug/deps/repository_migration-d3827272498b8982)
+
+running 7 tests
+test invalid_migration_paths_are_rejected_before_the_repository_is_touched ... ok
+test legacy_v01_reader_boundary_rejects_the_generation_selector_before_mutation ... ok
+test changed_source_rejects_retry_and_does_not_reuse_an_unpublished_target ... ok
+test legacy_migration_builds_a_generation_and_preserves_durable_state ... ok
+test migration_preserves_the_redaction_profile_and_full_tree_secret_boundary ... ok
+test corrupted_selector_or_active_manifest_fails_closed ... ok
+test migration_failpoints_expose_only_legacy_or_active_generation_after_cold_restart ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+
+     Running tests/security_boundaries.rs (/build/pong-target-ext4/debug/deps/security_boundaries-ecb7b59c4530bcae)
+
+running 1 test
+test full_pong_tree_is_secret_free_and_unknown_files_fail_closed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/wal_tail_recovery.rs (/build/pong-target-ext4/debug/deps/wal_tail_recovery-cd69128f482f7346)
+
+running 1 test
+test truncated_wal_tail_never_fabricates_an_event_after_cold_restart ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/workspace_faults.rs (/build/pong-target-ext4/debug/deps/workspace_faults-b3cdccacde745698)
+
+running 8 tests
+test materialization_fault_actions_have_stable_domain_codes ... ok
+test materialization_cleanup_failure_reports_recovery_required_and_retains_orphan ... ok
+test parent_sync_failure_is_outcome_unknown_and_preserves_published_destination ... ok
+test orphan_materialization_cleanup_is_explicit_and_reopen_safe ... ok
+test cas_blob_and_manifest_publication_faults_leave_no_partial_object ... ok
+test materialization_write_sync_tree_sync_and_rename_failures_clean_temporary_only ... ok
+test manager_cas_failure_does_not_advance_workspace_head_or_revision ... ok
+test manager_head_update_commit_failure_leaves_head_and_revision_unchanged ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/workspace_snapshot.rs (/build/pong-target-ext4/debug/deps/workspace_snapshot-54312f7874f26ce0)
+
+running 13 tests
+test environment_facts_never_persist_sensitive_allowlist_keys ... ok
+test workspace_snapshot_rejects_symlinks ... ok
+test local_snapshot_enforces_file_count_and_single_file_size_limits ... ok
+test local_driver_rejects_reparse_ancestors_for_create_and_materialize ... ok
+test malformed_tree_paths_fail_closed_before_materialization ... ok
+test local_snapshot_is_canonical_and_materializes_without_partial_destination ... ok
+test lease_epoch_and_workspace_revision_reject_stale_writers ... ok
+test workspace_update_rejects_missing_and_wrong_project_environment_bindings ... ok
+test workspace_creation_rejects_missing_or_wrong_project_environment_without_leaking_directory ... ok
+test post_commit_workspace_creation_error_keeps_the_committed_materialization ... ok
+test expired_lease_takeover_and_workspace_records_survive_cold_reopen ... ok
+test workspace_manager_keeps_physical_path_outside_pong_and_advances_head_under_lease ... ok
+test registered_secret_blocks_manager_snapshot_without_advancing_workspace ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+   Doc-tests pong_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Checking once_cell v1.21.4
+    Checking bitflags v2.13.1
+    Checking linux-raw-sys v0.4.15
+    Checking getrandom v0.2.17
+    Checking ppv-lite86 v0.2.21
+    Checking regex-syntax v0.8.11
+    Checking unarray v0.1.4
+    Checking lazy_static v1.5.0
+    Checking fastrand v2.5.0
+    Checking getrandom v0.3.4
+    Checking num-traits v0.2.19
+    Checking rand_core v0.9.5
+    Checking ahash v0.8.12
+    Checking rand_xorshift v0.4.0
+    Checking rand v0.9.5
+    Checking hashbrown v0.14.5
+    Checking rand_chacha v0.9.0
+    Checking rustix v0.38.44
+    Checking hashlink v0.9.1
+    Checking rusqlite v0.32.1
+    Checking proptest v1.8.0
+    Checking pong-core v0.1.0 (/repo)
+    Checking tempfile v3.15.0
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.38s

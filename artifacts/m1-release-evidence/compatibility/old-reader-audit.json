@@ -1,0 +1,27 @@
+{
+  "record_version": "m1-old-reader-audit-0.1",
+  "generated_on": "2026-08-27",
+  "status": "BLOCKED",
+  "repository": "https://github.com/NJHTR/pong.git",
+  "current_head": "2da6cf1037acf054b33b23b07c27388be1807690",
+  "current_branch": "dev",
+  "history_checked": true,
+  "local_tags": [],
+  "remote_tags": [],
+  "remote_releases": [],
+  "historical_commits": [
+    {"commit":"2da6cf1037acf054b33b23b07c27388be1807690","subject":"docs: redesign project README"},
+    {"commit":"181d889d448e196512caef47e5409f2dc9c0aefa","subject":"Initial import of Pong core"}
+  ],
+  "old_reader_commit": null,
+  "old_reader_binary": null,
+  "old_reader_sha256": null,
+  "fixture": null,
+  "required_external_artifacts": [
+    "separately released Pong v0.1 executable",
+    "immutable binary SHA-256",
+    "legacy fixture created by that executable",
+    "read/open/mutation probe with raw output and cold reopen"
+  ],
+  "reason": "No independently released v0.1 source, tag, binary, or GitHub release exists in the checked history or remote metadata."
+}

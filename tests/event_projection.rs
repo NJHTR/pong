@@ -19,6 +19,8 @@ fn event(id: &str, project: &str, stream: &str, kind: &str, value: i64) -> NewEv
         parent_event_ids: Vec::new(),
         capture_confidence: Some("observed".into()),
         redaction_status: "clean".into(),
+        generation_id: None,
+        migration_id: None,
         payload: json!({"value": value}),
     }
 }
@@ -63,6 +65,8 @@ fn projection_apply_is_idempotent_and_rebuild_is_stable() {
         projection_id: "counter".into(),
         project_id: "p".into(),
         schema_version: "0.1".into(),
+        generation_id: None,
+        migration_id: None,
         initial_state: json!({"total": 0}),
     };
     let first = metadata
@@ -96,6 +100,8 @@ fn unknown_event_type_degrades_projection_without_dropping_source() {
                 projection_id: "p1".into(),
                 project_id: "p".into(),
                 schema_version: "0.1".into(),
+                generation_id: None,
+                migration_id: None,
                 initial_state: json!({}),
             },
             "t0",

@@ -130,6 +130,172 @@ fn assert_retained_artifacts_exist(root: &Path, value: &Value) {
     }
 }
 
+fn assert_release_bundle_checksums(root: &Path) {
+    let bundle = root.join("artifacts/m1-release-evidence");
+    let sums_path = bundle.join("SHA256SUMS");
+    let sums = fs::read_to_string(sums_path).expect("release bundle SHA256SUMS");
+    let mut listed = 0usize;
+    for line in sums.lines().filter(|line| !line.trim().is_empty()) {
+        let (expected, relative) = line
+            .split_once("  ")
+            .unwrap_or_else(|| panic!("malformed SHA256SUMS line: {line}"));
+        assert_eq!(expected.len(), 64, "invalid SHA-256 in SHA256SUMS: {line}");
+        assert!(
+            expected.bytes().all(|byte| byte.is_ascii_hexdigit()),
+            "invalid SHA-256 in SHA256SUMS: {line}"
+        );
+        assert!(relative != "SHA256SUMS", "SHA256SUMS must not hash itself");
+        let path =
+            relative_artifact_path(root, &format!("artifacts/m1-release-evidence/{relative}"));
+        assert!(
+            path.is_file(),
+            "SHA256SUMS references missing file: {relative}"
+        );
+        let actual = hex::encode_upper(Sha256::digest(
+            fs::read(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display())),
+        ));
+        assert_eq!(
+            actual,
+            expected.to_ascii_uppercase(),
+            "bundle hash drift: {relative}"
+        );
+        listed += 1;
+    }
+    let actual_files = fs::read_dir(&bundle)
+        .expect("release bundle directory")
+        .flat_map(|entry| {
+            let entry = entry.expect("release bundle entry");
+            let path = entry.path();
+            if path.is_dir() {
+                let mut files = Vec::new();
+                collect_files(&path, &mut files);
+                files
+            } else {
+                vec![path]
+            }
+        })
+        .filter(|path| path.file_name().and_then(|name| name.to_str()) != Some("SHA256SUMS"))
+        .count();
+    assert_eq!(
+        listed, actual_files,
+        "SHA256SUMS does not cover the full bundle"
+    );
+}
+
+fn collect_files(directory: &Path, files: &mut Vec<PathBuf>) {
+    for entry in fs::read_dir(directory).expect("artifact subdirectory") {
+        let path = entry.expect("artifact subdirectory entry").path();
+        if path.is_dir() {
+            collect_files(&path, files);
+        } else {
+            files.push(path);
+        }
+    }
+}
+
+#[test]
+fn release_bundle_checksums_and_status_matrix_are_consistent() {
+    let root = repository_root();
+    assert_release_bundle_checksums(&root);
+    let matrix_path = root.join("artifacts/m1-release-evidence/m1-release-matrix.json");
+    let matrix: Value =
+        serde_json::from_slice(&fs::read(matrix_path).expect("normalized release matrix"))
+            .expect("normalized release matrix JSON");
+    assert_eq!(matrix["release_decision"], "NOT_PASSED");
+    let entries = matrix["entries"].as_array().expect("matrix entries");
+    assert!(!entries.is_empty(), "normalized release matrix is empty");
+    for entry in entries {
+        let status = entry["status"].as_str().expect("matrix status");
+        assert!(
+            matches!(status, "PASS" | "FAIL" | "BLOCKED" | "NOT_APPLICABLE"),
+            "unexpected normalized status: {status}"
+        );
+        if status == "PASS" {
+            assert!(
+                entry.get("environment").and_then(Value::as_str).is_some(),
+                "PASS matrix entry must declare environment"
+            );
+            let commands = entry["commands"].as_array().expect("PASS commands");
+            assert!(!commands.is_empty(), "PASS matrix entry has no command");
+            let exit_codes = entry["exit_codes"].as_array().expect("PASS exit codes");
+            assert!(!exit_codes.is_empty(), "PASS matrix entry has no exit code");
+            assert!(
+                exit_codes.iter().all(|code| code.as_i64() == Some(0)),
+                "PASS matrix entry contains a non-zero exit code"
+            );
+            let artifacts = entry["artifacts"].as_array().expect("PASS artifacts");
+            let hashes = entry["sha256"].as_array().expect("PASS hashes");
+            assert!(!artifacts.is_empty(), "PASS matrix entry has no artifact");
+            assert_eq!(
+                artifacts.len(),
+                hashes.len(),
+                "PASS artifacts/hashes length mismatch"
+            );
+            for hash in hashes {
+                let hash = hash.as_str().expect("PASS artifact hash");
+                assert_eq!(hash.len(), 64, "PASS artifact hash must be SHA-256");
+                assert!(
+                    hash.bytes().all(|byte| byte.is_ascii_hexdigit()),
+                    "PASS artifact hash must be hexadecimal"
+                );
+            }
+        }
+    }
+
+    let scenarios_path = root.join("artifacts/m1-release-evidence/fault/m1-fault-scenarios.json");
+    let scenarios: Value =
+        serde_json::from_slice(&fs::read(scenarios_path).expect("normalized fault scenarios"))
+            .expect("normalized fault scenarios JSON");
+    let scenarios = scenarios["scenarios"].as_array().expect("fault scenarios");
+    assert_eq!(scenarios.len(), 14, "expected FI-01 through FI-14");
+    for scenario in scenarios {
+        for field in [
+            "id",
+            "environment",
+            "setup",
+            "command",
+            "expected",
+            "actual",
+            "status",
+        ] {
+            assert!(
+                scenario.get(field).and_then(Value::as_str).is_some(),
+                "fault scenario is missing string field {field}"
+            );
+        }
+        let status = scenario["status"].as_str().expect("fault scenario status");
+        assert!(
+            matches!(status, "PASS" | "FAIL" | "BLOCKED" | "NOT_APPLICABLE"),
+            "unexpected fault scenario status: {status}"
+        );
+        match scenario.get("artifact") {
+            Some(Value::String(path)) => {
+                let resolved = relative_artifact_path(&root, path);
+                assert!(resolved.is_file(), "fault artifact does not exist: {path}");
+                let hash = scenario["artifact_sha256"]
+                    .as_str()
+                    .expect("fault artifact hash");
+                assert_eq!(hash.len(), 64, "fault artifact hash must be SHA-256");
+                assert!(
+                    hash.bytes().all(|byte| byte.is_ascii_hexdigit()),
+                    "fault artifact hash must be hexadecimal"
+                );
+            }
+            Some(Value::Null) | None => {
+                assert_eq!(
+                    status, "BLOCKED",
+                    "only blocked scenarios may omit artifacts"
+                );
+                assert!(
+                    scenario["artifact_sha256"].is_null(),
+                    "blocked scenario without artifact must have null hash"
+                );
+            }
+            Some(other) => panic!("fault artifact must be string or null: {other}"),
+        }
+    }
+}
+
 #[test]
 fn retained_m1_raw_logs_and_fault_matrix_references_are_consistent() {
     let root = repository_root();

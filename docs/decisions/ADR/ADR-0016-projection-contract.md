@@ -97,6 +97,11 @@ Projection state is stored inside the target generation, or in an explicitly
 generation-namespaced store whose identity is attested by the target manifest.
 Migration cannot replace `repository.json` until metadata and all required
 projections pass identity, schema, cursor, integrity, and redaction checks.
+The implementation validates projection state digests, applied-event ledger
+counts and source digests, cursor/source alignment, and generation/migration
+identity before selector publication. Event and projection write requests may
+carry optional generation/migration assertions; mismatches fail with
+`INTEGRITY_ERROR` before mutation.
 
 Before selector replacement, only the old generation is authoritative. After
 replacement, startup validates metadata and every required projection against
@@ -129,12 +134,13 @@ immutability check.
 ## Non-goals and current status
 
 This ADR does not introduce a public Core API, CLI, SDK, runtime, server, or
-adapter. It does not close the M1 gate. Until an owner accepts this ADR and the
-required migration/crash evidence exists, the authoritative status remains:
+adapter. It does not close the M1 gate. Current-host migration/crash evidence
+is retained, but owner acceptance and cross-platform evidence remain pending;
+the authoritative status remains:
 
 ```text
-PT-13: EVIDENCE PENDING
-FI-10: EVIDENCE PENDING
+PT-13: CURRENT-HOST EVIDENCE RETAINED; ACCEPTANCE PENDING
+FI-10: CURRENT-HOST EVIDENCE RETAINED; ACCEPTANCE PENDING
 M1 Release Gate: NOT PASSED
 ```
 

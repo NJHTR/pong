@@ -1,0 +1,51 @@
+RUN 1: cargo test --locked --test pt13_fi10 -- --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running tests\pt13_fi10.rs (target\debug\deps\pt13_fi10-54d3da31c969b7d2.exe)
+
+running 8 tests
+test fi10_repeated_crash_reopen_is_idempotent ... ok
+test pt13_generation_assertions_fail_closed_and_matching_identity_succeeds ... ok
+test pt13_malformed_envelope_and_corrupted_projection_fail_closed ... ok
+test pt13_source_generation_remains_available_for_audit_after_b_is_active ... ok
+test pt13_migration_a_to_b_preserves_projection_semantics_and_source_events ... ok
+test pt13_duplicate_event_identity_and_stale_cursor_fail_closed ... ok
+test fi10_projection_failpoint_schedule_converges_to_clean_replay_after_reopen ... ok
+test fi10_migration_interruption_keeps_generation_and_projection_aligned ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.84s
+
+RUN 1 EXIT CODE: 0
+RUN 2: cargo test --locked --test pt13_fi10 -- --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests\pt13_fi10.rs (target\debug\deps\pt13_fi10-54d3da31c969b7d2.exe)
+
+running 8 tests
+test fi10_repeated_crash_reopen_is_idempotent ... ok
+test pt13_generation_assertions_fail_closed_and_matching_identity_succeeds ... ok
+test pt13_malformed_envelope_and_corrupted_projection_fail_closed ... ok
+test pt13_source_generation_remains_available_for_audit_after_b_is_active ... ok
+test pt13_migration_a_to_b_preserves_projection_semantics_and_source_events ... ok
+test pt13_duplicate_event_identity_and_stale_cursor_fail_closed ... ok
+test fi10_projection_failpoint_schedule_converges_to_clean_replay_after_reopen ... ok
+test fi10_migration_interruption_keeps_generation_and_projection_aligned ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.82s
+
+RUN 2 EXIT CODE: 0
+RUN 3: cargo test --locked --test pt13_fi10 -- --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running tests\pt13_fi10.rs (target\debug\deps\pt13_fi10-54d3da31c969b7d2.exe)
+
+running 8 tests
+test fi10_repeated_crash_reopen_is_idempotent ... ok
+test pt13_generation_assertions_fail_closed_and_matching_identity_succeeds ... ok
+test pt13_malformed_envelope_and_corrupted_projection_fail_closed ... ok
+test pt13_source_generation_remains_available_for_audit_after_b_is_active ... ok
+test pt13_migration_a_to_b_preserves_projection_semantics_and_source_events ... ok
+test pt13_duplicate_event_identity_and_stale_cursor_fail_closed ... ok
+test fi10_projection_failpoint_schedule_converges_to_clean_replay_after_reopen ... ok
+test fi10_migration_interruption_keeps_generation_and_projection_aligned ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.84s
+
+RUN 3 EXIT CODE: 0

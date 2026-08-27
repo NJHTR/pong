@@ -11,16 +11,29 @@ evidence only.
 
 **Current Task:** Close the M1 evidence package without changing the settled
 storage architecture. The event envelope and generation-bound projection core
-is now implemented as an internal slice; finish its PT-13 migration fixtures
-and FI-10 crash/rebuild evidence alongside the accepted platform/MSRV matrix,
-old-binary compatibility artifact, real host fault disposition, property corpus
-record, and performance/capacity budget. Keep all work below Runtime, SDK, CLI,
-server, and framework adapters.
+is implemented as an internal slice; PT-13 migration fixtures and FI-10
+crash/rebuild evidence are retained for the current Windows host. The release
+bundle at `artifacts/m1-release-evidence/` indexes the platform/MSRV runs,
+fault disposition, property records, and measurement-only performance data.
+The old-binary artifact, accepted platform scope, fault schedule, budget, and
+owner sign-off are still missing. Keep all work below Runtime, SDK, CLI, server,
+and framework adapters.
+
+The minimal native-platform workflow is now defined at
+`.github/workflows/m1-release-evidence.yml`; its Linux and macOS rows remain
+`BLOCKED` until external runner artifacts are attached.
+
+The workflow has been audited and now emits stable/MSRV logs, per-command exit
+codes, cold-reopen output, workspace-local test-repository filesystem metadata,
+an artifact manifest, and SHA256SUMS under the named native evidence artifacts.
+The remote repository currently has no copy of this workflow and no run; follow
+[`M1_CI_EXECUTION_REQUIRED.md`](../development/M1_CI_EXECUTION_REQUIRED.md)
+for the external execution handoff.
 
 **Blocked By:** The evidence report still records missing separately released
 old-reader compatibility, incomplete supported-platform/cold-restart coverage,
-absent accepted budgets, and the unevidenced FI-10/PT-13 projection
-rebuild/migration schedules described by proposed
+absent accepted budgets, and current-host-only FI-10/PT-13 projection
+rebuild/migration acceptance described by proposed
 [`ADR-0016`](../decisions/ADR/ADR-0016-projection-contract.md). The historical
 Windows PT-14 selector/journal publication `IO_ERROR` has a reproduced root
 cause, protected-boundary error-mapping fix, and stable/MSRV/concurrent rerun
@@ -28,14 +41,13 @@ evidence, but broader filesystem coverage remains pending. M2/M3 remain
 internal test-gated slices and do not waive M1.
 
 **Next Action:** Review [`M1_EVIDENCE.md`](../development/M1_EVIDENCE.md)
-sections A-E and its release-owner acceptance register. Complete
-[`M1_COMPATIBILITY_MATRIX.md`](../development/M1_COMPATIBILITY_MATRIX.md) with
-the separately released v0.1 reader and accepted platform rows. Obtain the
-external old-reader, native Linux ext4/macOS, Windows disk-full, and full
-fault-schedule evidence listed in the handoff table, or record an owner-approved
-bounded exception. Add PT-13 migration fixtures and FI-10 crash/rebuild runs
-for the now-implemented projection core. The ADR-0015 performance decision and
-ADR-0016 projection contract remain proposed/pending release-owner acceptance.
+sections A-E, [`M1_COMPATIBILITY_MATRIX.md`](../development/M1_COMPATIBILITY_MATRIX.md),
+and `artifacts/m1-release-evidence/m1-release-summary.md`. PT-13/FI-10
+current-host fixtures are complete. Obtain the external old-reader, native
+Linux ext4/macOS, Windows disk-full, and full fault-schedule evidence listed in
+the handoff table, or record an owner-approved bounded exception. The ADR-0015
+performance decision and ADR-0016 projection contract remain proposed/pending
+release-owner acceptance.
 
 The retained Windows stable property evidence includes PT-01/02/03/04/05/06/
 07/08/11/12 at 10,000 cases each, PT-09 and PT-10 at 10,000 cases each, and the
@@ -54,11 +66,12 @@ not satisfy the external platform, old-reader, fault, budget, or
 release-owner requirements.
 
 The 2026-08-27 close-out reran the complete Windows stable Rust 1.95.0 and
-Rust 1.78.0 MSRV gates in independent target directories; the literal and
-locked/all-target variants returned exit code `0`, and artifact consistency
-passed under both toolchains. The supplied workspace has no `.git` metadata,
-so commit-level traceability is unavailable; retain exact commands, toolchain
-identity, test results, and artifact hashes for external review.
+Rust 1.78.0 MSRV gates in independent target directories; every command
+returned exit code `0`. Git traceability is available (`dev` at
+`2da6cf1037acf054b33b23b07c27388be1807690`, remote `origin`), but the working
+tree is dirty and no release tag/commit has been accepted; retain exact
+commands, toolchain identity, test results, and artifact hashes for external
+review.
 
 **Definition of Done:** Every M1 MUST-PASS row has platform-specific executable
 evidence or an explicitly accepted ADR disposition. The evidence report says

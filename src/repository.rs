@@ -123,6 +123,8 @@ pub enum MigrationFailpoint {
     Preflight,
     TargetAllocated,
     AfterBackup,
+    BeforeProjectionRebind,
+    AfterProjectionRebind,
     AfterCheckpoint,
     AfterVerify,
     BeforeSelectorReplace,
@@ -137,6 +139,8 @@ impl MigrationFailpoint {
             Self::Preflight => "preflight",
             Self::TargetAllocated => "target_allocated",
             Self::AfterBackup => "after_backup",
+            Self::BeforeProjectionRebind => "before_projection_rebind",
+            Self::AfterProjectionRebind => "after_projection_rebind",
             Self::AfterCheckpoint => "after_checkpoint",
             Self::AfterVerify => "after_verify",
             Self::BeforeSelectorReplace => "before_selector_replace",
@@ -175,6 +179,8 @@ impl MigrationFailpoints {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 struct MigrationJournal {
     journal_version: u32,
+    #[serde(default = "legacy_source_format")]
+    source_format: String,
     migration_id: String,
     source_generation_id: String,
     target_generation_id: String,
@@ -185,6 +191,10 @@ struct MigrationJournal {
     selector_digest: Option<String>,
     status: String,
     finalized_at: Option<String>,
+}
+
+fn legacy_source_format() -> String {
+    REPOSITORY_FORMAT.into()
 }
 
 enum RepositoryRootDocument {
@@ -817,46 +827,66 @@ fn migrate_locked(
     let root_document = read_repository_root(&layout.marker)?;
     if let RepositoryRootDocument::Selector(selector) = root_document {
         validate_selector(&selector)?;
-        if selector.active_generation != spec.target_generation_id
-            || selector.migration_id != spec.migration_id
-        {
-            return Err(PongError::Conflict(
-                "repository already has a different active generation".into(),
-            ));
+        if selector.active_generation == spec.target_generation_id {
+            if selector.migration_id != spec.migration_id {
+                return Err(PongError::Conflict(
+                    "repository already has a different active migration".into(),
+                ));
+            }
+            let manifest = read_and_validate_generation_manifest(
+                layout,
+                &selector.active_generation,
+                &selector.generation_manifest_digest,
+            )?;
+            let journal = finalize_selector_journal(layout, &selector, &manifest)?;
+            let selector_digest = byte_digest(&fs::read(&layout.marker)?)?;
+            if journal.plan_digest
+                != plan_digest(
+                    spec,
+                    &journal.source_format,
+                    &journal.source_root_digest,
+                    &journal.source_metadata_digest,
+                )?
+            {
+                return Err(PongError::Conflict(
+                    "migration journal plan digest does not match the requested plan".into(),
+                ));
+            }
+            return Ok(MigrationOutcome {
+                migration_id: spec.migration_id.clone(),
+                source_generation_id: journal.source_generation_id,
+                target_generation_id: selector.active_generation,
+                plan_digest: journal.plan_digest,
+                selector_digest,
+                generation_manifest_digest: selector.generation_manifest_digest,
+                already_active: true,
+            });
         }
-        let manifest = read_and_validate_generation_manifest(
-            layout,
-            &selector.active_generation,
-            &selector.generation_manifest_digest,
-        )?;
-        let journal = finalize_selector_journal(layout, &selector, &manifest)?;
-        let selector_digest = byte_digest(&fs::read(&layout.marker)?)?;
-        if journal.plan_digest
-            != plan_digest(
-                spec,
-                &journal.source_root_digest,
-                &journal.source_metadata_digest,
-            )?
-        {
-            return Err(PongError::Conflict(
-                "migration journal plan digest does not match the requested plan".into(),
-            ));
-        }
-        return Ok(MigrationOutcome {
-            migration_id: spec.migration_id.clone(),
-            source_generation_id: journal.source_generation_id,
-            target_generation_id: selector.active_generation,
-            plan_digest: journal.plan_digest,
-            selector_digest,
-            generation_manifest_digest: selector.generation_manifest_digest,
-            already_active: true,
-        });
     }
 
     fault_if(failpoints, MigrationFailpoint::Preflight)?;
     let source_marker_bytes = fs::read(&layout.marker)?;
     let source_root_digest = byte_digest(&source_marker_bytes)?;
-    let source_path = layout.metadata_path().to_path_buf();
+    let root_document = read_repository_root(&layout.marker)?;
+    let (source_path, source_generation_id, source_format) = match root_document {
+        RepositoryRootDocument::Legacy(_) => (
+            layout.metadata_path().to_path_buf(),
+            "legacy-v0.1".to_owned(),
+            REPOSITORY_FORMAT.to_owned(),
+        ),
+        RepositoryRootDocument::Selector(selector) => {
+            let manifest = read_and_validate_generation_manifest(
+                layout,
+                &selector.active_generation,
+                &selector.generation_manifest_digest,
+            )?;
+            (
+                layout.generation_metadata_path(&selector.active_generation),
+                selector.active_generation,
+                manifest.repository_format,
+            )
+        }
+    };
     if !is_regular_file(&source_path)? {
         return Err(PongError::Integrity(
             "legacy metadata file is missing or not regular".into(),
@@ -867,9 +897,9 @@ fn migrate_locked(
     // v0.1 identities but does not create M2 tables or metadata rows, so the
     // source digest remains an attestation of the actual legacy generation.
     let source = MetadataStore::open_for_backup(&source_path, redactor.clone())?;
-    if source.repository_format()? != REPOSITORY_FORMAT {
+    if source.repository_format()? != source_format {
         return Err(PongError::Unsupported(
-            "migration source is not a legacy v0.1 repository".into(),
+            "migration source format does not match its active marker".into(),
         ));
     }
     // The source handle is intentionally read-only. Do not checkpoint or
@@ -881,7 +911,12 @@ fn migrate_locked(
     // change that has not reached the main file cannot evade retry checks;
     // SQLite's non-semantic `-shm` index is deliberately excluded.
     let source_metadata_digest = source_database_digest(&source_path)?;
-    let plan_digest = plan_digest(spec, &source_root_digest, &source_metadata_digest)?;
+    let plan_digest = plan_digest(
+        spec,
+        &source_format,
+        &source_root_digest,
+        &source_metadata_digest,
+    )?;
     let journal_path = layout.migration_journal_path(&spec.migration_id);
     let mut journal = match read_migration_journal_optional(&journal_path)? {
         Some(existing) => {
@@ -903,7 +938,8 @@ fn migrate_locked(
             let initial = MigrationJournal {
                 journal_version: 1,
                 migration_id: spec.migration_id.clone(),
-                source_generation_id: "legacy-v0.1".into(),
+                source_generation_id: source_generation_id.clone(),
+                source_format: source_format.clone(),
                 target_generation_id: spec.target_generation_id.clone(),
                 plan_digest: plan_digest.clone(),
                 source_root_digest: source_root_digest.clone(),
@@ -982,7 +1018,10 @@ fn migrate_locked(
     let mut target = MetadataStore::open_with_redactor(&target_path, redactor.clone())?;
     target.set_repository_format(GENERATION_REPOSITORY_FORMAT)?;
     target.set_generation_identity(&spec.target_generation_id, &spec.migration_id)?;
+    fault_if(failpoints, MigrationFailpoint::BeforeProjectionRebind)?;
     target.rebind_projections(&spec.target_generation_id, &spec.migration_id)?;
+    fault_if(failpoints, MigrationFailpoint::AfterProjectionRebind)?;
+    target.validate_projection_bindings(&spec.target_generation_id, &spec.migration_id)?;
     target.checkpoint_truncate()?;
     drop(target);
     sync_file(&target_path)?;
@@ -1083,7 +1122,13 @@ fn cleanup_unpublished_generation(
     ));
     remove_generation_tree(&temporary)?;
     let root = read_repository_root(&layout.marker)?;
-    if matches!(root, RepositoryRootDocument::Legacy(_)) {
+    let target_is_active = matches!(
+        root,
+        RepositoryRootDocument::Selector(selector)
+            if selector.active_generation == spec.target_generation_id
+                && selector.migration_id == spec.migration_id
+    );
+    if !target_is_active {
         let final_generation = layout.generation_dir(&spec.target_generation_id);
         let manifest_path = layout.generation_manifest_path(&spec.target_generation_id);
         let owned_by_plan = match fs::symlink_metadata(&manifest_path) {
@@ -1208,6 +1253,7 @@ fn finalize_selector_journal(
         || journal.plan_digest
             != plan_digest(
                 &MigrationSpec::new(&journal.migration_id, &journal.target_generation_id),
+                &journal.source_format,
                 &journal.source_root_digest,
                 &journal.source_metadata_digest,
             )?
@@ -1228,13 +1274,14 @@ fn finalize_selector_journal(
 
 fn plan_digest(
     spec: &MigrationSpec,
+    source_format: &str,
     source_root_digest: &str,
     source_metadata_digest: &str,
 ) -> Result<String, PongError> {
     let value = serde_json::json!({
         "migration_id": spec.migration_id,
         "target_generation_id": spec.target_generation_id,
-        "source_format": REPOSITORY_FORMAT,
+        "source_format": source_format,
         "target_format": GENERATION_REPOSITORY_FORMAT,
         "source_root_digest": source_root_digest,
         "source_metadata_digest": source_metadata_digest,

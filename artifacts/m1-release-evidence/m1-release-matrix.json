@@ -1,0 +1,599 @@
+{
+  "record_version": "m1-release-matrix-0.1",
+  "generated_on": "2026-08-27",
+  "milestone": "M1",
+  "status_vocabulary": [
+    "PASS",
+    "FAIL",
+    "BLOCKED",
+    "NOT_APPLICABLE"
+  ],
+  "release_decision": "NOT_PASSED",
+  "release_owner": "UNASSIGNED",
+  "entries": [
+    {
+      "id": "PT-13",
+      "category": "core_projection",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "current Windows host; three targeted reruns",
+      "evidence": [
+        "artifacts/m1-pt13-fi10-summary.json",
+        "artifacts/m1-pt13-fi10-summary.log"
+      ],
+      "note": "Migration semantics, generation isolation, cursor/ledger integrity, and golden-state preservation pass; cross-platform and owner acceptance remain open.",
+      "environment": "current Windows host; three targeted reruns",
+      "exit_codes": [
+        0
+      ],
+      "commands": [
+        "cargo test --locked --test pt13_fi10 -- --nocapture"
+      ],
+      "artifacts": [
+        "artifacts/m1-pt13-fi10-summary.json",
+        "artifacts/m1-pt13-fi10-summary.log"
+      ],
+      "sha256": [
+        "D52339A93214F976D278C320C5AF2D775761C9C75852FA96329B485DCCC08FC0",
+        "E93313C73852962400B1412A7966350328D4FD68209BC8B4768AF4E49D19AF2D"
+      ]
+    },
+    {
+      "id": "FI-10",
+      "category": "projection_fault",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "current Windows host; ProjectionFailpoint A-J and repeated crash/reopen",
+      "evidence": [
+        "artifacts/m1-pt13-fi10-summary.json",
+        "artifacts/m1-pt13-fi10-summary.log"
+      ],
+      "note": "Atomic apply/rebuild converges to clean replay; native filesystem, power-loss, and owner acceptance remain open.",
+      "environment": "current Windows host; ProjectionFailpoint A-J and repeated crash/reopen",
+      "exit_codes": [
+        0
+      ],
+      "commands": [
+        "cargo test --locked --test pt13_fi10 -- --nocapture"
+      ],
+      "artifacts": [
+        "artifacts/m1-pt13-fi10-summary.json",
+        "artifacts/m1-pt13-fi10-summary.log"
+      ],
+      "sha256": [
+        "D52339A93214F976D278C320C5AF2D775761C9C75852FA96329B485DCCC08FC0",
+        "E93313C73852962400B1412A7966350328D4FD68209BC8B4768AF4E49D19AF2D"
+      ]
+    },
+    {
+      "id": "BUILD-WINDOWS-STABLE",
+      "category": "build",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "Windows x86_64 MSVC, Rust 1.95.0, isolated target/m1-release-stable-20260827",
+      "evidence": [
+        "build/windows-stable-fmt.log",
+        "build/windows-stable-check.log",
+        "build/windows-stable-test.log",
+        "build/windows-stable-clippy.log"
+      ],
+      "environment": "Windows x86_64 MSVC, Rust 1.95.0, isolated target/m1-release-stable-20260827",
+      "exit_codes": [
+        0
+      ],
+      "commands": [
+        "cargo fmt --all -- --check",
+        "cargo check --locked",
+        "cargo test --locked",
+        "cargo clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "build/windows-stable-fmt.log",
+        "build/windows-stable-check.log",
+        "build/windows-stable-test.log",
+        "build/windows-stable-clippy.log"
+      ],
+      "sha256": [
+        "C1E97067C5F479A44A6F57297A0A8F87A59D181C3C529910F8BF059094BC3ABB",
+        "28A033D6068960385F4CCFEEACD3DA6FEC86EE568CD1D648A1B77C589E9331CF",
+        "A33BA3210113A11DD93C2E8DC108B26027E85105CFEA679C81FF80563F6A0BD8",
+        "FF1764549D050B6C673A0638B253213C01B49431832F29A879011D13EDABFFFE"
+      ]
+    },
+    {
+      "id": "BUILD-WINDOWS-MSRV",
+      "category": "build",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "Windows x86_64 MSVC, Rust 1.78.0, isolated target/m1-release-msrv-178-20260827",
+      "evidence": [
+        "build/windows-msrv-178-fmt.log",
+        "build/windows-msrv-178-check.log",
+        "build/windows-msrv-178-test.log",
+        "build/windows-msrv-178-clippy.log"
+      ],
+      "environment": "Windows x86_64 MSVC, Rust 1.78.0, isolated target/m1-release-msrv-178-20260827",
+      "exit_codes": [
+        0
+      ],
+      "commands": [
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "build/windows-msrv-178-fmt.log",
+        "build/windows-msrv-178-check.log",
+        "build/windows-msrv-178-test.log",
+        "build/windows-msrv-178-clippy.log"
+      ],
+      "sha256": [
+        "C1E97067C5F479A44A6F57297A0A8F87A59D181C3C529910F8BF059094BC3ABB",
+        "5928E6715D80D5053EC02A6FCA6FA3D9030AABED683020A84644B6796C48B510",
+        "54A57D99F6EB255BEDB5320707413DB1E8B837425867478E63DC7517B7EA2784",
+        "FA328A7892EEA4994C7E0AF5B242B369DDC4DC5402631C52B609EC3B4DC22FD1"
+      ]
+    },
+    {
+      "id": "BUILD-LINUX-OVERLAY",
+      "category": "platform",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "Docker overlay, pinned rust:1.78-slim-bookworm",
+      "evidence": [
+        "artifacts/m1-platform-runs/README.md"
+      ],
+      "environment": "Docker overlay, pinned rust:1.78-slim-bookworm",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-platform-runs/README.md"
+      ],
+      "sha256": [
+        "F28BEE955A37352C78A7304E6A747D411903CEB7631BE9025A075D478024C78C"
+      ],
+      "commands": [
+        "cargo fmt --all -- --check",
+        "cargo check --locked",
+        "cargo test --locked",
+        "cargo clippy --locked --all-targets -- -D warnings"
+      ]
+    },
+    {
+      "id": "BUILD-LINUX-EXT4-DOCKER",
+      "category": "platform",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "Docker-VM ext4-backed named volume, Rust 1.78.0",
+      "evidence": [
+        "artifacts/m1-platform-runs/linux-ext4-rust-178-run-2-2026-08-26.json",
+        "artifacts/m1-platform-runs/linux-ext4-rust-178-run-2-2026-08-26.log"
+      ],
+      "note": "Not a native Linux host/VM acceptance row.",
+      "environment": "Docker-VM ext4-backed named volume, Rust 1.78.0",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-platform-runs/linux-ext4-rust-178-run-2-2026-08-26.json",
+        "artifacts/m1-platform-runs/linux-ext4-rust-178-run-2-2026-08-26.log"
+      ],
+      "sha256": [
+        "17A61BCED4B660F5DC7F1DED42A2EBCA17A83A7F8CDEC2099DBDDEEBC242C31C",
+        "1E8AE089A0B3AC0AB7ECCCC84A4E49AE8AC0EEE8C318B21FD7C03D8A5EA35085"
+      ],
+      "commands": [
+        "cargo fmt --all -- --check",
+        "cargo check --locked",
+        "cargo test --locked",
+        "cargo clippy --locked --all-targets -- -D warnings"
+      ]
+    },
+    {
+      "id": "PLATFORM-MATRIX",
+      "category": "platform",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "Windows native, Linux container/native, macOS native",
+      "evidence": [
+        "platform/platform-matrix.json",
+        ".github/workflows/m1-release-evidence.yml"
+      ],
+      "note": "Native Linux and macOS workflow is prepared but has not produced retained runner evidence."
+    },
+    {
+      "id": "COMPAT-OLD-READER",
+      "category": "compatibility",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "separately released Pong v0.1 executable",
+      "evidence": [
+        "compatibility/README.md"
+      ],
+      "note": "Binary, hash, and mutation/open probe are absent. Current-source fixture tests are supplementary only."
+    },
+    {
+      "id": "COMPAT-OLD-READER-AUDIT",
+      "category": "compatibility",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "Git history, tags, remote releases, and artifact configuration audit",
+      "evidence": [
+        "compatibility/old-reader-audit.json",
+        "compatibility/old-reader-audit.log"
+      ],
+      "note": "No independently released v0.1 reader exists in the checked history or remote metadata."
+    },
+    {
+      "id": "PLATFORM-NATIVE-LINUX-EXT4",
+      "category": "platform",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "native Linux host or VM on ext4",
+      "note": "No native run is retained. Docker-VM ext4 evidence cannot be promoted automatically."
+    },
+    {
+      "id": "PLATFORM-MACOS",
+      "category": "platform",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "macOS or another declared target",
+      "note": "No runner or supported-target decision is present."
+    },
+    {
+      "id": "FI-01",
+      "category": "fault",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "synthetic/file-backed current-host cold reopen",
+      "evidence": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "environment": "synthetic/file-backed current-host cold reopen",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "sha256": [
+        "49F2D693FF6FA323068C8E9E0D187D2CBC6C2C59A35BD5CD61C3CDA4D885B494"
+      ],
+      "commands": [
+        "cargo test --locked --test metadata_failpoints fi01_before_intent_commit_cold_reopen_preserves_pre_state_and_retry_publishes_once -- --nocapture"
+      ]
+    },
+    {
+      "id": "FI-02",
+      "category": "fault",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "process boundary and cold reopen",
+      "evidence": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "environment": "process boundary and cold reopen",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "sha256": [
+        "49F2D693FF6FA323068C8E9E0D187D2CBC6C2C59A35BD5CD61C3CDA4D885B494"
+      ],
+      "commands": [
+        "cargo test --locked --test process_kill_recovery process_kill_after_intent_never_becomes_success -- --nocapture"
+      ]
+    },
+    {
+      "id": "FI-03",
+      "category": "fault",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "real tool effect before outcome append",
+      "note": "Requires an external provider/tool execution schedule."
+    },
+    {
+      "id": "FI-04",
+      "category": "fault",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "synthetic outcome boundary and WAL-tail truncation",
+      "evidence": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "environment": "synthetic outcome boundary and WAL-tail truncation",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "sha256": [
+        "49F2D693FF6FA323068C8E9E0D187D2CBC6C2C59A35BD5CD61C3CDA4D885B494"
+      ],
+      "commands": [
+        "cargo test --locked --test wal_tail_recovery truncated_wal_tail_never_fabricates_an_event_after_cold_restart -- --nocapture"
+      ]
+    },
+    {
+      "id": "FI-05",
+      "category": "fault",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "process boundary/outbox recovery",
+      "evidence": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "environment": "process boundary/outbox recovery",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "sha256": [
+        "49F2D693FF6FA323068C8E9E0D187D2CBC6C2C59A35BD5CD61C3CDA4D885B494"
+      ],
+      "commands": [
+        "cargo test --locked --test process_kill_recovery process_kill_after_outcome_keeps_republishable_outbox -- --nocapture"
+      ]
+    },
+    {
+      "id": "FI-06",
+      "category": "fault",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "synthetic SQLite transaction boundary",
+      "evidence": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "environment": "synthetic SQLite transaction boundary",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "sha256": [
+        "49F2D693FF6FA323068C8E9E0D187D2CBC6C2C59A35BD5CD61C3CDA4D885B494"
+      ],
+      "commands": [
+        "cargo test --locked --test metadata_failpoints sqlite_commit_failpoints_cover_wal_pre_and_post_visibility -- --nocapture"
+      ]
+    },
+    {
+      "id": "FI-07",
+      "category": "fault",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "CAS short-write/ENOSPC",
+      "evidence": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "note": "Linux tmpfs evidence exists; Windows native quota/disk-full and complete filesystem matrix are missing."
+    },
+    {
+      "id": "FI-08",
+      "category": "fault",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "synthetic CAS publication and file-backed cold reopen",
+      "evidence": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "environment": "synthetic CAS publication and file-backed cold reopen",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "sha256": [
+        "49F2D693FF6FA323068C8E9E0D187D2CBC6C2C59A35BD5CD61C3CDA4D885B494"
+      ],
+      "commands": [
+        "cargo test --locked --test cas_failpoints fi08_directory_sync_fault_cold_reopen_verifies_object_and_retry_is_idempotent -- --nocapture"
+      ]
+    },
+    {
+      "id": "FI-09",
+      "category": "fault",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "ref CAS and idempotent retry",
+      "evidence": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "environment": "ref CAS and idempotent retry",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "sha256": [
+        "49F2D693FF6FA323068C8E9E0D187D2CBC6C2C59A35BD5CD61C3CDA4D885B494"
+      ],
+      "commands": [
+        "cargo test --locked --test property_corpus pt04_generated_ref_writer_order_has_one_cas_winner -- --nocapture"
+      ]
+    },
+    {
+      "id": "FI-11",
+      "category": "fault_security",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "synthetic redaction and full .pong scan",
+      "evidence": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "environment": "synthetic redaction and full .pong scan",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "sha256": [
+        "49F2D693FF6FA323068C8E9E0D187D2CBC6C2C59A35BD5CD61C3CDA4D885B494"
+      ],
+      "commands": [
+        "cargo test --locked --test security_boundaries full_pong_tree_is_secret_free_and_unknown_files_fail_closed -- --nocapture"
+      ]
+    },
+    {
+      "id": "FI-12",
+      "category": "fault_migration",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "process-kill and property migration schedules",
+      "evidence": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "environment": "process-kill and property migration schedules",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-fault-matrix.json"
+      ],
+      "sha256": [
+        "49F2D693FF6FA323068C8E9E0D187D2CBC6C2C59A35BD5CD61C3CDA4D885B494"
+      ],
+      "commands": [
+        "cargo test --locked --test process_kill_migration process_kill_after_selector_uses_new_generation_only -- --nocapture"
+      ]
+    },
+    {
+      "id": "FI-13",
+      "category": "fault",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "Windows NTFS ACL plus corruption",
+      "evidence": [
+        "artifacts/m1-fault-runs/windows-fi13-acl-audit-2026-08-26.json",
+        "artifacts/m1-fault-runs/windows-fi13-acl-audit-2026-08-26.log"
+      ],
+      "note": "Real Windows ACL evidence is partial; complete declared-filesystem schedule is missing."
+    },
+    {
+      "id": "FI-14",
+      "category": "fault_resource",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "Linux 64 MiB tmpfs resource exhaustion",
+      "evidence": [
+        "artifacts/m1-fault-runs/linux-fi14-cas-2026-08-26.json",
+        "artifacts/m1-fault-runs/linux-fi14-metadata-2026-08-26.json",
+        "artifacts/m1-fault-runs/linux-fi14-journal-2026-08-26.json"
+      ],
+      "note": "Linux real ENOSPC is retained; Windows native disk-full/quota and other rows remain external."
+    },
+    {
+      "id": "PERFORMANCE-MEASUREMENT",
+      "category": "performance",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "Windows stable/MSRV and pinned Linux overlay repeated probe runs",
+      "evidence": [
+        "performance/README.md",
+        "artifacts/m1-performance.json",
+        "artifacts/m1-performance-windows-stable.json"
+      ],
+      "note": "Measurement-only; no accepted p95/p99 or capacity threshold.",
+      "environment": "Windows stable/MSRV and pinned Linux overlay repeated probe runs",
+      "exit_codes": [
+        0
+      ],
+      "artifacts": [
+        "artifacts/m1-performance.json",
+        "artifacts/m1-performance-windows-stable.json"
+      ],
+      "sha256": [
+        "22175032CC95C071B21FCE9D1D78D8741EBD40D397AE5D95C10C916280C33F2F",
+        "52974FE6A106FE87B54A03D4C7D9FAF5F1C88DF494DE6975E0E583DA3CA6782D"
+      ],
+      "commands": [
+        "cargo test --locked --test performance_measurements -- --ignored --nocapture"
+      ]
+    },
+    {
+      "id": "ADR-0015",
+      "category": "governance",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "performance/capacity budget",
+      "note": "Proposed, unassigned, and not binding."
+    },
+    {
+      "id": "ADR-0016",
+      "category": "governance",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "generation-bound projection contract",
+      "note": "Core implementation and current-host evidence exist; ADR acceptance remains pending."
+    },
+    {
+      "id": "GIT-TRACEABILITY",
+      "category": "traceability",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "repository metadata",
+      "note": "Git repository exists on branch dev at HEAD 2da6cf1037acf054b33b23b07c27388be1807690 with origin remote; working tree is dirty and no release tag/commit is accepted.",
+      "environment": "repository metadata",
+      "exit_codes": [
+        0
+      ],
+      "evidence": [
+        "build-metadata.json",
+        "traceability/release-traceability.json"
+      ],
+      "commands": [
+        "git status --short --branch",
+        "git rev-parse HEAD",
+        "git remote -v",
+        "git tag --list"
+      ],
+      "artifacts": [
+        "build-metadata.json",
+        "traceability/release-traceability.json"
+      ],
+      "sha256": [
+        "AE95E682DBD44E141F1844CFEA0B028D10ECB3DD30937BD5C27B03F7C1603CAB",
+        "038DBDCF88CE54F6EF4EFDBD02506040362C87ACAD39E54CF7B75DD7AFB44F1E"
+      ]
+    },
+    {
+      "id": "RELEASE-OWNER",
+      "category": "governance",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "M1 acceptance register",
+      "note": "No named owner, decision date, accepted platform scope, or approved exception is recorded."
+    },
+    {
+      "id": "RELEASE-CANDIDATE",
+      "category": "traceability",
+      "status": "BLOCKED",
+      "release_status": "BLOCKED",
+      "scope": "clean M1 release candidate commit/tag",
+      "evidence": [
+        "traceability/release-traceability.json",
+        "traceability/release-traceability.log"
+      ],
+      "note": "Working tree is dirty; no release commit/tag was created without owner approval."
+    },
+    {
+      "id": "M1-RELEASE-GATE",
+      "category": "release",
+      "status": "BLOCKED",
+      "release_status": "NOT_PASSED",
+      "scope": "all M1 MUST-PASS rows",
+      "note": "Evidence is incomplete or not accepted; do not enter M2."
+    }
+  ]
+}

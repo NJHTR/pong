@@ -2,6 +2,20 @@
 
 **Status: evidence package in progress; no release support claim is made.**
 
+The current close-out bundle is indexed at
+[`artifacts/m1-release-evidence/m1-release-matrix.json`](../../artifacts/m1-release-evidence/m1-release-matrix.json)
+with copied raw evidence, source references, and checksums in
+[`artifacts/m1-release-evidence/`](../../artifacts/m1-release-evidence/). The
+bundle does not change the acceptance status below: executable evidence may be
+`PASS` for a scoped host while the release row remains `BLOCKED` pending owner
+acceptance.
+
+The external native-runner job is defined at
+[`../../.github/workflows/m1-release-evidence.yml`](../../.github/workflows/m1-release-evidence.yml)
+for Ubuntu 24.04 and macOS 14. Until those jobs complete and their uploaded
+platform metadata, raw logs, cold-reopen results, and hashes are attached,
+native Linux and macOS remain `BLOCKED`.
+
 This matrix is the checklist for M1 acceptance. A row is `PASS` only when the
 named executable artifact, platform, filesystem, toolchain, and cold-restart
 inspection are retained. A source-level fixture or a direct SQL query is not a

@@ -1,0 +1,11 @@
+M1 old-reader audit, 2026-08-27
+Current HEAD: 2da6cf1037acf054b33b23b07c27388be1807690
+Current branch: dev
+Local tags: none
+Remote tags: none (git ls-remote --tags origin)
+GitHub releases: none (GET /repos/NJHTR/pong/releases)
+Historical commits inspected: 2da6cf1, 181d889
+Result: BLOCKED
+No separately released Pong v0.1 reader binary is available. Current-source
+compatibility fixtures are supplementary and cannot be promoted to old-reader
+binary evidence.

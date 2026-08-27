@@ -1,0 +1,66 @@
+{
+  "record_version": "m1-pt13-fi10-0.1",
+  "generated_on": "2026-08-27",
+  "commands": [
+    "cargo fmt --all",
+    "cargo check --locked",
+    "cargo test --locked --test pt13_fi10 -- --nocapture",
+    "cargo clippy --locked --all-targets -- -D warnings",
+    "cargo test --locked",
+    "cargo +1.78.0 fmt --all -- --check",
+    "cargo +1.78.0 check --locked",
+    "cargo +1.78.0 test --locked",
+    "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+  ],
+  "targeted_runs": {
+    "command": "cargo test --locked --test pt13_fi10 -- --nocapture",
+    "repetitions": 3,
+    "tests_per_run": 8,
+    "passed_per_run": 8,
+    "failed_per_run": 0,
+    "exit_codes": [
+      0,
+      0,
+      0
+    ],
+    "raw_log": "artifacts/m1-pt13-fi10-summary.log",
+    "raw_log_sha256": "E93313C73852962400B1412A7966350328D4FD68209BC8B4768AF4E49D19AF2D",
+    "tests": [
+      "fi10_repeated_crash_reopen_is_idempotent",
+      "pt13_generation_assertions_fail_closed_and_matching_identity_succeeds",
+      "pt13_duplicate_event_identity_and_stale_cursor_fail_closed",
+      "pt13_malformed_envelope_and_corrupted_projection_fail_closed",
+      "pt13_source_generation_remains_available_for_audit_after_b_is_active",
+      "pt13_migration_a_to_b_preserves_projection_semantics_and_source_events",
+      "fi10_projection_failpoint_schedule_converges_to_clean_replay_after_reopen",
+      "fi10_migration_interruption_keeps_generation_and_projection_aligned"
+    ],
+    "schedule": [
+      "BeforeApply",
+      "AfterValidation",
+      "AfterIdempotencyCheck",
+      "AfterStateMutation",
+      "BeforeCursorUpdate",
+      "AfterCursorUpdate",
+      "BeforeLedgerCommit",
+      "AfterLedgerCommit",
+      "BeforeTransactionCommit",
+      "AfterTransactionCommit"
+    ]
+  },
+  "pt13": {
+    "migration": "PASS: legacy -> generation-a -> generation-b preserves source envelopes, state digest, cursor, event count, and applied ledger",
+    "interruption": "PASS: projection rebind/checkpoint/verify/selector interruption exposes legacy-only or fully aligned generation and retry converges",
+    "generation_isolation": "PASS: mismatched event/projection generation or migration assertions return INTEGRITY_ERROR",
+    "idempotency": "PASS: rebuild and repeated migration produce no duplicate applied-event ledger entries",
+    "golden_state": "PASS: generation-b cold reopen matches clean replay state {total:15}"
+  },
+  "fi10": {
+    "schedules": "PASS: all ProjectionFailpoint A-J boundaries recover through cold reopen and rebuild",
+    "repeated_crash": "PASS: two injected pre-commit crashes followed by reopen/rebuild converge deterministically",
+    "recovery": "PASS: state, cursor, and ledger are published atomically or rolled back together",
+    "golden_state": "PASS: final projection equals clean replay with cursor e5 and five ledger rows"
+  },
+  "result": "BLOCKED",
+  "blocking_reason": "PT-13/FI-10 implementation evidence is complete on the current Windows host, but M1 release acceptance still requires external platform, old-reader, real fault, performance-budget, and release-owner evidence."
+}

@@ -44,7 +44,53 @@
   request/operation idempotency, and before/after-commit cold-reopen evidence.
   Runtime interception and public APIs remain out of scope.
 
+## Unreleased - M1 native platform closeout (2026-08-27)
+
+- Audited and hardened `.github/workflows/m1-release-evidence.yml` for the
+  native-platform closeout. The workflow now runs stable and Rust 1.78 gates
+  in independent target directories, records exact command exit codes,
+  pins test repositories to a workspace-local temporary directory, captures
+  native filesystem identity and run metadata, executes focused cold-reopen
+  evidence,
+  and uploads deterministic Linux/macOS artifact names with structured
+  metadata, manifest, and SHA256SUMS. GitHub currently has no published copy
+  or workflow run, so Native Linux and Native macOS remain `BLOCKED`.
+- Added `docs/development/M1_CI_EXECUTION_REQUIRED.md` with the minimum
+  commit/push/Actions/download handoff. No CI result, release tag, or owner
+  acceptance is inferred from the local workflow definition.
+
 ## Unreleased - M1 evidence audit (2026-08-26)
+
+- Assembled the M1 release evidence bundle under
+  `artifacts/m1-release-evidence/`. It contains a normalized
+  `PASS`/`FAIL`/`BLOCKED`/`NOT_APPLICABLE` matrix, Windows stable/MSRV build
+  logs with explicit exit codes, copied platform, fault, performance,
+  property, and PT-13/FI-10 records, source-path references, and `SHA256SUMS`.
+  PT-13 and FI-10 remain `PASS` for the current Windows-host evidence scope,
+  while release acceptance remains `BLOCKED`.
+- Corrected stale audit wording: this checkout does contain Git metadata
+  (`dev` at `2da6cf1037acf054b33b23b07c27388be1807690` with `origin`), but the
+  working tree is dirty and has no accepted release tag or release commit.
+- M1 remains **not passed**. The separately released v0.1 reader, native
+  Linux/macOS rows, Windows native disk-full, real power-loss/full fault
+  schedule, accepted ADR-0015 budget, and named release owner are still
+  required.
+- Added the minimal `.github/workflows/m1-release-evidence.yml` workflow for
+  external native Linux (`ubuntu-24.04`) and macOS (`macos-14`) evidence. It
+  captures platform identity, runs the Rust 1.78 quality gates plus
+  projection/migration/recovery/compatibility tests, and uploads raw logs with
+  hashes. No runner has executed in this workspace, so both native rows remain
+  `BLOCKED`.
+
+- Closed the current-host PT-13/FI-10 implementation evidence gap without
+  changing the settled storage architecture. Added generation A-to-B
+  projection migration, generation-isolation assertions, migration interruption
+  checks, ProjectionFailpoint A-J crash/reopen schedules, repeated-crash
+  recovery, and clean-replay golden-state comparisons. Three targeted reruns
+  are retained in `artifacts/m1-pt13-fi10-summary.json` and
+  `artifacts/m1-pt13-fi10-summary.log`; M1 remains **not passed** because
+  external platform, old-reader, real fault, budget, and owner acceptance
+  evidence is still required.
 
 - Implemented the internal generation-bound event envelope and projection
   slice described by ADR-0016. Added additive `event_envelopes`, projection
@@ -200,9 +246,11 @@
   artifact-consistency test under each toolchain. This is refreshed local
   evidence only; M1 remains **not passed** and all external/implementation
   blockers remain visible.
-- Recorded that the supplied workspace has no `.git` metadata; the M1 evidence
-  package therefore makes no commit-level claim and relies on exact commands,
-  toolchain identities, test results, and retained artifact hashes.
+- An earlier audit note incorrectly described the checkout as lacking `.git`
+  metadata. The repository is on branch `dev` at
+  `2da6cf1037acf054b33b23b07c27388be1807690` with `origin`; the working tree
+  is dirty and no release tag/commit is accepted, so the evidence package does
+  not claim a clean release artifact.
 - Corrected broken relative links in ADR-0014 and ADR-0015 so the M1 storage,
   protocol, recovery, gate, and performance artifact references resolve from
   their `docs/decisions/ADR/` location.
