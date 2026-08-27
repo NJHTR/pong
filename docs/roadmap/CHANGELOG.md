@@ -304,8 +304,9 @@
   retained evidence hash drift after checkout. The focused migration,
   recovery, compatibility, PT-13/FI-10, and cold-reopen commands passed.
 - Recorded the macOS artifact boundary honestly: only the Rust 1.78 build logs
-  and focused logs were produced; MSRV test/clippy failed, and platform
-  metadata, manifest, stable logs, and stable exit records are absent.
+  and focused logs were produced; MSRV test failed while MSRV clippy exited
+  zero, and platform metadata, manifest, stable logs, and stable exit records
+  are absent.
 - Added the run to the M1 release matrix, compatibility matrix, roadmap, and
   checksum/reference bundle. Workflow capture-boundary hardening was pushed in
   `2cf136e`; M1 remains `NOT PASSED` and a fresh successful native run is

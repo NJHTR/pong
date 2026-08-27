@@ -30,7 +30,8 @@ two real defects: Linux evidence hashes were invalidated by checkout line-ending
 normalization, while macOS compiled a platform-inapplicable host-fault test.
 Run `33080915116` was retained after the first correction: Linux still failed
 both full tests in `artifact_consistency`, and macOS produced an incomplete
-artifact while its MSRV test/clippy path failed. Both failures are retained.
+artifact while its MSRV test path failed (MSRV clippy exited zero). Both
+failures are retained.
 The bundle-wide byte-preservation correction is pushed at `96a2f8c`; workflow
 capture-boundary hardening is pushed at `2cf136e99091d8d074d1a0e597f72f06bd2d52f7`.
 A fresh manual dispatch is required. Follow

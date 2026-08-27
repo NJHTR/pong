@@ -229,7 +229,7 @@
         "CFEB5CDE5F09B0BC25DECF7FEAF318BF89ECCA5C4B9358413F3EBBF5D67E11B0",
         "B57883FBFF29F7EE2E6C5C4EE4986DBD7643B134BF8DF56D9B939D7CF85BB89D"
       ],
-      "note": "Run 33074865773 failed on checkout hash drift (Linux) and platform-inapplicable host-resource compilation (macOS). Run 33080915116 repeated the Linux artifact-consistency hash drift and produced an incomplete macOS artifact: MSRV test/clippy failed and platform metadata, manifest, stable logs, and stable exit records were absent. The byte-preservation and capture-boundary fixes require another manual rerun."
+      "note": "Run 33074865773 failed on checkout hash drift (Linux) and platform-inapplicable host-resource compilation (macOS). Run 33080915116 repeated the Linux artifact-consistency hash drift and produced an incomplete macOS artifact: MSRV test failed while clippy exited zero, and platform metadata, manifest, stable logs, and stable exit records were absent. The byte-preservation and capture-boundary fixes require another manual rerun."
     },
     {
       "id": "COMPAT-OLD-READER",
@@ -717,7 +717,7 @@
       "environment": "GitHub Actions macOS 14 arm64, APFS; run 33080915116",
       "exit_codes": [
         101,
-        101
+        0
       ],
       "commands": [
         "cargo +1.78.0 test --locked",
@@ -733,7 +733,7 @@
         "B57883FBFF29F7EE2E6C5C4EE4986DBD7643B134BF8DF56D9B939D7CF85BB89D",
         "45F115543A320D15D2B880CE7C037BA182C326CCC0E769BF17F4AA2F8F9A38CF"
       ],
-      "note": "Focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed. Full artifact lacks platform metadata, stable logs, and manifest; Rust 1.78 test and clippy failed in artifact-consistency. This run cannot satisfy native macOS evidence until the capture/upload path is fixed and rerun."
+      "note": "Focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed. The MSRV test failed in artifact-consistency with exit 101 while MSRV clippy exited 0. Stable gates did not run because platform identity capture failed; platform metadata, manifest, stable logs, and stable exit records are absent. This run cannot satisfy native macOS evidence until the capture/upload path is fixed and rerun."
     }
   ]
 }

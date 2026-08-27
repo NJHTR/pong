@@ -25,6 +25,6 @@
   "disposition": "retained_failure_evidence; evidence bundle byte-boundary correction and workflow rerun required",
   "observed": {
     "linux": "stable and Rust 1.78 fmt/check/clippy plus focused M1 suites passed; both full test commands failed in artifact-consistency because artifact-references.json and the retained PT-13/FI-10 raw-log hash drifted after checkout",
-    "macos": "focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen suites passed; Rust 1.78 test and clippy failed in artifact-consistency; stable gates did not run because platform identity capture failed, and the uploaded artifact lacks platform metadata, manifest, stable logs, and stable exit records"
+    "macos": "focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen suites passed; Rust 1.78 test failed in artifact-consistency while clippy exited zero; stable gates did not run because platform identity capture failed, and the uploaded artifact lacks platform metadata, manifest, stable logs, and stable exit records"
   }
 }

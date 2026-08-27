@@ -8,7 +8,8 @@ jobs failed their full quality gates. Linux found evidence-log line-ending hash
 drift; macOS found a platform-inapplicable host-resource test compilation
 failure. A second manual dispatch completed as run `33080915116` on commit
 `8d28075d44f5458e866c94ee33b95b430f7959d6`. Linux again failed both full tests
-in `artifact_consistency`; macOS failed the Rust 1.78 test/clippy path and its
+in `artifact_consistency`; macOS failed the Rust 1.78 test path (clippy exited
+zero) and its
 downloaded artifact omitted platform metadata, the manifest, stable logs, and
 stable exit records. Both ZIPs are retained under
 `artifacts/m1-platform-runs/github-actions-run-33080915116/` with Linux SHA-256

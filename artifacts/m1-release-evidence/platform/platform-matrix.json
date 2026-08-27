@@ -196,7 +196,7 @@
         "B57883FBFF29F7EE2E6C5C4EE4986DBD7643B134BF8DF56D9B939D7CF85BB89D",
         "45F115543A320D15D2B880CE7C037BA182C326CCC0E769BF17F4AA2F8F9A38CF"
       ],
-      "note": "Focused M1 suites passed. Artifact is incomplete: platform identity, stable logs, and artifact-manifest are absent; Rust 1.78 test and clippy failed in artifact-consistency. Native macOS support cannot be accepted from this run."
+      "note": "Focused M1 suites passed. Artifact is incomplete: platform identity, stable logs, and artifact-manifest are absent. Rust 1.78 test failed in artifact-consistency (exit 101), while clippy exited 0; native macOS support cannot be accepted from this run."
     }
   ]
 }
