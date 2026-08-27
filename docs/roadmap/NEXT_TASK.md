@@ -20,14 +20,15 @@ owner sign-off are still missing. Keep all work below Runtime, SDK, CLI, server,
 and framework adapters.
 
 The minimal native-platform workflow is now defined at
-`.github/workflows/m1-release-evidence.yml`; its Linux and macOS rows remain
-`BLOCKED` until external runner artifacts are attached.
+`.github/workflows/m1-release-evidence.yml`; the first real run produced
+artifacts but failed both native rows and therefore does not advance M1.
 
-The workflow has been audited and now emits stable/MSRV logs, per-command exit
-codes, cold-reopen output, workspace-local test-repository filesystem metadata,
-an artifact manifest, and SHA256SUMS under the named native evidence artifacts.
-It is published on `origin/dev` at `ca6323673cc87be30d377f3b0915f9061c2a038b`,
-but has no run yet; follow
+The workflow emits stable/MSRV logs, per-command exit codes, cold-reopen output,
+workspace-local test-repository filesystem metadata, an artifact manifest, and
+SHA256SUMS under the named native evidence artifacts. Run `33074865773` exposed
+two real defects: Linux evidence hashes were invalidated by checkout line-ending
+normalization, while macOS compiled a platform-inapplicable host-fault test.
+Both failures are retained and must be resolved and rerun; follow
 [`M1_CI_EXECUTION_REQUIRED.md`](../development/M1_CI_EXECUTION_REQUIRED.md)
 for the external execution handoff.
 

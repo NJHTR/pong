@@ -1,0 +1,30 @@
+{
+  "record_version": "m1-native-platform-download-0.1",
+  "workflow": "M1 release evidence",
+  "workflow_run_id": "33074865773",
+  "workflow_run_attempt": "1",
+  "commit": "1212930d5d4faab9ca6b66cb8745475ad9a6de46",
+  "branch": "dev",
+  "status": "failure",
+  "jobs": {
+    "linux-native / stable + Rust 1.78": "failure",
+    "macos-native / stable + Rust 1.78": "failure"
+  },
+  "artifacts": [
+    {
+      "name": "m1-linux-native-evidence",
+      "downloaded_from": "C:/Users/NJHTR/Downloads/m1-linux-native-evidence.zip",
+      "sha256": "91694F6DFA456D475AE7F7FA385B3D72130329FAADD204C7DA1B48AC58687D44"
+    },
+    {
+      "name": "m1-macos-native-evidence",
+      "downloaded_from": "C:/Users/NJHTR/Downloads/m1-macos-native-evidence.zip",
+      "sha256": "AE75632EDD526E35D0D6E317E1EEF791F0773F698FF26BF01B001E6C547EC48F"
+    }
+  ],
+  "disposition": "retained_failure_evidence; corrective commit and workflow rerun required",
+  "observed": {
+    "linux": "focused M1 suites passed; stable/MSRV full test failed in artifact-consistency due to retained evidence hash drift after checkout line-ending normalization",
+    "macos": "focused M1 suites passed; stable/MSRV full test and clippy failed because tests/host_resource_faults.rs compiled Linux/Windows-only helpers"
+  }
+}

@@ -1,0 +1,73 @@
+[1m[92m    Checking[0m libc v0.2.189
+[1m[92m    Checking[0m once_cell v1.21.4
+[1m[92m    Checking[0m bitflags v2.13.1
+[1m[92m    Checking[0m ppv-lite86 v0.2.21
+[1m[92m    Checking[0m ahash v0.8.12
+[1m[92m    Checking[0m hashbrown v0.14.5
+[1m[92m    Checking[0m num-traits v0.2.19
+[1m[92m    Checking[0m hashlink v0.9.1
+[1m[92m    Checking[0m lazy_static v1.5.0
+[1m[92m    Checking[0m regex-syntax v0.8.11
+[1m[92m    Checking[0m rusqlite v0.32.1
+[1m[92m    Checking[0m getrandom v0.3.4
+[1m[92m    Checking[0m rand_core v0.9.5
+[1m[92m    Checking[0m errno v0.3.14
+[1m[92m    Checking[0m cpufeatures v0.2.17
+[1m[92m    Checking[0m sha2 v0.10.9
+[1m[92m    Checking[0m rustix v0.38.44
+[1m[92m    Checking[0m rand_chacha v0.9.0
+[1m[92m    Checking[0m rand v0.9.5
+[1m[92m    Checking[0m rand_xorshift v0.4.0
+[1m[92m    Checking[0m getrandom v0.2.17
+[1m[92m    Checking[0m fs2 v0.4.3
+[1m[92m    Checking[0m unarray v0.1.4
+[1m[92m    Checking[0m fastrand v2.5.0
+[1m[92m    Checking[0m pong-core v0.1.0 (/Users/runner/work/pong/pong)
+[1m[92m    Checking[0m proptest v1.8.0
+[1m[92m    Checking[0m tempfile v3.15.0
+[1m[91merror[0m[1m: unused import: `pong_core::Repository`[0m
+ [1m[94m--> [0mtests/host_resource_faults.rs:8:5
+  [1m[94m|[0m
+[1m[94m8[0m [1m[94m|[0m use pong_core::Repository;
+  [1m[94m|[0m     [1m[91m^^^^^^^^^^^^^^^^^^^^^[0m
+  [1m[94m|[0m
+  [1m[94m= [0m[1mnote[0m: `-D unused-imports` implied by `-D warnings`
+  [1m[94m= [0m[1mhelp[0m: to override `-D warnings` add `#[allow(unused_imports)]`
+
+[1m[91merror[0m[1m: constant `HOST_FAULT_ROOT` is never used[0m
+  [1m[94m--> [0mtests/host_resource_faults.rs:28:7
+   [1m[94m|[0m
+[1m[94m28[0m [1m[94m|[0m const HOST_FAULT_ROOT: &str = "PONG_HOST_FAULT_ROOT";
+   [1m[94m|[0m       [1m[91m^^^^^^^^^^^^^^^[0m
+   [1m[94m|[0m
+   [1m[94m= [0m[1mnote[0m: `-D dead-code` implied by `-D warnings`
+   [1m[94m= [0m[1mhelp[0m: to override `-D warnings` add `#[expect(dead_code)]` or `#[allow(dead_code)]`
+
+[1m[91merror[0m[1m: struct `HostFaultCase` is never constructed[0m
+  [1m[94m--> [0mtests/host_resource_faults.rs:36:8
+   [1m[94m|[0m
+[1m[94m36[0m [1m[94m|[0m struct HostFaultCase {
+   [1m[94m|[0m        [1m[91m^^^^^^^^^^^^^[0m
+
+[1m[91merror[0m[1m: method `path` is never used[0m
+  [1m[94m--> [0mtests/host_resource_faults.rs:42:8
+   [1m[94m|[0m
+[1m[94m41[0m [1m[94m|[0m impl HostFaultCase {
+   [1m[94m|[0m [1m[94m------------------[0m [1m[94mmethod in this implementation[0m
+[1m[94m42[0m [1m[94m|[0m     fn path(&self) -> &Path {
+   [1m[94m|[0m        [1m[91m^^^^[0m
+
+[1m[91merror[0m[1m: function `empty_host_fault_root` is never used[0m
+  [1m[94m--> [0mtests/host_resource_faults.rs:47:4
+   [1m[94m|[0m
+[1m[94m47[0m [1m[94m|[0m fn empty_host_fault_root() -> HostFaultCase {
+   [1m[94m|[0m    [1m[91m^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[91merror[0m[1m: function `repository_in` is never used[0m
+  [1m[94m--> [0mtests/host_resource_faults.rs:88:4
+   [1m[94m|[0m
+[1m[94m88[0m [1m[94m|[0m fn repository_in(root: &Path) -> TempDir {
+   [1m[94m|[0m    [1m[91m^^^^^^^^^^^^^[0m
+
+[1m[91merror[0m: could not compile `pong-core` (test "host_resource_faults") due to 6 previous errors
+[1m[33mwarning[0m: build failed, waiting for other jobs to finish...

@@ -20,7 +20,8 @@ missing external evidence and governance decisions.
 | Windows stable/MSRV gates | PASS | BLOCKED | Clean release tree and owner acceptance are absent. |
 | Linux overlay / Docker-VM ext4 | PASS | BLOCKED | Executable evidence only; not native Linux acceptance. |
 | Old v0.1 reader | BLOCKED | BLOCKED | Separately released binary, hash, and mutation probe absent. |
-| Native Linux ext4 / macOS | BLOCKED | BLOCKED | No accepted runner evidence. |
+| Native Linux ext4 | FAIL | BLOCKED | GitHub Actions run `33074865773` reached Ubuntu 24.04/ext4, but stable/MSRV full tests failed in artifact-consistency because captured Windows evidence hashes drifted after checkout line-ending normalization. Corrective `-text` attributes require a rerun. |
+| Native macOS arm64 | FAIL | BLOCKED | GitHub Actions run `33074865773` reached macOS 14/APFS, but stable/MSRV full tests and clippy failed because the host-resource fault test compiled Linux/Windows-only helpers. Corrective target cfg requires a rerun. |
 | FI-01..FI-14 full matrix | BLOCKED | BLOCKED | Partial synthetic/host rows; external fault schedule and power-loss rows absent. |
 | Performance / capacity | PASS | BLOCKED | Repeated measurements exist; ADR-0015 remains proposed. |
 | Release owner | BLOCKED | BLOCKED | Unassigned; no sign-off or exception. |

@@ -46,6 +46,17 @@
 
 ## Unreleased - M1 native platform closeout (2026-08-27)
 
+- Retained real GitHub Actions run `33074865773` and both native evidence
+  artifacts. Ubuntu 24.04 completed focused M1 evidence but failed full tests
+  when Windows evidence hashes drifted after checkout line-ending
+  normalization; macOS 14 completed focused M1 evidence but failed full tests
+  and clippy because the host-resource fault test compiled unused
+  Linux/Windows-only helpers. M1 remains not passed.
+- Marked captured evidence logs as byte-exact Git `-text` files and constrained
+  `tests/host_resource_faults.rs` to Linux/Windows targets. Corrected Windows
+  stable/MSRV gates and artifact-consistency checks pass locally; a new native
+  CI run is required before platform rows can be accepted.
+
 - Audited and hardened `.github/workflows/m1-release-evidence.yml` for the
   native-platform closeout. The workflow now runs stable and Rust 1.78 gates
   in independent target directories, records exact command exit codes,
@@ -53,15 +64,15 @@
   native filesystem identity and run metadata, executes focused cold-reopen
   evidence,
   and uploads deterministic Linux/macOS artifact names with structured
-  metadata, manifest, and SHA256SUMS. GitHub currently has no published copy
-  or workflow run, so Native Linux and Native macOS remain `BLOCKED`.
+  metadata, manifest, and SHA256SUMS. The first real run `33074865773` is
+  retained as a failure record; native rows remain unaccepted pending rerun.
 - Added `docs/development/M1_CI_EXECUTION_REQUIRED.md` with the minimum
   commit/push/Actions/download handoff. No CI result, release tag, or owner
   acceptance is inferred from the local workflow definition.
 - Published the M1 evidence workflow to `origin/dev` at
-  `ca6323673cc87be30d377f3b0915f9061c2a038b`. GitHub exposes one active
-  workflow but no run; the browser session is signed out, so manual login and
-  dispatch remain required and Native Linux/macOS stay `BLOCKED`.
+  `ca6323673cc87be30d377f3b0915f9061c2a038b`. A subsequent run exposed
+  cross-platform evidence normalization and macOS target-cfg defects; the
+  corrective commit and manual dispatch remain required.
 
 ## Unreleased - M1 evidence audit (2026-08-26)
 

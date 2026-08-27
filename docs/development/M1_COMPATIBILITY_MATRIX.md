@@ -12,9 +12,10 @@ acceptance.
 
 The external native-runner job is defined at
 [`../../.github/workflows/m1-release-evidence.yml`](../../.github/workflows/m1-release-evidence.yml)
-for Ubuntu 24.04 and macOS 14. Until those jobs complete and their uploaded
-platform metadata, raw logs, cold-reopen results, and hashes are attached,
-native Linux and macOS remain `BLOCKED`.
+for Ubuntu 24.04 and macOS 14. Run `33074865773` completed both jobs and
+produced retained artifacts, but both jobs failed the full quality gates. The
+focused M1 suites passed. Native rows therefore remain `FAIL` pending a rerun
+of the corrected commit, not `PASS` or `BLOCKED`.
 
 This matrix is the checklist for M1 acceptance. A row is `PASS` only when the
 named executable artifact, platform, filesystem, toolchain, and cold-restart
@@ -30,8 +31,8 @@ substitute for a separately released old Pong binary.
 | Linux x86_64 GNU | Docker overlay filesystem | Rust 1.78.0 | pinned `rust:1.78-slim-bookworm`, full `fmt/check/test/clippy -D warnings`, named volume `pong-msrv178-slim-target` mounted at `/root/pong-target` | migration/process-kill/recovery/WAL/property/Workspace/Snapshot/Operation suites pass | not the quota run | Executable container evidence only |
 | Linux x86_64 GNU | disposable 64 MiB `tmpfs` | Rust 1.78.0 | focused host-fault test build | not applicable | FI-14 CAS/metadata/journal `ENOSPC` pass | Host-fault evidence only |
 | Linux x86_64 GNU | Docker named volume backed by ext4 | Rust 1.78.0 | pinned image, fresh source volume, independent target volume, `TMPDIR` on ext4; fmt/check/test/clippy pass | migration/process-kill/recovery/WAL/property/Workspace/Snapshot/Operation suites pass | not a quota run | Evidence present; release acceptance pending; [`artifacts/m1-platform-runs/linux-ext4-rust-178-run-2-2026-08-26.json`](../../artifacts/m1-platform-runs/linux-ext4-rust-178-run-2-2026-08-26.json) |
-| Linux x86_64 GNU | native ext4 | Rust 1.78.0 | no native host run retained | no native host run retained | no native host run retained | Missing |
-| macOS or other targets | declared only after evidence | pinned MSRV | no runner in current environment | no runner in current environment | no runner in current environment | Missing; do not claim support |
+| Linux x86_64 GNU | native ext4 | Rust 1.78.0 | run `33074865773`: focused cold-reopen passed; full test failed in artifact-consistency | focused migration/recovery/PT-13/FI-10 passed | not exercised by this workflow | **FAIL**; rerun after evidence line-ending fix |
+| macOS arm64 | APFS | stable 1.98.0 + Rust 1.78.0 | run `33074865773`: focused cold-reopen passed; full test/clippy failed to compile host-resource test | focused migration/recovery/PT-13/FI-10 passed | not exercised by this workflow | **FAIL**; rerun after platform cfg fix |
 
 The final Linux overlay rerun used image digest
 `sha256:0fea967628dc796a2b9d1d57ddb3af3b3f0a35b6c8c0e23690dbe0ceb71a2dc9` and

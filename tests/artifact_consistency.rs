@@ -133,7 +133,7 @@ fn assert_retained_artifacts_exist(root: &Path, value: &Value) {
 fn assert_release_bundle_checksums(root: &Path) {
     let bundle = root.join("artifacts/m1-release-evidence");
     let sums_path = bundle.join("SHA256SUMS");
-    let sums = fs::read_to_string(sums_path).expect("release bundle SHA256SUMS");
+    let sums = fs::read_to_string(&sums_path).expect("release bundle SHA256SUMS");
     let mut listed = 0usize;
     for line in sums.lines().filter(|line| !line.trim().is_empty()) {
         let (expected, relative) = line
@@ -174,12 +174,31 @@ fn assert_release_bundle_checksums(root: &Path) {
                 vec![path]
             }
         })
-        .filter(|path| path.file_name().and_then(|name| name.to_str()) != Some("SHA256SUMS"))
+        .filter(|path| path.as_path() != sums_path.as_path())
         .count();
     assert_eq!(
         listed, actual_files,
         "SHA256SUMS does not cover the full bundle"
     );
+}
+
+fn assert_native_failure_artifacts(root: &Path) {
+    let run = root.join("artifacts/m1-platform-runs/github-actions-run-33074865773");
+    let metadata: Value = serde_json::from_slice(
+        &fs::read(run.join("download-metadata.json")).expect("native CI download metadata"),
+    )
+    .expect("native CI download metadata JSON");
+    assert_eq!(metadata["workflow_run_id"], "33074865773");
+    assert_eq!(metadata["status"], "failure");
+    for platform in ["linux", "macos"] {
+        let platform_root = run.join(platform);
+        assert!(platform_root
+            .join("platform/platform-metadata.json")
+            .is_file());
+        assert!(platform_root.join("artifact-manifest.json").is_file());
+        assert!(platform_root.join("SHA256SUMS").is_file());
+        assert!(platform_root.join("logs/cold-reopen.exit").is_file());
+    }
 }
 
 fn collect_files(directory: &Path, files: &mut Vec<PathBuf>) {
@@ -300,6 +319,7 @@ fn release_bundle_checksums_and_status_matrix_are_consistent() {
 fn retained_m1_raw_logs_and_fault_matrix_references_are_consistent() {
     let root = repository_root();
     collect_raw_log_records(&root, &root.join("artifacts"));
+    assert_native_failure_artifacts(&root);
 
     let matrix_path = root.join("artifacts/m1-fault-matrix.json");
     let matrix: Value =

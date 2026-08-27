@@ -194,14 +194,33 @@
     {
       "id": "PLATFORM-MATRIX",
       "category": "platform",
-      "status": "BLOCKED",
+      "status": "FAIL",
       "release_status": "BLOCKED",
       "scope": "Windows native, Linux container/native, macOS native",
       "evidence": [
         "platform/platform-matrix.json",
-        ".github/workflows/m1-release-evidence.yml"
+        ".github/workflows/m1-release-evidence.yml",
+        "platform/github-actions-run-33074865773/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33074865773/macos/platform/platform-metadata.json"
       ],
-      "note": "Native Linux and macOS workflow is prepared but has not produced retained runner evidence."
+      "environment": "GitHub Actions run 33074865773; Ubuntu 24.04 ext4 and macOS 14 arm64 APFS",
+      "exit_codes": [
+        101,
+        101
+      ],
+      "commands": [
+        "cargo +stable test --locked",
+        "cargo +1.78.0 test --locked"
+      ],
+      "artifacts": [
+        "platform/github-actions-run-33074865773/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33074865773/macos/platform/platform-metadata.json"
+      ],
+      "sha256": [
+        "7C5BA28E7088BFD4DB91210B3D351972B311C9E5BE04F6425106AEFB19942DC0",
+        "E9E90F93A0EC68BDE270C5CA265E91D3C4145073718A027BBE27D01271F7A2EC"
+      ],
+      "note": "Run 33074865773 produced real native artifacts, but Linux full tests failed on evidence hash drift and macOS full tests/clippy failed on host-resource test compilation. Corrective rerun required."
     },
     {
       "id": "COMPAT-OLD-READER",
@@ -229,18 +248,66 @@
     {
       "id": "PLATFORM-NATIVE-LINUX-EXT4",
       "category": "platform",
-      "status": "BLOCKED",
+      "status": "FAIL",
       "release_status": "BLOCKED",
       "scope": "native Linux host or VM on ext4",
-      "note": "No native run is retained. Docker-VM ext4 evidence cannot be promoted automatically."
+      "evidence": [
+        "platform/github-actions-run-33074865773/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33074865773/linux/build/stable-test.log",
+        "platform/github-actions-run-33074865773/linux/build/msrv-178-test.log"
+      ],
+      "environment": "GitHub Actions Ubuntu 24.04, ext4, run 33074865773",
+      "exit_codes": [
+        101,
+        101
+      ],
+      "commands": [
+        "cargo +stable test --locked",
+        "cargo +1.78.0 test --locked"
+      ],
+      "artifacts": [
+        "platform/github-actions-run-33074865773/linux/build/stable-test.log",
+        "platform/github-actions-run-33074865773/linux/build/msrv-178-test.log"
+      ],
+      "sha256": [
+        "2151348897604B62655847BDFE5949E8B71F92DAF31A5DD3C22830C09F758AEA",
+        "761681E4AC68CA730DA5B512F93E305C9338869882B238E25BF3BA34317DB298"
+      ],
+      "note": "Native runner evidence is retained, but both full test commands failed in artifact-consistency. The row cannot pass until the byte-exact evidence fix is rerun."
     },
     {
       "id": "PLATFORM-MACOS",
       "category": "platform",
-      "status": "BLOCKED",
+      "status": "FAIL",
       "release_status": "BLOCKED",
       "scope": "macOS or another declared target",
-      "note": "No runner or supported-target decision is present."
+      "evidence": [
+        "platform/github-actions-run-33074865773/macos/platform/platform-metadata.json",
+        "platform/github-actions-run-33074865773/macos/build/stable-test.log",
+        "platform/github-actions-run-33074865773/macos/build/stable-clippy.log"
+      ],
+      "environment": "GitHub Actions macOS 14 arm64 APFS, run 33074865773",
+      "exit_codes": [
+        101,
+        101,
+        101,
+        101
+      ],
+      "commands": [
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "platform/github-actions-run-33074865773/macos/build/stable-test.log",
+        "platform/github-actions-run-33074865773/macos/build/stable-clippy.log"
+      ],
+      "sha256": [
+        "F1B43C3471BD9B37330012627029DC9FA3338D8E17080F89F87F92541CECAA0A",
+        "A7ADAD441CAF0F61D14343953CACEA50AC66A576D1AA85EC3F13D1CD7ED5425B"
+      ],
+      "note": "Native runner evidence is retained, but full test/clippy commands failed because host_resource_faults.rs compiled platform-inapplicable helpers. The row cannot pass until the platform cfg fix is rerun."
     },
     {
       "id": "FI-01",

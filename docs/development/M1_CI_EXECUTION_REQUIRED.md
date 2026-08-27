@@ -1,21 +1,25 @@
 # M1 Native CI Execution Required
 
-**Updated on 2026-08-27:** the workflow is published on `NJHTR/pong/dev` at
-`ca6323673cc87be30d377f3b0915f9061c2a038b`. GitHub reports one active workflow,
-zero workflow runs, and no releases. The GitHub Actions page is reachable but
-the current browser session is signed out, so no run has been triggered and no
-native Linux or macOS result is claimed.
+**Updated on 2026-08-27:** the first manual dispatch completed as workflow run
+`33074865773` on commit `1212930d5d4faab9ca6b66cb8745475ad9a6de46`. Both native
+artifacts were downloaded and retained under
+`artifacts/m1-platform-runs/github-actions-run-33074865773/`, but both matrix
+jobs failed their full quality gates. Linux found evidence-log line-ending hash
+drift; macOS found a platform-inapplicable host-resource test compilation
+failure. The corrective commit must be pushed and dispatched again.
 
 ```text
-PUSH_REQUIRED = false
+PUSH_REQUIRED = true
+RERUN_REQUIRED = true
 ```
 
 ## Required external steps
 
 1. Sign in to GitHub in the browser session that opens
    `https://github.com/NJHTR/pong/actions/workflows/m1-release-evidence.yml`.
-2. Open **Actions -> M1 release evidence** and run it with **Run workflow**;
-   a pull request touching the configured paths also starts it.
+2. After the corrective commit is pushed, open **Actions -> M1 release
+   evidence** and run it with **Run workflow**; a pull request touching the
+   configured paths also starts it.
 3. Wait for both matrix jobs to finish. A green workflow is required; a
    failed job is `FAIL`, not `BLOCKED`.
 4. Download `m1-linux-native-evidence` and
@@ -40,11 +44,11 @@ PUSH_REQUIRED = false
   filesystem (tests use a workspace-local `TMPDIR`), Rust/Cargo versions,
   commit SHA, workflow run ID, exact commands, exit codes, and hashes.
 
-Until a successful run and retained artifacts exist, the authoritative state
+Until a successful rerun and retained artifacts exist, the authoritative state
 remains:
 
 ```text
-Native Linux = BLOCKED
-Native macOS = BLOCKED
+Native Linux = FAIL (run 33074865773); rerun required
+Native macOS = FAIL (run 33074865773); rerun required
 M1 Release Gate = NOT PASSED
 ```

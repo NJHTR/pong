@@ -63,6 +63,12 @@ jobs:
           else
             filesystem_type="$(stat -f '%T' "${GITHUB_WORKSPACE}")"
             repository_filesystem_type="$(stat -f '%T' "${M1_TMPDIR}")"
+            if [[ -z "${filesystem_type}" || "${filesystem_type}" == "/" ]]; then
+              filesystem_type="$(diskutil info "${GITHUB_WORKSPACE}" | awk -F: '/File System Personality/ {gsub(/^ +/, "", $2); print $2; exit}')"
+            fi
+            if [[ -z "${repository_filesystem_type}" || "${repository_filesystem_type}" == "/" ]]; then
+              repository_filesystem_type="$(diskutil info "${M1_TMPDIR}" | awk -F: '/File System Personality/ {gsub(/^ +/, "", $2); print $2; exit}')"
+            fi
             os_version="$(sw_vers -productVersion)"
           fi
           printf '%s\n' \

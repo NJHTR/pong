@@ -1,3 +1,4 @@
-# Evidence logs preserve captured terminal bytes, including ANSI padding and
-# trailing spaces. Keep them byte-exact while reviewing the text/source diff.
-artifacts/m1-release-evidence/**/*.log -diff
+# Evidence logs preserve captured terminal bytes, including CRLF/LF endings,
+# ANSI padding, and trailing spaces. They are binary evidence for hashing, not
+# source text that Git may normalize during a cross-platform checkout.
+artifacts/**/*.log -text -diff

@@ -16,8 +16,8 @@ and accepted.
 | PT-13 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, three reruns | Native-platform and owner acceptance |
 | FI-10 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, A-J and repeated crash | Native filesystem/power-loss and owner acceptance |
 | Old Reader | BLOCKED | Compatibility absence record | No released v0.1 binary or tag | Independent binary, hash, fixture, read/write probe |
-| Native Linux | BLOCKED | Workflow prepared; no runner artifact | `.github/workflows/m1-release-evidence.yml` | Execute on native Linux runner and retain metadata/logs |
-| Native macOS | BLOCKED | Workflow prepared; no runner artifact | GitHub Actions `macos-14` | Execute on macOS runner and retain metadata/logs |
+| Native Linux | FAIL | GitHub Actions run `33074865773`, artifact `m1-linux-native-evidence` | Ubuntu 24.04 / ext4 / Rust 1.98 + 1.78 | Full stable/MSRV test failed in artifact-consistency because retained Windows evidence hashes drifted after checkout line-ending normalization; rerun after fix required |
+| Native macOS | FAIL | GitHub Actions run `33074865773`, artifact `m1-macos-native-evidence` | macOS 14 arm64 / APFS / Rust 1.98 + 1.78 | Full stable/MSRV test and clippy failed because `tests/host_resource_faults.rs` compiled Linux/Windows-only helpers; rerun after fix required |
 | Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json` | `dev` at `d56b924`; clean tree; no release tag | Release-owner-approved release tag |
 
 This is an evidence report, not a release claim. It separates executable
@@ -25,20 +25,29 @@ evidence from implementation that still lacks the platform, compatibility,
 fault, or performance acceptance required by
 [`M1_DURABLE_PRIMITIVES_GATE.md`](M1_DURABLE_PRIMITIVES_GATE.md).
 
-The workflow definition was audited on 2026-08-27. It now prepares stable and
+The workflow definition was audited on 2026-08-27. The first manually
+dispatched run (`33074865773`, commit
+`1212930d5d4faab9ca6b66cb8745475ad9a6de46`) completed both matrix jobs but
+failed the full quality gates. The retained artifacts are under
+[`artifacts/m1-platform-runs/github-actions-run-33074865773/`](../../artifacts/m1-platform-runs/github-actions-run-33074865773/).
+The downloaded ZIP SHA-256 values are Linux
+`91694F6DFA456D475AE7F7FA385B3D72130329FAADD204C7DA1B48AC58687D44` and
+macOS `AE75632EDD526E35D0D6E317E1EEF791F0773F698FF26BF01B001E6C547EC48F`.
+The focused migration, recovery, compatibility, PT-13/FI-10, and cold-reopen
+steps passed on both runners. Linux stable/MSRV full tests failed because
+retained Windows evidence hashes drifted after checkout line-ending
+normalization. macOS stable/MSRV full tests and clippy failed because the
+host-resource fault test compiled platform-inapplicable helpers. These are
+recorded failures, not native-platform passes. The workflow now prepares stable and
 Rust 1.78 quality gates in independent target directories, pins test
 repositories to a workspace-local temporary directory, records per-command
 exit codes, runs the focused M1 and `cold_reopen` suites, captures the actual
 runner and test-repository filesystems, and uploads `m1-linux-native-evidence` or
 `m1-macos-native-evidence` with a structured metadata/manifest/checksum set.
-GitHub's unauthenticated API now reports one active workflow and zero runs for
-`NJHTR/pong`; the workflow is published at commit
-`ca6323673cc87be30d377f3b0915f9061c2a038b`, but the browser session is signed
-out and no run has been triggered. This remains a workflow artifact rather than
-native platform evidence. See
+The failed run is real native-platform execution, but it is not acceptable gate
+evidence until the corrected commit completes successfully. See
 [`M1_CI_EXECUTION_REQUIRED.md`](M1_CI_EXECUTION_REQUIRED.md) for the minimum
-external handoff. `PUSH_REQUIRED = false`; authentication and the manual
-workflow dispatch remain required.
+external handoff and rerun procedure.
 
 ## Reproduction
 
@@ -311,15 +320,15 @@ The following evidence cannot be honestly produced in this workspace:
 
 - a separately released historical Pong v0.1 executable and its old-reader
   mutation/open matrix;
-- macOS or other non-Windows/non-Linux supported targets;
 - Windows-native disk-full/quota exhaustion without risking the host volume;
 - power-loss testing, hardware/filesystem corruption beyond the exercised
   SQLite/CAS corruption cases, and a complete external-process kill schedule;
 - an independent acceptance decision for performance/capacity budgets.
 
-The native-platform workflow is now prepared for external execution, but a
-workflow definition is not platform evidence until a hosted runner completes
-the commands and retains its logs, filesystem identity, and hashes.
+The first hosted native-platform execution is retained as a failed run. A
+workflow definition or failed artifact is not a platform pass; the corrected
+commit must complete the same commands and retain new logs, filesystem identity,
+and hashes before either native row can be accepted.
 
 These are recorded as unavailable evidence, not as passing assumptions.
 

@@ -75,37 +75,69 @@
     },
     {
       "platform": "Linux x86_64 GNU",
-      "environment": "Native Linux runner workflow prepared; no completed runner artifact in this workspace",
-      "kernel": null,
-      "filesystem": "unknown until runner execution",
+      "environment": "GitHub Actions Ubuntu 24.04 native runner; workflow run 33074865773",
+      "kernel": "Linux 6.17.0-1022-azure",
+      "filesystem": "ext4",
       "architecture": "x86_64",
       "rust": [
+        "1.98.0",
         "1.78.0"
       ],
-      "status": "BLOCKED",
+      "status": "FAIL",
       "commands": [
-        ".github/workflows/m1-release-evidence.yml"
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
       ],
-      "artifacts": [],
-      "sha256": [],
-      "note": "A GitHub Actions job is defined but has not run or produced retained evidence."
+      "artifacts": [
+        "artifacts/m1-platform-runs/github-actions-run-33074865773/linux/platform/platform-metadata.json",
+        "artifacts/m1-platform-runs/github-actions-run-33074865773/linux/build/stable-test.log",
+        "artifacts/m1-platform-runs/github-actions-run-33074865773/linux/build/msrv-178-test.log"
+      ],
+      "sha256": [
+        "7C5BA28E7088BFD4DB91210B3D351972B311C9E5BE04F6425106AEFB19942DC0",
+        "2151348897604B62655847BDFE5949E8B71F92DAF31A5DD3C22830C09F758AEA",
+        "761681E4AC68CA730DA5B512F93E305C9338869882B238E25BF3BA34317DB298"
+      ],
+      "note": "Focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed. Full stable/MSRV test failed in artifact-consistency before the corrective byte-exact evidence fix. Rerun required."
     },
     {
       "platform": "macOS arm64",
-      "environment": "GitHub Actions macos-14 workflow prepared; no completed runner artifact in this workspace",
-      "kernel": null,
-      "filesystem": "unknown until runner execution",
+      "environment": "GitHub Actions macOS 14 native runner; workflow run 33074865773",
+      "kernel": "Darwin 23.6.0",
+      "filesystem": "APFS (statfs reports /)",
       "architecture": "arm64",
       "rust": [
+        "1.98.0",
         "1.78.0"
       ],
-      "status": "BLOCKED",
+      "status": "FAIL",
       "commands": [
-        ".github/workflows/m1-release-evidence.yml"
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
       ],
-      "artifacts": [],
-      "sha256": [],
-      "note": "A GitHub Actions job is defined but has not run or produced retained evidence."
+      "artifacts": [
+        "artifacts/m1-platform-runs/github-actions-run-33074865773/macos/platform/platform-metadata.json",
+        "artifacts/m1-platform-runs/github-actions-run-33074865773/macos/build/stable-test.log",
+        "artifacts/m1-platform-runs/github-actions-run-33074865773/macos/build/stable-clippy.log"
+      ],
+      "sha256": [
+        "E9E90F93A0EC68BDE270C5CA265E91D3C4145073718A027BBE27D01271F7A2EC",
+        "F1B43C3471BD9B37330012627029DC9FA3338D8E17080F89F87F92541CECAA0A",
+        "A7ADAD441CAF0F61D14343953CACEA50AC66A576D1AA85EC3F13D1CD7ED5425B"
+      ],
+      "note": "Focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed. Full stable/MSRV test and clippy failed because host_resource_faults.rs compiled platform-inapplicable helpers. Rerun required."
     }
   ]
 }

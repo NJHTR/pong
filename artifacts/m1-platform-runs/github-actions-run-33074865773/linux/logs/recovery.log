@@ -1,0 +1,15 @@
+[1m[92m   Compiling[0m pong-core v0.1.0 (/home/runner/work/pong/pong)
+[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+[1m[92m     Running[0m tests/recovery_boundaries.rs (target/m1-ci-focused/debug/deps/recovery_boundaries-61fa3ce2f86ead39)
+
+running 7 tests
+test orphan_intents_are_marked_unknown_once_and_keep_the_intent_payload ... ok
+test outcome_and_published_transitions_are_idempotent ... ok
+test corrupt_cas_object_is_quarantined_and_never_read_as_success ... ok
+test outcome_durable_rows_remain_available_for_publication_recovery ... ok
+test unsupported_repository_format_is_rejected_before_open ... ok
+test idempotency_record_survives_restart_without_second_mutation ... ok
+test committed_metadata_survives_reopen_and_uses_full_wal_durability ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+

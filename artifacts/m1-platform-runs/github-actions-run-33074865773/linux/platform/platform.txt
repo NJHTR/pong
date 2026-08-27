@@ -1,0 +1,12 @@
+runner_os=Linux
+runner_arch=X64
+os_version=Ubuntu 24.04
+kernel=Linux 6.17.0-1022-azure
+architecture=x86_64
+filesystem_type=ext4
+repository_filesystem_type=ext4
+tmpdir=/home/runner/work/pong/pong/.m1-tmp
+workspace=/home/runner/work/pong/pong
+commit=1212930d5d4faab9ca6b66cb8745475ad9a6de46
+run_id=33074865773
+run_attempt=1

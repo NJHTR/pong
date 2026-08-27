@@ -1,3 +1,5 @@
+#![cfg(any(target_os = "linux", windows))]
+
 //! Opt-in evidence for FI-13/FI-14 against real host filesystem failures.
 //!
 //! These tests are ignored by the ordinary quality gate because they mutate a
