@@ -74,6 +74,17 @@
   cross-platform evidence normalization and macOS target-cfg defects; the
   corrective commit and manual dispatch remain required.
 
+## Unreleased - M1 native rerun handoff (2026-08-27)
+
+- Fixed byte-exact evidence-log handling, constrained host-resource fault
+  helpers to applicable targets, retained the failed native run `33074865773`,
+  and corrected the release bundle's nested `SHA256SUMS` coverage.
+- Pushed portability fix `359abc306b554d592b532ebc182e543f97489043` and metadata
+  follow-up `2310c822a6f5d3f942067e0ec7a322369f03df8a` to `origin/dev`.
+- Native Linux and macOS remain `FAIL` for the historical run; a new manual
+  workflow dispatch is required before either row can be reconsidered. M1
+  remains `NOT PASSED`.
+
 ## Unreleased - M1 evidence audit (2026-08-26)
 
 - Assembled the M1 release evidence bundle under

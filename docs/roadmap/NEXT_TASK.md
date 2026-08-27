@@ -28,7 +28,10 @@ workspace-local test-repository filesystem metadata, an artifact manifest, and
 SHA256SUMS under the named native evidence artifacts. Run `33074865773` exposed
 two real defects: Linux evidence hashes were invalidated by checkout line-ending
 normalization, while macOS compiled a platform-inapplicable host-fault test.
-Both failures are retained and must be resolved and rerun; follow
+Both failures are retained. The portability correction is pushed at
+`359abc306b554d592b532ebc182e543f97489043`, with evidence metadata bound in
+`2310c822a6f5d3f942067e0ec7a322369f03df8a`; a manual rerun is now required.
+Follow
 [`M1_CI_EXECUTION_REQUIRED.md`](../development/M1_CI_EXECUTION_REQUIRED.md)
 for the external execution handoff.
 

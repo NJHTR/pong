@@ -6,20 +6,24 @@ artifacts were downloaded and retained under
 `artifacts/m1-platform-runs/github-actions-run-33074865773/`, but both matrix
 jobs failed their full quality gates. Linux found evidence-log line-ending hash
 drift; macOS found a platform-inapplicable host-resource test compilation
-failure. The corrective commit must be pushed and dispatched again.
+failure. The portability correction was committed as `359abc306b554d592b532ebc182e543f97489043`,
+the evidence metadata was rebound in `2310c822a6f5d3f942067e0ec7a322369f03df8a`,
+and both commits are now pushed to `origin/dev`. A fresh manual dispatch is still
+required.
 
 ```text
-PUSH_REQUIRED = true
+PUSH_REQUIRED = false
 RERUN_REQUIRED = true
+PUSHED_HEAD = 2310c822a6f5d3f942067e0ec7a322369f03df8a
 ```
 
 ## Required external steps
 
 1. Sign in to GitHub in the browser session that opens
    `https://github.com/NJHTR/pong/actions/workflows/m1-release-evidence.yml`.
-2. After the corrective commit is pushed, open **Actions -> M1 release
-   evidence** and run it with **Run workflow**; a pull request touching the
-   configured paths also starts it.
+2. Open **Actions -> M1 release evidence** at the pushed `dev` head and run it
+   with **Run workflow**; a pull request touching the configured paths also
+   starts it.
 3. Wait for both matrix jobs to finish. A green workflow is required; a
    failed job is `FAIL`, not `BLOCKED`.
 4. Download `m1-linux-native-evidence` and
