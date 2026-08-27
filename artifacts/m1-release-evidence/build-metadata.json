@@ -4,14 +4,14 @@
   "repository": {
     "root": "D:/pong",
     "branch": "dev",
-    "head": "d56b924990da2f47ede7a018ddac0915503f334b",
+    "head": "359abc306b554d592b532ebc182e543f97489043",
     "remote": "https://github.com/NJHTR/pong.git",
     "working_tree": "CLEAN",
     "release_tag": null,
     "release_commit": null,
     "evidence_snapshot": {
       "captured_before_commit": "2da6cf1037acf054b33b23b07c27388be1807690",
-      "closeout_commit": "d56b924990da2f47ede7a018ddac0915503f334b",
+      "closeout_commit": "359abc306b554d592b532ebc182e543f97489043",
       "post_commit_verification": "metadata-only; build/test evidence was not rerun after the commit"
     }
   },

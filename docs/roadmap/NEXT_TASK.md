@@ -70,7 +70,7 @@ release-owner requirements.
 The 2026-08-27 close-out reran the complete Windows stable Rust 1.95.0 and
 Rust 1.78.0 MSRV gates in independent target directories; every command
 returned exit code `0`. Git traceability is available (`dev` at
-`d56b924990da2f47ede7a018ddac0915503f334b`, remote `origin`); the working tree
+`359abc306b554d592b532ebc182e543f97489043`, remote `origin`); the working tree
 is clean, but no release tag or owner-approved release commit exists. The
 retained executable evidence was captured before this closeout commit; retain
 that snapshot relationship with the exact commands, toolchain identity, test

@@ -18,7 +18,7 @@ and accepted.
 | Old Reader | BLOCKED | Compatibility absence record | No released v0.1 binary or tag | Independent binary, hash, fixture, read/write probe |
 | Native Linux | FAIL | GitHub Actions run `33074865773`, artifact `m1-linux-native-evidence` | Ubuntu 24.04 / ext4 / Rust 1.98 + 1.78 | Full stable/MSRV test failed in artifact-consistency because retained Windows evidence hashes drifted after checkout line-ending normalization; rerun after fix required |
 | Native macOS | FAIL | GitHub Actions run `33074865773`, artifact `m1-macos-native-evidence` | macOS 14 arm64 / APFS / Rust 1.98 + 1.78 | Full stable/MSRV test and clippy failed because `tests/host_resource_faults.rs` compiled Linux/Windows-only helpers; rerun after fix required |
-| Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json` | `dev` at `d56b924`; clean tree; no release tag | Release-owner-approved release tag |
+| Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json` | `dev` at `359abc3`; clean tree; no release tag | Release-owner-approved release tag |
 
 This is an evidence report, not a release claim. It separates executable
 evidence from implementation that still lacks the platform, compatibility,
@@ -333,7 +333,7 @@ and hashes before either native row can be accepted.
 These are recorded as unavailable evidence, not as passing assumptions.
 
 The supplied workspace is a Git repository on branch `dev` at HEAD
-`d56b924990da2f47ede7a018ddac0915503f334b`, with remote
+`359abc306b554d592b532ebc182e543f97489043`, with remote
 `https://github.com/NJHTR/pong.git`. The working tree is clean and there is no
 release tag or owner-approved release commit. The retained executable evidence
 was captured before this closeout commit; that relationship is recorded in the
