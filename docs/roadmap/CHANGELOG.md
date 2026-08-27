@@ -58,6 +58,10 @@
 - Added `docs/development/M1_CI_EXECUTION_REQUIRED.md` with the minimum
   commit/push/Actions/download handoff. No CI result, release tag, or owner
   acceptance is inferred from the local workflow definition.
+- Published the M1 evidence workflow to `origin/dev` at
+  `ca6323673cc87be30d377f3b0915f9061c2a038b`. GitHub exposes one active
+  workflow but no run; the browser session is signed out, so manual login and
+  dispatch remain required and Native Linux/macOS stay `BLOCKED`.
 
 ## Unreleased - M1 evidence audit (2026-08-26)
 

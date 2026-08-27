@@ -31,12 +31,14 @@ repositories to a workspace-local temporary directory, records per-command
 exit codes, runs the focused M1 and `cold_reopen` suites, captures the actual
 runner and test-repository filesystems, and uploads `m1-linux-native-evidence` or
 `m1-macos-native-evidence` with a structured metadata/manifest/checksum set.
-GitHub's unauthenticated API currently reports no workflow, run, or release
-for `NJHTR/pong`, so this remains a preparation artifact rather than native
-platform evidence. See
+GitHub's unauthenticated API now reports one active workflow and zero runs for
+`NJHTR/pong`; the workflow is published at commit
+`ca6323673cc87be30d377f3b0915f9061c2a038b`, but the browser session is signed
+out and no run has been triggered. This remains a workflow artifact rather than
+native platform evidence. See
 [`M1_CI_EXECUTION_REQUIRED.md`](M1_CI_EXECUTION_REQUIRED.md) for the minimum
-external handoff. The remote API currently has no workflow or run,
-so `PUSH_REQUIRED = true`; no push is performed by this audit.
+external handoff. `PUSH_REQUIRED = false`; authentication and the manual
+workflow dispatch remain required.
 
 ## Reproduction
 

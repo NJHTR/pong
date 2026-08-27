@@ -26,7 +26,8 @@ The minimal native-platform workflow is now defined at
 The workflow has been audited and now emits stable/MSRV logs, per-command exit
 codes, cold-reopen output, workspace-local test-repository filesystem metadata,
 an artifact manifest, and SHA256SUMS under the named native evidence artifacts.
-The remote repository currently has no copy of this workflow and no run; follow
+It is published on `origin/dev` at `ca6323673cc87be30d377f3b0915f9061c2a038b`,
+but has no run yet; follow
 [`M1_CI_EXECUTION_REQUIRED.md`](../development/M1_CI_EXECUTION_REQUIRED.md)
 for the external execution handoff.
 
