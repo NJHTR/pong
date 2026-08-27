@@ -1,0 +1,25 @@
+{
+  "fixture_id": "CT-08-redaction-profile",
+  "fixture_version": "1.0",
+  "kind": "compatibility",
+  "m1_rows": ["CT-08", "I-SCHEMA-06"],
+  "protocol_version": "0.1",
+  "schema_version": "0.1",
+  "repository_format": "0.1",
+  "redaction_profile": {
+    "id": "profile-a",
+    "version": "0.1"
+  },
+  "input": {
+    "stored_profile": "profile-a@0.1",
+    "requested_profile": "default@0.1"
+  },
+  "expected": {
+    "status": "unsupported",
+    "error_code": "UNSUPPORTED"
+  },
+  "compatibility": {
+    "from": "profile-a@0.1",
+    "to": "default@0.1"
+  }
+}

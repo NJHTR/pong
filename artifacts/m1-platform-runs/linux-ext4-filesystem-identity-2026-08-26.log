@@ -1,0 +1,6 @@
+platform=linux-x86_64-gnu
+filesystem_claim=ext4-backed Docker named volume
+volume=pong-linux-ext4-audit-repo
+Filesystem           Type       1K-blocks      Used Available Use% Mounted on
+/dev/sdf             ext4       1055762868  35020060 967039336   3% /repo
+statfs_type=ext2/ext3 magic=ef53

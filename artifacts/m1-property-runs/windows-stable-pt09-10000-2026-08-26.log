@@ -1,0 +1,74 @@
+record_version=m1-property-run-0.2
+property=PT-09
+platform=windows-x86_64-msvc
+filesystem=NTFS
+toolchain=Rust 1.95.0
+requested_cases=10000
+target_directory=target/windows-stable-pt09-10000-2026-08-26
+command=PONG_PROPTEST_CASES=10000 cargo test --locked --test property_recovery_migration pt09_recovery_converges_across_interleavings_and_commit_boundaries -- --nocapture
+   Compiling version_check v0.9.5
+   Compiling cfg-if v1.0.4
+   Compiling zerocopy v0.8.56
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.24
+   Compiling getrandom v0.3.4
+   Compiling find-msvc-tools v0.1.11
+   Compiling once_cell v1.21.4
+   Compiling typenum v1.20.1
+   Compiling shlex v2.0.1
+   Compiling windows_x86_64_msvc v0.52.6
+   Compiling pkg-config v0.3.34
+   Compiling serde_core v1.0.229
+   Compiling vcpkg v0.2.15
+   Compiling winapi v0.3.9
+   Compiling autocfg v1.5.1
+   Compiling zmij v1.0.23
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling libc v0.2.189
+   Compiling bitflags v2.13.1
+   Compiling thiserror v2.0.20
+   Compiling itoa v1.0.18
+   Compiling fallible-iterator v0.3.0
+   Compiling memchr v2.8.3
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling cpufeatures v0.2.17
+   Compiling smallvec v1.15.2
+   Compiling regex-syntax v0.8.11
+   Compiling lazy_static v1.5.0
+   Compiling unarray v0.1.4
+   Compiling getrandom v0.2.17
+   Compiling fastrand v2.5.0
+   Compiling hex v0.4.3
+   Compiling generic-array v0.14.7
+   Compiling ahash v0.8.12
+   Compiling cc v1.4.3
+   Compiling num-traits v0.2.19
+   Compiling libsqlite3-sys v0.30.1
+   Compiling windows-targets v0.52.6
+   Compiling rand_core v0.9.5
+   Compiling syn v3.0.3
+   Compiling fs2 v0.4.3
+   Compiling windows-sys v0.59.0
+   Compiling rand_xorshift v0.4.0
+   Compiling rand v0.9.5
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.9
+   Compiling tempfile v3.15.0
+   Compiling ppv-lite86 v0.2.21
+   Compiling hashbrown v0.14.5
+   Compiling rand_chacha v0.9.0
+   Compiling proptest v1.8.0
+   Compiling hashlink v0.9.1
+   Compiling thiserror-impl v2.0.20
+   Compiling serde_derive v1.0.229
+   Compiling rusqlite v0.32.1
+   Compiling pong-core v0.1.0 (D:\pong)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.97s
+     Running tests\property_recovery_migration.rs (target\windows-stable-pt09-10000-2026-08-26\debug\deps\property_recovery_migration-232da1aaf019057e.exe)
+
+running 1 test
+test pt09_recovery_converges_across_interleavings_and_commit_boundaries has been running for over 60 seconds

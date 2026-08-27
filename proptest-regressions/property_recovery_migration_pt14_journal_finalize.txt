@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc b2974370fd850f36884d42b0bb0d5ed9a07781cc0eaabf596daf12e630d131b3 # shrinks to MigrationCase { events: [MigrationEvent { payload_tag: 34504, flag: false, schema_selector: 1 }], ref_values: [46986, 43083, 29627], opaque_tag: 3854204327 }

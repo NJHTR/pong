@@ -1,0 +1,30 @@
+{
+  "fixture_id": "CT-06-current-repository-marker",
+  "fixture_version": "1.0",
+  "kind": "compatibility",
+  "m1_rows": ["CT-06", "I-SCHEMA-03", "I-SCHEMA-04"],
+  "protocol_version": "0.1",
+  "schema_version": "0.1",
+  "repository_format": "0.1",
+  "input": {
+    "marker_version": 1,
+    "repository_format": "0.1",
+    "schema_version": "0.1",
+    "storage_driver": "cas+sqlite",
+    "future_optional_field": "opaque"
+  },
+  "expected": {
+    "status": "supported",
+    "projection": {
+      "marker_version": 1,
+      "repository_format": "0.1",
+      "schema_version": "0.1",
+      "storage_driver": "cas+sqlite"
+    }
+  },
+  "compatibility": {
+    "from": "0.1",
+    "to": "0.1",
+    "unknown_fields": ["future_optional_field"]
+  }
+}

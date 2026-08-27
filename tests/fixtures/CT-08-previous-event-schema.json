@@ -1,0 +1,32 @@
+{
+  "fixture_id": "CT-08-previous-event-schema",
+  "fixture_version": "1.0",
+  "kind": "compatibility",
+  "m1_rows": ["CT-08", "I-SCHEMA-01", "I-SCHEMA-03", "I-SCHEMA-04"],
+  "protocol_version": "0.1",
+  "schema_version": "0.0",
+  "repository_format": "0.1",
+  "input": {
+    "event_id": "evt_previous",
+    "stream_id": "project:compatibility",
+    "schema_version": "0.0",
+    "payload": {
+      "type": "legacy.event",
+      "legacy_state": "opaque",
+      "future_enum": "provider_specific"
+    }
+  },
+  "expected": {
+    "status": "supported-as-opaque",
+    "projection": {
+      "schema_version": "0.0",
+      "future_enum": "provider_specific"
+    }
+  },
+  "compatibility": {
+    "from": "0.0",
+    "to": "0.1",
+    "unknown_fields": ["legacy_state"],
+    "unknown_enum_values": ["provider_specific"]
+  }
+}

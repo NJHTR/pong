@@ -1,0 +1,38 @@
+{
+  "record_version": "m1-property-run-0.1",
+  "run_date": "2026-08-26",
+  "platform": "windows-x86_64-msvc",
+  "filesystem": "NTFS",
+  "toolchain": "Rust 1.95.0",
+  "target_directory": "target/windows-stable-audit-test",
+  "requested_cases": 10000,
+  "command": "PONG_PROPTEST_CASES=10000 cargo test --locked --test property_corpus --test property_recovery_migration -- --nocapture",
+  "property_corpus": {
+    "status": "passed",
+    "cases_per_property": 10000,
+    "properties": [
+      {"id": "PT-01", "seed": "0x50540001CAFE0001"},
+      {"id": "PT-02", "seed": "0x50540002CAFE0002"},
+      {"id": "PT-03", "seed": "0x50540003CAFE0003"},
+      {"id": "PT-04", "seed": "0x50540004CAFE0004"},
+      {"id": "PT-05", "seed": "0x50540005CAFE0005"},
+      {"id": "PT-06", "seed": "0x50540006CAFE0006"},
+      {"id": "PT-07", "seed": "0x50540007CAFE0007"},
+      {"id": "PT-08", "seed": "0x50540008CAFE0008"},
+      {"id": "PT-11", "seed": "0x50540011CAFE0011"},
+      {"id": "PT-12", "seed": "0x50540012CAFE0012"}
+    ],
+    "elapsed_seconds": 382.38
+  },
+  "property_recovery_migration": {
+    "status": "aborted_before_result",
+    "properties_started": ["PT-09", "PT-10", "PT-14"],
+    "properties_with_passing_result": [],
+    "reason": "The storage-heavy 10000-case run exceeded the bounded audit window and was interrupted with Ctrl+C; no result is claimed."
+  },
+  "raw_log": "artifacts/m1-property-runs/windows-stable-properties-10000-2026-08-26.log",
+  "raw_log_sha256": "E90B809B2019D8EE0F7439D39E666D92354D75FE361599F74621961F67586CB6",
+  "acceptance": "bounded_subset_only",
+  "release_owner": "unassigned",
+  "note": "This record does not close PT-09/PT-10/PT-13/PT-14, FI-10, or the platform matrix."
+}

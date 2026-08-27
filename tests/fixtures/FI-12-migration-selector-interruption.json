@@ -1,0 +1,50 @@
+{
+  "fixture_id": "FI-12-migration-selector-interruption",
+  "fixture_version": "1.0",
+  "kind": "fault",
+  "m1_rows": ["FI-12", "I-SCHEMA-02", "I-SCHEMA-05"],
+  "protocol_version": "0.1",
+  "schema_version": "0.1",
+  "repository_format": "0.2",
+  "input": {
+    "migration_id": "migration-0001",
+    "from_generation": "generation-0001",
+    "to_generation": "generation-0002",
+    "from_schema_version": "0.1",
+    "to_schema_version": "0.2",
+    "selector": "repository.json",
+    "migration_phases": [
+      "preflight",
+      "target_built",
+      "target_verified",
+      "selector_replace",
+      "selector_directory_sync",
+      "journal_finalized"
+    ]
+  },
+  "expected": {
+    "status": "old-or-new-only",
+    "projection": {
+      "before_selector_replace": {
+        "visible_generation": "generation-0001",
+        "schema_version": "0.1"
+      },
+      "after_selector_replace": {
+        "visible_generation": "generation-0002",
+        "schema_version": "0.2"
+      },
+      "after_cold_reopen": {
+        "visible_generation": "selector-value",
+        "selector_and_generation_match": true,
+        "mixed_generation_visible": false,
+        "retry_is_idempotent": true
+      }
+    }
+  },
+  "fault": {
+    "point": "FI-12:selector_replace",
+    "restart_required": true,
+    "injection": "process_kill",
+    "repeat": 1
+  }
+}

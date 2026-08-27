@@ -1,0 +1,33 @@
+{
+  "record_version": "m1-fault-run-0.1",
+  "fault_id": "FI-14",
+  "test": "tests/host_resource_faults.rs::fi_14_real_enospc_during_metadata_write_preserves_committed_history",
+  "run_date": "2026-08-26",
+  "platform": "linux-x86_64-gnu-docker",
+  "filesystem": "tmpfs",
+  "tmpfs_size_bytes": 67108864,
+  "container_image": "rust:1.78-slim-bookworm@sha256:0fea967628dc796a2b9d1d57ddb3af3b3f0a35b6c8c0e23690dbe0ceb71a2dc9",
+  "container_image_id": "sha256:de5136cebf526224ae59da8937f768791c7af495a45e1e216e3e07cf6ce7c949",
+  "docker_engine": "29.6.2",
+  "toolchain": "Rust 1.78.0",
+  "target_directory": "/tmp/pong-target-fi14-metadata",
+  "scratch_root": "/mnt/hostfault",
+  "exit_code": 0,
+  "test_result": "passed",
+  "kernel_error": {
+    "kind": "ENOSPC",
+    "raw_os_error": 28
+  },
+  "initial_available_bytes": 66957312,
+  "bytes_written_to_exhaust": 66912256,
+  "pong_code": "RESOURCE_EXHAUSTED",
+  "committed_history_while_full": "passed",
+  "rejected_mutation": "failed_as_resource_exhausted",
+  "cold_reopen": "passed",
+  "metadata_visibility_after_reopen": "committed_event_only",
+  "raw_log": "artifacts/m1-fault-runs/linux-fi14-metadata-2026-08-26.log",
+  "raw_log_sha256": "F0BA6F605FF845849A34CC068AA17CC0A2BD5D5C55C47A9DEA2464813C07DB9A",
+  "acceptance": "partial_platform_matrix",
+  "release_owner": "unassigned",
+  "note": "One disposable Linux tmpfs run; Windows native disk-full/quota and other declared filesystem rows remain outside this artifact."
+}

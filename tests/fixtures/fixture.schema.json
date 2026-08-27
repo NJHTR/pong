@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pong.local/schemas/m1-fixture.schema.json",
+  "title": "Pong M1 test fixture envelope",
+  "description": "Language-neutral, redacted fixture format for M1 contract, property, compatibility, and fault tests.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fixture_id",
+    "fixture_version",
+    "kind",
+    "m1_rows",
+    "protocol_version",
+    "schema_version",
+    "repository_format",
+    "input",
+    "expected"
+  ],
+  "properties": {
+    "fixture_id": {
+      "type": "string",
+      "pattern": "^(CT|PT|FI)-[0-9]{2}-[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "fixture_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["contract", "property", "fault", "compatibility"]
+    },
+    "m1_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^(I|CT|PT|FI)-[A-Z0-9-]+$"
+      },
+      "uniqueItems": true
+    },
+    "protocol_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "repository_format": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "redaction_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"}
+      }
+    },
+    "input": {
+      "description": "Canonical, secret-free input consumed by the adapter.",
+      "type": ["object", "array", "string", "number", "boolean", "null"]
+    },
+    "expected": {
+      "description": "Machine-readable outcome and invariant observations.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"type": "string", "minLength": 1},
+        "error_code": {"type": "string", "minLength": 1},
+        "projection": {"type": ["object", "array", "null"]},
+        "events": {"type": "array"},
+        "raw_bytes_must_not_contain": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        }
+      }
+    },
+    "fault": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["point", "restart_required"],
+      "properties": {
+        "point": {"type": "string", "pattern": "^FI-[0-9]{2}:[a-z0-9_]+$"},
+        "restart_required": {"type": "boolean"},
+        "injection": {
+          "type": "string",
+          "enum": ["process_kill", "short_write", "truncate_tail", "quota", "permission", "corrupt_object"]
+        },
+        "repeat": {"type": "integer", "minimum": 1}
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+        "from": {"type": "string", "minLength": 1},
+        "to": {"type": "string", "minLength": 1},
+        "unknown_fields": {"type": "array"},
+        "unknown_enum_values": {"type": "array"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "observed_status"],
+      "properties": {
+        "platform": {"type": "string", "minLength": 1},
+        "runtime": {"type": "string", "minLength": 1},
+        "seed": {"type": ["integer", "string"]},
+        "observed_status": {"type": "string", "minLength": 1},
+        "inspection_path": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"kind": {"const": "fault"}}, "required": ["kind"]},
+      "then": {"required": ["fault"]}
+    },
+    {
+      "if": {"properties": {"kind": {"const": "compatibility"}}, "required": ["kind"]},
+      "then": {"required": ["compatibility"]}
+    }
+  ]
+}

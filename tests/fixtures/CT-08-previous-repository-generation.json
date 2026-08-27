@@ -1,0 +1,78 @@
+{
+  "fixture_id": "CT-08-previous-repository-generation",
+  "fixture_version": "1.0",
+  "kind": "compatibility",
+  "m1_rows": ["CT-08", "I-SCHEMA-02", "I-SCHEMA-03", "I-SCHEMA-05"],
+  "protocol_version": "0.1",
+  "schema_version": "0.2",
+  "repository_format": "0.2",
+  "input": {
+    "marker": {
+      "marker_version": 1,
+      "repository_format": "0.1",
+      "schema_version": "0.1",
+      "storage_driver": "cas+sqlite"
+    },
+    "selector": {
+      "active_generation": "generation-0001",
+      "migration_id": "migration-0001"
+    },
+    "old_generation": {
+      "generation_id": "generation-0001",
+      "schema_version": "0.1",
+      "metadata": {
+        "events": [
+          {
+            "event_id": "evt_legacy_generation",
+            "stream_id": "project:generation",
+            "schema_version": "0.0",
+            "payload": {
+              "type": "legacy.checkpoint",
+              "opaque_extension": "preserve-me"
+            }
+          }
+        ]
+      }
+    },
+    "target_generation": {
+      "generation_id": "generation-0002",
+      "schema_version": "0.2",
+      "metadata": {
+        "events": [
+          {
+            "event_id": "evt_legacy_generation",
+            "stream_id": "project:generation",
+            "schema_version": "0.0",
+            "payload": {
+              "type": "legacy.checkpoint",
+              "opaque_extension": "preserve-me"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "status": "migration-required",
+    "projection": {
+      "before_migration": {
+        "visible_generation": "generation-0001",
+        "schema_version": "0.1"
+      },
+      "after_verified_migration": {
+        "visible_generation": "generation-0002",
+        "schema_version": "0.2"
+      },
+      "event_identity_preserved": true,
+      "opaque_extension_preserved": true,
+      "mixed_generation_visible": false,
+      "repeated_migration": "idempotent"
+    }
+  },
+  "compatibility": {
+    "from": "0.1",
+    "to": "0.2",
+    "unknown_fields": ["opaque_extension"],
+    "unknown_enum_values": []
+  }
+}

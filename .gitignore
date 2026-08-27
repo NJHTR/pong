@@ -1,0 +1,21 @@
+# Rust build output
+/target/
+
+# Local fault-injection/runtime scratch data
+/.host-fault-concurrent/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+Desktop.ini
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+id_rsa

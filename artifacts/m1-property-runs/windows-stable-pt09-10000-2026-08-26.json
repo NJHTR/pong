@@ -1,0 +1,27 @@
+{
+  "record_version": "m1-property-run-0.2",
+  "run_date": "2026-08-26",
+  "platform": "windows-x86_64-msvc",
+  "filesystem": "NTFS",
+  "toolchain": "Rust 1.95.0",
+  "target_directory": "target/windows-stable-pt09-10000-2026-08-26",
+  "requested_cases": 10000,
+  "command": "PONG_PROPTEST_CASES=10000 cargo test --locked --test property_recovery_migration pt09_recovery_converges_across_interleavings_and_commit_boundaries -- --nocapture",
+  "property": {
+    "id": "PT-09",
+    "status": "aborted_before_result",
+    "cases_completed": null,
+    "passing_result": false
+  },
+  "termination": {
+    "method": "manual Ctrl+C after bounded audit window",
+    "observed_exit_code": 1,
+    "bounded_audit_window_seconds": 60,
+    "result_interpretation": "No property result is claimed; the run was interrupted while the test was still executing."
+  },
+  "raw_log": "artifacts/m1-property-runs/windows-stable-pt09-10000-2026-08-26.log",
+  "raw_log_sha256": "37E7226E9148D83CE37E59D4169245B6C88506A5F95DD7742800B80353D1CFC7",
+  "acceptance": "no_result",
+  "release_owner": "unassigned",
+  "note": "This record does not close PT-09, PT-10, PT-13, PT-14, FI-10, or the M1 property gate."
+}

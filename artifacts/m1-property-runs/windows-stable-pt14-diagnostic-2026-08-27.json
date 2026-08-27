@@ -1,0 +1,119 @@
+{
+  "record_version": "m1-property-run-0.4",
+  "run_date": "2026-08-27",
+  "platform": "windows-x86_64-msvc",
+  "filesystem": "NTFS",
+  "toolchain": "Rust 1.95.0",
+  "property": {
+    "id": "PT-14",
+    "name": "migration_failpoints_are_old_or_verified_new_and_retry_idempotently",
+    "requested_cases": 256,
+    "cases_per_failpoint": 29,
+    "failpoint_count": 9,
+    "persistent_regression_cases": 6,
+    "executed_case_count": 267,
+    "status": "passed",
+    "test_result": "1 passed; 0 failed"
+  },
+  "bounded_probe": {
+    "purpose": "Supplemental high-load race probe; not normative 10000-case evidence.",
+    "trace_log": "artifacts/m1-property-runs/windows-stable-pt14-trace-2026-08-27.log",
+    "trace_log_sha256": "9323D1F506C0647422543BEB3BEF52F951F997531557BAE87607B0B806A1A1B2",
+    "trace_records": {
+      "pt14-failpoint": 267,
+      "pt14-retry": 1335,
+      "pt14-cold-reopen": 267,
+      "pt14-final-cold-reopen": 267
+    },
+    "retry": {
+      "operations": 1335,
+      "attempts_min": 1,
+      "attempts_max": 1,
+      "retry_failures": 0,
+      "raw_os_errors_observed": [],
+      "terminal_pong_codes": {
+        "FAULT_INJECTED": 267
+      }
+    },
+    "failpoint": {
+      "stages_recorded": [
+        "Preflight",
+        "TargetAllocated",
+        "AfterBackup",
+        "AfterCheckpoint",
+        "AfterVerify",
+        "BeforeSelectorReplace",
+        "AfterSelectorReplace",
+        "AfterSelectorDirectorySync",
+        "AfterJournalFinalize"
+      ],
+      "expected_fault_code_count": 267,
+      "unexpected_host_error_count": 0,
+      "raw_os_errors_observed": []
+    },
+    "cold_reopen": {
+      "checks": 267,
+      "old_or_new_only_checks": 267,
+      "selector_manifest_identity_verified": 267,
+      "mixed_generation_observed": false
+    }
+  },
+  "repeated_runs": [
+    {
+      "id": "r1",
+      "requested_cases": 256,
+      "target_directory": "target/windows-stable-pt14-diag-r1-2026-08-27",
+      "command": "PONG_PROPTEST_CASES=256 cargo test --locked --test property_recovery_migration pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently -- --nocapture",
+      "result": "passed",
+      "exit_code": 0,
+      "raw_log": "artifacts/m1-property-runs/windows-stable-pt14-diag-r1-2026-08-27.log",
+      "raw_log_sha256": "EA045B565ABBBBDE3C5FCF0A9FE991588CFD22AB6ED8AC44F1352B316DDB09F9"
+    },
+    {
+      "id": "r2",
+      "requested_cases": 256,
+      "target_directory": "target/windows-stable-pt14-diag-r2-2026-08-27",
+      "command": "PONG_PROPTEST_CASES=256 cargo test --locked --test property_recovery_migration pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently -- --nocapture",
+      "result": "passed",
+      "exit_code": 0,
+      "raw_log": "artifacts/m1-property-runs/windows-stable-pt14-diag-r2-2026-08-27.log",
+      "raw_log_sha256": "83577BF88833B47882BAF9D420ED2755DE68C1714FE50DD403D232D2FB2DE6DB"
+    },
+    {
+      "id": "r3",
+      "requested_cases": 256,
+      "target_directory": "target/windows-stable-pt14-diag-r3-2026-08-27",
+      "command": "PONG_PROPTEST_CASES=256 cargo test --locked --test property_recovery_migration pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently -- --nocapture",
+      "result": "passed",
+      "exit_code": 0,
+      "raw_log": "artifacts/m1-property-runs/windows-stable-pt14-diag-r3-2026-08-27.log",
+      "raw_log_sha256": "543895A0D5A3B727DA16B3C7DB50E4A077CD0691E15332D7FED7024E4E19C223"
+    },
+    {
+      "id": "trace",
+      "requested_cases": 256,
+      "target_directory": "target/windows-stable-pt14-trace-2026-08-27",
+      "command": "PONG_PROPTEST_CASES=256 PONG_PT14_TRACE=1 cargo test --locked --test property_recovery_migration pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently -- --nocapture",
+      "result": "passed",
+      "exit_code": 0,
+      "raw_log": "artifacts/m1-property-runs/windows-stable-pt14-trace-2026-08-27.log",
+      "raw_log_sha256": "9323D1F506C0647422543BEB3BEF52F951F997531557BAE87607B0B806A1A1B2"
+    }
+  ],
+  "diagnostic_fields": [
+    "operation",
+    "stage",
+    "failpoint",
+    "attempts",
+    "failures[].code",
+    "failures[].raw_os_error",
+    "terminal.code",
+    "terminal.raw_os_error",
+    "active_generation",
+    "old_or_new_only",
+    "selector_manifest_identity"
+  ],
+  "acceptance": "bounded_supplemental_only",
+  "release_owner": "unassigned",
+  "note": "All four bounded Windows NTFS runs passed. The trace run observed one attempt per retry operation, no host storage errors, and no mixed-generation state. This does not close the PT-14 normative 10000-case requirement or the cross-platform matrix."
+}

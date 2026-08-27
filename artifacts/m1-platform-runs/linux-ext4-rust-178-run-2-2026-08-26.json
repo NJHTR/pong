@@ -1,0 +1,34 @@
+{
+  "record_version": "m1-platform-run-0.2",
+  "run_date": "2026-08-26",
+  "platform": "linux-x86_64-gnu",
+  "filesystem": "ext4-backed Docker named volume",
+  "toolchain": "Rust 1.78.0",
+  "image": "rust:1.78-slim-bookworm@sha256:0fea967628dc796a2b9d1d57ddb3af3b3f0a35b6c8c0e23690dbe0ceb71a2dc9",
+  "source_volume": "pong-linux-ext4-audit-repo",
+  "target_volume": "pong-linux-ext4-audit-build",
+  "target_directory": "/build/pong-target-ext4",
+  "temporary_directory": "/repo/tmp",
+  "filesystem_identity": {
+    "command": "df -T /repo /repo/tmp",
+    "observed": "/dev/sdf ext4 mounted at /repo and /repo/tmp",
+    "raw_log": "artifacts/m1-platform-runs/linux-ext4-rust-178-run-2-2026-08-26.log",
+    "raw_log_sha256": "1E8AE089A0B3AC0AB7ECCCC84A4E49AE8AC0EEE8C318B21FD7C03D8A5EA35085"
+  },
+  "commands": [
+    "cargo fmt --all -- --check",
+    "cargo check --locked",
+    "cargo test --locked",
+    "cargo clippy --locked --all-targets -- -D warnings"
+  ],
+  "observed": {
+    "fmt": "passed",
+    "check": "passed",
+    "test": "passed; all non-ignored tests",
+    "clippy": "passed"
+  },
+  "raw_log": "artifacts/m1-platform-runs/linux-ext4-rust-178-run-2-2026-08-26.log",
+  "raw_log_sha256": "1E8AE089A0B3AC0AB7ECCCC84A4E49AE8AC0EEE8C318B21FD7C03D8A5EA35085",
+  "acceptance": "executable_evidence_release_owner_pending",
+  "scope_note": "This is a Linux Docker-VM ext4-backed volume, not a native Linux host or VM ext4 acceptance row; it does not cover macOS, Windows native disk-full, the historical v0.1 reader, or the complete FI matrix."
+}

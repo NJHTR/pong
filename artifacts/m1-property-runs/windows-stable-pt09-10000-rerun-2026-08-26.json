@@ -1,0 +1,25 @@
+{
+  "record_version": "m1-property-run-0.3",
+  "run_date": "2026-08-26",
+  "platform": "windows-x86_64-msvc",
+  "filesystem": "NTFS",
+  "toolchain": "Rust 1.95.0",
+  "requested_cases": 10000,
+  "target_directory": "target/windows-stable-pt09-10000-rerun-2026-08-26",
+  "command": "PONG_PROPTEST_CASES=10000 cargo test --locked --test property_recovery_migration pt09_recovery_converges_across_interleavings_and_commit_boundaries -- --nocapture",
+  "property": {
+    "id": "PT-09",
+    "name": "recovery_converges_across_interleavings_and_commit_boundaries",
+    "status": "passed",
+    "cases_completed": 10000,
+    "passing_result": true,
+    "test_result": "1 passed; 0 failed",
+    "test_elapsed_seconds": 1081.76
+  },
+  "exit_code": 0,
+  "raw_log": "artifacts/m1-property-runs/windows-stable-pt09-10000-rerun-2026-08-26.log",
+  "raw_log_sha256": "62D59E034CA30AD0DB1EC3BD1FACE31359C3BC00B65F7F180FD7ADC3B5308E6F",
+  "acceptance": "normative_property_evidence_pending_release_owner",
+  "release_owner": "unassigned",
+  "note": "This closes the Windows stable PT-09 10,000-case run only. PT-10 and PT-14 remain separate evidence obligations; PT-13/FI-10 remain unimplemented."
+}

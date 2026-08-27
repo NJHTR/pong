@@ -1,0 +1,25 @@
+{
+  "record_version": "m1-fault-run-0.1",
+  "fault_id": "FI-13",
+  "test": "tests/host_resource_faults.rs::fi_13_real_windows_acl_read_revocation_fails_closed_and_recovers",
+  "run_date": "2026-08-26",
+  "platform": "windows-x86_64-msvc",
+  "filesystem": "NTFS",
+  "toolchain": "Rust 1.95.0",
+  "target_directory": "target/windows-stable-audit-test",
+  "scratch_root": "D:/pong/.host-fault-audit",
+  "exit_code": 0,
+  "kernel_error": {
+    "kind": "PermissionDenied",
+    "raw_os_error": 5
+  },
+  "pong_code": "PERMISSION_DENIED",
+  "acl_restoration": "passed",
+  "cold_reopen": "passed",
+  "committed_ref_and_cas_read_after_restore": "passed",
+  "raw_log": "artifacts/m1-fault-runs/windows-fi13-acl-audit-2026-08-26.log",
+  "raw_log_sha256": "111F94C5DDC4AE99A24D1507E25C4177266C03CA130C4E9660FD661B933F1A36",
+  "acceptance": "partial_platform_matrix",
+  "release_owner": "unassigned",
+  "note": "One real NTFS run is retained; this does not cover every declared filesystem or a Windows disk-full schedule."
+}

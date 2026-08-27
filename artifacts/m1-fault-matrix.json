@@ -1,0 +1,209 @@
+{
+  "record_version": "m1-fault-disposition-0.1",
+  "milestone": "M1",
+  "status": "not_passed",
+  "generated_on": "2026-08-26",
+  "purpose": "Machine-auditable disposition of FI-01 through FI-14; this artifact never promotes an external or incomplete row to pass.",
+  "verified_platforms": [
+    "windows-x86_64-msvc-rust-1.95.0",
+    "windows-x86_64-msvc-rust-1.78.0",
+    "linux-x86_64-gnu-docker-overlay-rust-1.78.0",
+    "linux-x86_64-gnu-docker-ext4-volume-rust-1.78.0"
+  ],
+  "faults": [
+    {
+      "id": "FI-01",
+      "status": "covered_synthetic_and_cold_reopen",
+      "injection": "before intent fsync/commit",
+      "tests": [
+        "tests/metadata_failpoints.rs::failpoints_are_disabled_by_default_and_one_shot",
+        "tests/metadata_failpoints.rs::fi01_before_intent_commit_cold_reopen_preserves_pre_state_and_retry_publishes_once"
+      ],
+      "observed": "file-backed cold reopen sees pre-state with no success-visible intent; retry publishes exactly one durable intent",
+      "real_host_gap": "No power-loss or native filesystem schedule",
+      "acceptance": "pending_release_owner"
+    },
+    {
+      "id": "FI-02",
+      "status": "covered_process_boundary",
+      "injection": "after intent durable, before execution",
+      "tests": [
+        "tests/metadata_failpoints.rs::intent_after_commit_returns_fault_but_survives_cold_reopen",
+        "tests/process_kill_recovery.rs::process_kill_after_intent_never_becomes_success"
+      ],
+      "observed": "intent survives restart and cannot be inferred as success",
+      "real_host_gap": "External tool-host schedule is not complete on every declared filesystem",
+      "acceptance": "pending_release_owner"
+    },
+    {
+      "id": "FI-03",
+      "status": "partial_process_boundary",
+      "injection": "after tool effect, before outcome append",
+      "tests": ["tests/property_recovery_migration.rs::pt10_crash_schedules_never_turn_an_unresolved_intent_into_success"],
+      "observed": "generated unresolved schedules preserve unknown; no dedicated external-provider execution hook exists",
+      "real_host_gap": "A real tool execution plus abrupt termination matrix is external work",
+      "acceptance": "blocked_external_schedule"
+    },
+    {
+      "id": "FI-04",
+      "status": "covered_synthetic_and_wal",
+      "injection": "outcome append/torn WAL tail",
+      "tests": [
+        "tests/metadata_failpoints.rs::outcome_boundaries_preserve_pre_state_or_post_state",
+        "tests/wal_tail_recovery.rs::truncated_wal_tail_never_fabricates_an_event_after_cold_restart"
+      ],
+      "observed": "complete prior records survive; damaged tail is not reported as success",
+      "real_host_gap": "Power-loss and native journal implementations remain unverified",
+      "acceptance": "pending_release_owner"
+    },
+    {
+      "id": "FI-05",
+      "status": "covered_process_boundary",
+      "injection": "after outcome durable, before publication/index/ref",
+      "tests": [
+        "tests/process_kill_recovery.rs::process_kill_after_outcome_keeps_republishable_outbox",
+        "tests/recovery_boundaries.rs::outcome_durable_rows_remain_available_for_publication_recovery",
+        "tests/operation_ledger.rs::operation_finish_commit_faults_preserve_pre_or_post_state"
+      ],
+      "observed": "outbox remains recoverable and duplicate publication is idempotent",
+      "real_host_gap": "Complete external process-kill schedule is not retained for every platform",
+      "acceptance": "pending_release_owner"
+    },
+    {
+      "id": "FI-06",
+      "status": "covered_synthetic",
+      "injection": "during metadata transaction commit",
+      "tests": [
+        "tests/metadata_failpoints.rs::sqlite_commit_failpoints_cover_wal_pre_and_post_visibility",
+        "tests/property_corpus.rs::pt03_metadata_commit_boundary_is_pre_or_post_state"
+      ],
+      "observed": "cold readers observe all pre-state or all post-state",
+      "real_host_gap": "Native power-loss ordering is not directly testable here",
+      "acceptance": "pending_release_owner"
+    },
+    {
+      "id": "FI-07",
+      "status": "covered_synthetic_and_resource",
+      "injection": "CAS short write/quota during staging",
+      "tests": [
+        "src/cas.rs::tests::injected_short_write_cleans_staging_and_publishes_nothing",
+        "src/cas.rs::tests::injected_quota_failure_cleans_partial_staging_bytes",
+        "tests/host_resource_faults.rs::fi_14_real_enospc_during_cas_write_preserves_committed_history"
+      ],
+      "observed": "partial staging is unreachable or cleaned; Linux tmpfs returns RESOURCE_EXHAUSTED",
+      "real_host_gap": "Windows native quota/disk-full is unavailable in this workspace",
+      "acceptance": "partial_platform_matrix"
+    },
+    {
+      "id": "FI-08",
+      "status": "covered_synthetic_and_cold_reopen",
+      "injection": "after CAS atomic namespace publication (hard-link)/before directory durability",
+      "tests": [
+        "src/cas.rs::tests::injected_directory_sync_failure_leaves_a_retryable_published_object",
+        "tests/cas_failpoints.rs::fi08_directory_sync_fault_cold_reopen_verifies_object_and_retry_is_idempotent",
+        "tests/property_recovery_migration.rs::pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently"
+      ],
+      "observed": "file-backed cold reopen rechecks the complete object after atomic hard-link publication; staging is empty and retry is idempotent",
+      "real_host_gap": "Filesystem-specific directory-sync durability is not covered everywhere",
+      "acceptance": "pending_release_owner"
+    },
+    {
+      "id": "FI-09",
+      "status": "covered_synthetic",
+      "injection": "after ref CAS/before response",
+      "tests": [
+        "src/metadata.rs::tests::ref_compare_and_swap_rejects_stale_writer",
+        "tests/metadata_failpoints.rs::sqlite_commit_failpoints_cover_wal_pre_and_post_visibility",
+        "tests/recovery_boundaries.rs::idempotency_record_survives_restart_without_second_mutation",
+        "tests/property_corpus.rs::pt04_generated_ref_writer_order_has_one_cas_winner"
+      ],
+      "observed": "retry returns the committed result; stale writers cannot advance the ref",
+      "real_host_gap": "No distributed transport matrix is in M1 scope",
+      "acceptance": "pending_release_owner"
+    },
+    {
+      "id": "FI-10",
+      "status": "implemented_core_evidence_pending",
+      "injection": "during projection rebuild",
+      "tests": [
+        "tests/event_projection.rs::projection_apply_is_idempotent_and_rebuild_is_stable",
+        "tests/event_projection.rs::unknown_event_type_degrades_projection_without_dropping_source"
+      ],
+      "observed": "generation-bound projection apply/rebuild is atomic and idempotent; unknown event types remain source-visible and set DEGRADED",
+      "real_host_gap": "PT-13 migration fixtures and a complete FI-10 crash/restart schedule remain external release evidence",
+      "acceptance": "release_blocking_evidence_gap"
+    },
+    {
+      "id": "FI-11",
+      "status": "covered_synthetic_and_security",
+      "injection": "during redaction/export",
+      "tests": [
+        "tests/property_corpus.rs::pt11_registered_secrets_are_closed_over_persisted_metadata_and_cas",
+        "tests/security_boundaries.rs::full_pong_tree_is_secret_free_and_unknown_files_fail_closed",
+        "tests/operation_ledger.rs::operation_redaction_applies_before_sqlite_and_event_persistence"
+      ],
+      "observed": "raw registered secrets are rejected or absent from persisted bytes",
+      "real_host_gap": "External log/export integrations are outside the current core harness",
+      "acceptance": "pending_release_owner"
+    },
+    {
+      "id": "FI-12",
+      "status": "covered_process_kill_and_property",
+      "injection": "during repository generation migration",
+      "tests": [
+        "tests/repository_migration.rs::migration_failpoints_expose_only_legacy_or_active_generation_after_cold_restart",
+        "tests/process_kill_migration.rs::process_kill_before_selector_leaves_legacy_only",
+        "tests/process_kill_migration.rs::process_kill_after_selector_uses_new_generation_only",
+        "tests/property_recovery_migration.rs::pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently",
+        "tests/repository_migration.rs::foreign_valid_generation_database_cannot_replace_the_active_identity"
+      ],
+      "observed": "cold restart exposes old-only or fully verified new generation; mixed visibility is rejected",
+      "real_host_gap": "Broader native filesystem and old-binary matrix remains external",
+      "acceptance": "pending_release_owner"
+    },
+    {
+      "id": "FI-13",
+      "status": "partial_real_host",
+      "injection": "permission revocation/read corruption",
+      "tests": [
+        "tests/host_resource_faults.rs::fi_13_real_windows_acl_read_revocation_fails_closed_and_recovers",
+        "tests/recovery_boundaries.rs::corrupt_cas_object_is_quarantined_and_never_read_as_success"
+      ],
+      "observed": "Windows NTFS ACL revocation maps raw error 5 to PERMISSION_DENIED; corrupt objects quarantine",
+      "real_host_gap": "Complete FI-13 schedule across all declared filesystems is missing",
+      "retained_artifacts": [
+        "artifacts/m1-fault-runs/windows-fi13-acl-audit-2026-08-26.json",
+        "artifacts/m1-fault-runs/windows-fi13-acl-audit-2026-08-26.log"
+      ],
+      "acceptance": "partial_platform_matrix"
+    },
+    {
+      "id": "FI-14",
+      "status": "partial_real_host",
+      "injection": "disk full during journal/object/metadata write",
+      "tests": [
+        "tests/host_resource_faults.rs::fi_14_real_enospc_during_cas_write_preserves_committed_history",
+        "tests/host_resource_faults.rs::fi_14_real_enospc_during_metadata_write_preserves_committed_history",
+        "tests/host_resource_faults.rs::fi_14_real_enospc_during_journal_write_preserves_committed_history"
+      ],
+      "observed": "Linux 64 MiB tmpfs returns RESOURCE_EXHAUSTED and preserves committed history",
+      "real_host_gap": "Windows native disk-full/quota and other filesystem rows require a disposable external host",
+      "retained_artifacts": [
+        "artifacts/m1-fault-runs/linux-fi14-cas-2026-08-26.json",
+        "artifacts/m1-fault-runs/linux-fi14-cas-2026-08-26.log",
+        "artifacts/m1-fault-runs/linux-fi14-metadata-2026-08-26.json",
+        "artifacts/m1-fault-runs/linux-fi14-metadata-2026-08-26.log",
+        "artifacts/m1-fault-runs/linux-fi14-journal-2026-08-26.json",
+        "artifacts/m1-fault-runs/linux-fi14-journal-2026-08-26.log"
+      ],
+      "acceptance": "partial_platform_matrix"
+    }
+  ],
+  "release_owner": "unassigned",
+  "release_decision": "pending",
+  "references": [
+    "docs/development/M1_DURABLE_PRIMITIVES_GATE.md",
+    "docs/development/M1_EVIDENCE.md",
+    "tests/HOST_RESOURCE_FAULTS.md"
+  ]
+}
