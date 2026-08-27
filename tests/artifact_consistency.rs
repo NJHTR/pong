@@ -182,22 +182,35 @@ fn assert_release_bundle_checksums(root: &Path) {
     );
 }
 
-fn assert_native_failure_artifacts(root: &Path) {
-    let run = root.join("artifacts/m1-platform-runs/github-actions-run-33074865773");
+fn assert_native_failure_artifacts(root: &Path, run_id: &str, macos_complete: bool) {
+    let run = root.join(format!(
+        "artifacts/m1-platform-runs/github-actions-run-{run_id}"
+    ));
     let metadata: Value = serde_json::from_slice(
         &fs::read(run.join("download-metadata.json")).expect("native CI download metadata"),
     )
     .expect("native CI download metadata JSON");
-    assert_eq!(metadata["workflow_run_id"], "33074865773");
+    assert_eq!(metadata["workflow_run_id"], run_id);
     assert_eq!(metadata["status"], "failure");
-    for platform in ["linux", "macos"] {
-        let platform_root = run.join(platform);
-        assert!(platform_root
-            .join("platform/platform-metadata.json")
-            .is_file());
-        assert!(platform_root.join("artifact-manifest.json").is_file());
-        assert!(platform_root.join("SHA256SUMS").is_file());
-        assert!(platform_root.join("logs/cold-reopen.exit").is_file());
+    let linux_root = run.join("linux");
+    assert!(linux_root.join("platform/platform-metadata.json").is_file());
+    assert!(linux_root.join("artifact-manifest.json").is_file());
+    assert!(linux_root.join("SHA256SUMS").is_file());
+    assert!(linux_root.join("logs/cold-reopen.exit").is_file());
+
+    let macos_root = run.join("macos");
+    if macos_complete {
+        assert!(macos_root.join("platform/platform-metadata.json").is_file());
+        assert!(macos_root.join("artifact-manifest.json").is_file());
+        assert!(macos_root.join("SHA256SUMS").is_file());
+        assert!(macos_root.join("logs/cold-reopen.exit").is_file());
+    } else {
+        assert!(macos_root.join("build/msrv-178-test.log").is_file());
+        assert!(macos_root.join("build/msrv-178-clippy.log").is_file());
+        assert!(macos_root.join("logs/cold-reopen.exit").is_file());
+        assert!(!macos_root.join("platform/platform-metadata.json").exists());
+        assert!(!macos_root.join("artifact-manifest.json").exists());
+        assert!(!macos_root.join("build/stable-test.log").exists());
     }
 }
 
@@ -319,7 +332,8 @@ fn release_bundle_checksums_and_status_matrix_are_consistent() {
 fn retained_m1_raw_logs_and_fault_matrix_references_are_consistent() {
     let root = repository_root();
     collect_raw_log_records(&root, &root.join("artifacts"));
-    assert_native_failure_artifacts(&root);
+    assert_native_failure_artifacts(&root, "33074865773", true);
+    assert_native_failure_artifacts(&root, "33080915116", false);
 
     let matrix_path = root.join("artifacts/m1-fault-matrix.json");
     let matrix: Value =

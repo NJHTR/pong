@@ -6,15 +6,24 @@ artifacts were downloaded and retained under
 `artifacts/m1-platform-runs/github-actions-run-33074865773/`, but both matrix
 jobs failed their full quality gates. Linux found evidence-log line-ending hash
 drift; macOS found a platform-inapplicable host-resource test compilation
-failure. The portability correction was committed as `359abc306b554d592b532ebc182e543f97489043`,
+failure. A second manual dispatch completed as run `33080915116` on commit
+`8d28075d44f5458e866c94ee33b95b430f7959d6`. Linux again failed both full tests
+in `artifact_consistency`; macOS failed the Rust 1.78 test/clippy path and its
+downloaded artifact omitted platform metadata, the manifest, stable logs, and
+stable exit records. Both ZIPs are retained under
+`artifacts/m1-platform-runs/github-actions-run-33080915116/` with Linux SHA-256
+`B3E457A9B936347E619C280B5DB5ACE06A9C7A7C206178193D85527BDF9E0B1E` and macOS
+SHA-256 `01A1BC12E9DE8051F603EEDA3CC23A920419067F38503F38635856628083F16F`.
+The portability correction was committed as `359abc306b554d592b532ebc182e543f97489043`,
 the evidence metadata was rebound in `2310c822a6f5d3f942067e0ec7a322369f03df8a`,
-and both commits are now pushed to `origin/dev`. A fresh manual dispatch is still
-required.
+and the bundle-wide byte-preservation fix is in `96a2f8c`. The current workflow
+capture-boundary hardening is still local and must be pushed before the next
+manual dispatch.
 
 ```text
-PUSH_REQUIRED = false
+PUSH_REQUIRED = true
 RERUN_REQUIRED = true
-PUSHED_HEAD = 2310c822a6f5d3f942067e0ec7a322369f03df8a
+PUSHED_HEAD = 96a2f8c (workflow hardening not yet pushed)
 ```
 
 ## Required external steps
@@ -52,7 +61,7 @@ Until a successful rerun and retained artifacts exist, the authoritative state
 remains:
 
 ```text
-Native Linux = FAIL (run 33074865773); rerun required
-Native macOS = FAIL (run 33074865773); rerun required
+Native Linux = FAIL (runs 33074865773, 33080915116); rerun required
+Native macOS = FAIL (runs 33074865773, 33080915116); rerun required
 M1 Release Gate = NOT PASSED
 ```

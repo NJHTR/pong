@@ -201,9 +201,12 @@
         "platform/platform-matrix.json",
         ".github/workflows/m1-release-evidence.yml",
         "platform/github-actions-run-33074865773/linux/platform/platform-metadata.json",
-        "platform/github-actions-run-33074865773/macos/platform/platform-metadata.json"
+        "platform/github-actions-run-33074865773/macos/platform/platform-metadata.json",
+        "platform/github-actions-run-33080915116/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33080915116/macos/build/msrv-178-test.log",
+        "platform/github-actions-run-33080915116/macos/build/msrv-178-clippy.log"
       ],
-      "environment": "GitHub Actions run 33074865773; Ubuntu 24.04 ext4 and macOS 14 arm64 APFS",
+      "environment": "GitHub Actions native runners; workflow runs 33074865773 and 33080915116",
       "exit_codes": [
         101,
         101
@@ -214,13 +217,19 @@
       ],
       "artifacts": [
         "platform/github-actions-run-33074865773/linux/platform/platform-metadata.json",
-        "platform/github-actions-run-33074865773/macos/platform/platform-metadata.json"
+        "platform/github-actions-run-33074865773/macos/platform/platform-metadata.json",
+        "platform/github-actions-run-33080915116/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33080915116/macos/build/msrv-178-test.log",
+        "platform/github-actions-run-33080915116/macos/build/msrv-178-clippy.log"
       ],
       "sha256": [
         "7C5BA28E7088BFD4DB91210B3D351972B311C9E5BE04F6425106AEFB19942DC0",
-        "E9E90F93A0EC68BDE270C5CA265E91D3C4145073718A027BBE27D01271F7A2EC"
+        "E9E90F93A0EC68BDE270C5CA265E91D3C4145073718A027BBE27D01271F7A2EC",
+        "17393A609A3E95F05E270C7F8D645A030D0FFB5B0348A0B4BAE9D97065A5AF14",
+        "CFEB5CDE5F09B0BC25DECF7FEAF318BF89ECCA5C4B9358413F3EBBF5D67E11B0",
+        "B57883FBFF29F7EE2E6C5C4EE4986DBD7643B134BF8DF56D9B939D7CF85BB89D"
       ],
-      "note": "Run 33074865773 produced real native artifacts, but Linux full tests failed on evidence hash drift and macOS full tests/clippy failed on host-resource test compilation. Corrective rerun required."
+      "note": "Run 33074865773 failed on checkout hash drift (Linux) and platform-inapplicable host-resource compilation (macOS). Run 33080915116 repeated the Linux artifact-consistency hash drift and produced an incomplete macOS artifact: MSRV test/clippy failed and platform metadata, manifest, stable logs, and stable exit records were absent. The byte-preservation and capture-boundary fixes require another manual rerun."
     },
     {
       "id": "COMPAT-OLD-READER",
@@ -661,6 +670,70 @@
       "release_status": "NOT_PASSED",
       "scope": "all M1 MUST-PASS rows",
       "note": "Evidence is incomplete or not accepted; do not enter M2."
+    },
+    {
+      "id": "PLATFORM-NATIVE-LINUX-EXT4-RUN-33080915116",
+      "category": "platform",
+      "status": "FAIL",
+      "release_status": "BLOCKED",
+      "scope": "native Linux host or VM on ext4; workflow run 33080915116",
+      "evidence": [
+        "platform/github-actions-run-33080915116/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33080915116/linux/build/stable-test.log",
+        "platform/github-actions-run-33080915116/linux/build/msrv-178-test.log"
+      ],
+      "environment": "GitHub Actions Ubuntu 24.04 x86_64, ext4, run 33080915116",
+      "exit_codes": [
+        101,
+        101
+      ],
+      "commands": [
+        "cargo +stable test --locked",
+        "cargo +1.78.0 test --locked"
+      ],
+      "artifacts": [
+        "platform/github-actions-run-33080915116/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33080915116/linux/build/stable-test.log",
+        "platform/github-actions-run-33080915116/linux/build/msrv-178-test.log"
+      ],
+      "sha256": [
+        "17393A609A3E95F05E270C7F8D645A030D0FFB5B0348A0B4BAE9D97065A5AF14",
+        "24F6C57E912C67C78A6193525D5A602CCB8BDFEE85CD4E07084EE596F6607F9A",
+        "944C6BD85146C10C6BE127D7BB0D30808C1F76E4E76CF8D9F8F4CDAF1F012A0B"
+      ],
+      "note": "Focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed. Stable and Rust 1.78 fmt/check/clippy passed, but both full test commands failed in artifact-consistency because repository evidence hashes drifted after checkout. Rerun after the bundle-wide byte-preservation fix is required."
+    },
+    {
+      "id": "PLATFORM-MACOS-RUN-33080915116",
+      "category": "platform",
+      "status": "FAIL",
+      "release_status": "BLOCKED",
+      "scope": "native macOS arm64 on APFS; workflow run 33080915116",
+      "evidence": [
+        "platform/github-actions-run-33080915116/macos/build/msrv-178-test.log",
+        "platform/github-actions-run-33080915116/macos/build/msrv-178-clippy.log",
+        "platform/github-actions-run-33080915116/macos/logs/pt13-fi10.log"
+      ],
+      "environment": "GitHub Actions macOS 14 arm64, APFS; run 33080915116",
+      "exit_codes": [
+        101,
+        101
+      ],
+      "commands": [
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "platform/github-actions-run-33080915116/macos/build/msrv-178-test.log",
+        "platform/github-actions-run-33080915116/macos/build/msrv-178-clippy.log",
+        "platform/github-actions-run-33080915116/macos/logs/pt13-fi10.log"
+      ],
+      "sha256": [
+        "CFEB5CDE5F09B0BC25DECF7FEAF318BF89ECCA5C4B9358413F3EBBF5D67E11B0",
+        "B57883FBFF29F7EE2E6C5C4EE4986DBD7643B134BF8DF56D9B939D7CF85BB89D",
+        "45F115543A320D15D2B880CE7C037BA182C326CCC0E769BF17F4AA2F8F9A38CF"
+      ],
+      "note": "Focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed. Full artifact lacks platform metadata, stable logs, and manifest; Rust 1.78 test and clippy failed in artifact-consistency. This run cannot satisfy native macOS evidence until the capture/upload path is fixed and rerun."
     }
   ]
 }

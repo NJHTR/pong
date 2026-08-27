@@ -20,8 +20,8 @@ missing external evidence and governance decisions.
 | Windows stable/MSRV gates | PASS | BLOCKED | Clean release tree and owner acceptance are absent. |
 | Linux overlay / Docker-VM ext4 | PASS | BLOCKED | Executable evidence only; not native Linux acceptance. |
 | Old v0.1 reader | BLOCKED | BLOCKED | Separately released binary, hash, and mutation probe absent. |
-| Native Linux ext4 | FAIL | BLOCKED | GitHub Actions run `33074865773` reached Ubuntu 24.04/ext4, but stable/MSRV full tests failed in artifact-consistency because captured Windows evidence hashes drifted after checkout line-ending normalization. Corrective `-text` attributes require a rerun. |
-| Native macOS arm64 | FAIL | BLOCKED | GitHub Actions run `33074865773` reached macOS 14/APFS, but stable/MSRV full tests and clippy failed because the host-resource fault test compiled Linux/Windows-only helpers. Corrective target cfg requires a rerun. |
+| Native Linux ext4 | FAIL | BLOCKED | Runs `33074865773` and `33080915116` reached Ubuntu 24.04/ext4. Run #2 passed stable/MSRV fmt/check/clippy and focused suites, but both full tests still failed in artifact-consistency because retained evidence hashes drifted after checkout line-ending normalization. The bundle-wide `-text` fix is committed; another rerun is required. |
+| Native macOS arm64 | FAIL | BLOCKED | Run `33074865773` failed on platform-inapplicable helpers. Run `33080915116` still failed the Rust 1.78 test/clippy path and produced only MSRV/focused logs; platform metadata, manifest, stable logs, and stable exit records are absent. Capture/upload hardening and a complete rerun are required. |
 | FI-01..FI-14 full matrix | BLOCKED | BLOCKED | Partial synthetic/host rows; external fault schedule and power-loss rows absent. |
 | Performance / capacity | PASS | BLOCKED | Repeated measurements exist; ADR-0015 remains proposed. |
 | Release owner | BLOCKED | BLOCKED | Unassigned; no sign-off or exception. |

@@ -1,0 +1,93 @@
+{
+  "record_version": "m1-native-platform-evidence-0.2",
+  "environment": {
+    "runner": "GitHub Actions 1000000097",
+    "runner_os": "Linux",
+    "runner_arch": "X64",
+    "os_version": "Ubuntu 24.04",
+    "kernel": "Linux 6.17.0-1022-azure",
+    "architecture": "x86_64",
+    "filesystem": "ext4",
+    "repository_filesystem": "ext4",
+    "tmpdir": "/home/runner/work/pong/pong/.m1-tmp",
+    "workspace": "/home/runner/work/pong/pong"
+  },
+  "rust": {
+    "stable": "rustc 1.98.0 (88d9e12ae 2026-08-18)\nbinary: rustc\ncommit-hash: 88d9e12ae178fab0fb5cc050a94da85685d449ea\ncommit-date: 2026-08-18\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.0\nLLVM version: 22.1.8",
+    "msrv": "rustc 1.78.0 (9b00956e5 2024-04-29)\nbinary: rustc\ncommit-hash: 9b00956e56009bab2aa15d7bff10916599e3d6d6\ncommit-date: 2024-04-29\nhost: x86_64-unknown-linux-gnu\nrelease: 1.78.0\nLLVM version: 18.1.2"
+  },
+  "cargo": {
+    "stable": "cargo 1.98.0 (797e8a9bc 2026-08-05)",
+    "msrv": "cargo 1.78.0 (54d8815d0 2024-03-26)"
+  },
+  "commit": "8d28075d44f5458e866c94ee33b95b430f7959d6",
+  "workflow_run_id": "33080915116",
+  "workflow_run_attempt": "1",
+  "commands": [
+    {
+      "label": "stable-fmt",
+      "command": "cargo +stable fmt --all -- --check",
+      "exit_code": 0
+    },
+    {
+      "label": "stable-check",
+      "command": "cargo +stable check --locked",
+      "exit_code": 0
+    },
+    {
+      "label": "stable-test",
+      "command": "cargo +stable test --locked",
+      "exit_code": 101
+    },
+    {
+      "label": "stable-clippy",
+      "command": "cargo +stable clippy --locked --all-targets -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "label": "msrv-178-fmt",
+      "command": "cargo +1.78.0 fmt --all -- --check",
+      "exit_code": 0
+    },
+    {
+      "label": "msrv-178-check",
+      "command": "cargo +1.78.0 check --locked",
+      "exit_code": 0
+    },
+    {
+      "label": "msrv-178-test",
+      "command": "cargo +1.78.0 test --locked",
+      "exit_code": 101
+    },
+    {
+      "label": "msrv-178-clippy",
+      "command": "cargo +1.78.0 clippy --locked --all-targets -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "label": "pt13-fi10",
+      "command": "cargo +stable test --locked --test pt13_fi10 -- --nocapture",
+      "exit_code": 0
+    },
+    {
+      "label": "migration",
+      "command": "cargo +stable test --locked --test repository_migration -- --nocapture",
+      "exit_code": 0
+    },
+    {
+      "label": "recovery",
+      "command": "cargo +stable test --locked --test recovery_boundaries -- --nocapture",
+      "exit_code": 0
+    },
+    {
+      "label": "compatibility",
+      "command": "cargo +stable test --locked --test compatibility_boundaries -- --nocapture",
+      "exit_code": 0
+    },
+    {
+      "label": "cold-reopen",
+      "command": "cargo +stable test --locked -- --nocapture cold_reopen",
+      "exit_code": 0
+    }
+  ]
+}

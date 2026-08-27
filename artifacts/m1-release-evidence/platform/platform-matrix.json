@@ -138,6 +138,65 @@
         "A7ADAD441CAF0F61D14343953CACEA50AC66A576D1AA85EC3F13D1CD7ED5425B"
       ],
       "note": "Focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed. Full stable/MSRV test and clippy failed because host_resource_faults.rs compiled platform-inapplicable helpers. Rerun required."
+    },
+    {
+      "platform": "Linux x86_64 GNU",
+      "environment": "GitHub Actions Ubuntu 24.04 native runner; workflow run 33080915116",
+      "kernel": "Linux 6.17.0-1022-azure",
+      "filesystem": "ext4",
+      "architecture": "x86_64",
+      "rust": [
+        "1.98.0",
+        "1.78.0"
+      ],
+      "status": "FAIL",
+      "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "artifacts/m1-platform-runs/github-actions-run-33080915116/linux/platform/platform-metadata.json",
+        "artifacts/m1-platform-runs/github-actions-run-33080915116/linux/build/stable-test.log",
+        "artifacts/m1-platform-runs/github-actions-run-33080915116/linux/build/msrv-178-test.log"
+      ],
+      "sha256": [
+        "17393A609A3E95F05E270C7F8D645A030D0FFB5B0348A0B4BAE9D97065A5AF14",
+        "24F6C57E912C67C78A6193525D5A602CCB8BDFEE85CD4E07084EE596F6607F9A",
+        "944C6BD85146C10C6BE127D7BB0D30808C1F76E4E76CF8D9F8F4CDAF1F012A0B"
+      ],
+      "note": "Focused M1 suites passed. Stable and Rust 1.78 fmt/check/clippy passed; both full test commands failed in artifact-consistency because repository evidence hashes drifted after checkout. Bundle-wide byte-preservation fix is now pushed; rerun required."
+    },
+    {
+      "platform": "macOS arm64",
+      "environment": "GitHub Actions macOS 14 native runner; workflow run 33080915116",
+      "kernel": "unavailable: platform identity capture did not complete",
+      "filesystem": "unavailable: platform identity capture did not complete",
+      "architecture": "arm64 (job target)",
+      "rust": [
+        "1.78.0"
+      ],
+      "status": "FAIL",
+      "commands": [
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "artifacts/m1-platform-runs/github-actions-run-33080915116/macos/build/msrv-178-test.log",
+        "artifacts/m1-platform-runs/github-actions-run-33080915116/macos/build/msrv-178-clippy.log",
+        "artifacts/m1-platform-runs/github-actions-run-33080915116/macos/logs/pt13-fi10.log"
+      ],
+      "sha256": [
+        "CFEB5CDE5F09B0BC25DECF7FEAF318BF89ECCA5C4B9358413F3EBBF5D67E11B0",
+        "B57883FBFF29F7EE2E6C5C4EE4986DBD7643B134BF8DF56D9B939D7CF85BB89D",
+        "45F115543A320D15D2B880CE7C037BA182C326CCC0E769BF17F4AA2F8F9A38CF"
+      ],
+      "note": "Focused M1 suites passed. Artifact is incomplete: platform identity, stable logs, and artifact-manifest are absent; Rust 1.78 test and clippy failed in artifact-consistency. Native macOS support cannot be accepted from this run."
     }
   ]
 }

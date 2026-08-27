@@ -16,9 +16,9 @@ and accepted.
 | PT-13 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, three reruns | Native-platform and owner acceptance |
 | FI-10 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, A-J and repeated crash | Native filesystem/power-loss and owner acceptance |
 | Old Reader | BLOCKED | Compatibility absence record | No released v0.1 binary or tag | Independent binary, hash, fixture, read/write probe |
-| Native Linux | FAIL | GitHub Actions run `33074865773`, artifact `m1-linux-native-evidence` | Ubuntu 24.04 / ext4 / Rust 1.98 + 1.78 | Full stable/MSRV test failed in artifact-consistency because retained Windows evidence hashes drifted after checkout line-ending normalization; rerun after fix required |
-| Native macOS | FAIL | GitHub Actions run `33074865773`, artifact `m1-macos-native-evidence` | macOS 14 arm64 / APFS / Rust 1.98 + 1.78 | Full stable/MSRV test and clippy failed because `tests/host_resource_faults.rs` compiled Linux/Windows-only helpers; rerun after fix required |
-| Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json` | `dev` at `359abc3`; clean tree; no release tag | Release-owner-approved release tag |
+| Native Linux | FAIL | GitHub Actions runs `33074865773` and `33080915116`, artifact `m1-linux-native-evidence` | Ubuntu 24.04 / ext4 / Rust 1.98 + 1.78 | Run #1 failed on checkout line-ending hash drift; run #2 still failed both stable/MSRV full tests in `artifact_consistency`; rerun after the committed byte-preservation fix is required |
+| Native macOS | FAIL | GitHub Actions runs `33074865773` and `33080915116`, artifact `m1-macos-native-evidence` | macOS 14 arm64 / APFS / Rust 1.98 + 1.78 | Run #1 had platform-inapplicable test compilation; run #2 still failed MSRV test/clippy and omitted platform metadata, manifest, and stable logs; complete rerun required |
+| Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json` | `dev`; bundle traceability is a pre-closeout snapshot; no release tag | Release-owner-approved release tag |
 
 This is an evidence report, not a release claim. It separates executable
 evidence from implementation that still lacks the platform, compatibility,
@@ -38,7 +38,17 @@ steps passed on both runners. Linux stable/MSRV full tests failed because
 retained Windows evidence hashes drifted after checkout line-ending
 normalization. macOS stable/MSRV full tests and clippy failed because the
 host-resource fault test compiled platform-inapplicable helpers. These are
-recorded failures, not native-platform passes. The workflow now prepares stable and
+recorded failures, not native-platform passes. A second manually dispatched run
+(`33080915116`, commit `8d28075d44f5458e866c94ee33b95b430f7959d6`) was then
+retained. Linux reached the full stable/MSRV gates and focused suites, but both
+full test commands again failed in `artifact_consistency` with the same retained
+evidence hash drift. macOS only produced the Rust 1.78 build logs and focused
+logs; its MSRV test and clippy failed, and the artifact omitted platform
+metadata, the manifest, stable logs, and stable command exit records. The
+downloaded ZIP SHA-256 values are Linux
+`B3E457A9B936347E619C280B5DB5ACE06A9C7A7C206178193D85527BDF9E0B1E` and macOS
+`01A1BC12E9DE8051F603EEDA3CC23A920419067F38503F38635856628083F16F`.
+These are recorded failures, not native-platform passes. The workflow now prepares stable and
 Rust 1.78 quality gates in independent target directories, pins test
 repositories to a workspace-local temporary directory, records per-command
 exit codes, runs the focused M1 and `cold_reopen` suites, captures the actual
@@ -208,6 +218,8 @@ The following claims have executable evidence in the current implementation:
 | Windows MSRV | Rust `1.78.0` `check` and full `test` pass in the fresh `target/windows-msrv-178-final` directory, and `clippy --all-targets -- -D warnings` passes in the independent `target/windows-msrv-178-clippy-final` directory; migration, process-kill, recovery, WAL, compatibility, Workspace/Snapshot, Operation, and property suites are included. |
 | Linux MSRV | In pinned `rust:1.78-slim-bookworm` (with ephemeral `build-essential`, rustfmt, and clippy components), `fmt`, `check`, full `test`, and `clippy -D warnings` pass using the independent named target volume. |
 | Linux Docker-VM ext4-backed volume | Rust `1.78.0` in the pinned image passes `fmt`, `check`, full `test`, and `clippy -D warnings` from separate source/target volumes with `TMPDIR` pinned to ext4; `df -T` identifies the repository and test temporary directory as `ext4`. Raw output and hashes are retained in [`artifacts/m1-platform-runs/`](../../artifacts/m1-platform-runs/). This remains executable evidence pending release-owner acceptance and does not claim native Linux ext4 support. |
+| Native Linux run `33080915116` | GitHub Actions Ubuntu 24.04/ext4; [`download metadata`](../../artifacts/m1-platform-runs/github-actions-run-33080915116/download-metadata.json) and retained artifact | Stable and Rust 1.78 `fmt`, `check`, and clippy passed; focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed; both full `test` commands exited `101` in `artifact_consistency` because retained evidence hashes drifted after checkout. | Failure evidence only; bundle-wide `-text` fix is committed, and another rerun is required. |
+| Native macOS run `33080915116` | GitHub Actions macOS 14 arm64/APFS; [`download metadata`](../../artifacts/m1-platform-runs/github-actions-run-33080915116/download-metadata.json) and retained artifact | Focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed; MSRV `test` and clippy exited `101`; the artifact contains no platform metadata, manifest, stable logs, or stable exit records. | Incomplete failure evidence; capture/upload path must be fixed and rerun. |
 | Migration atomicity | `tests/repository_migration.rs`, `tests/process_kill_migration.rs`, and `tests/property_recovery_migration.rs` exercise SQLite Online Backup, target verification, selector replacement, child termination, retry idempotency, and old-only/new-only visibility. No test adopts a merely existing partial generation. |
 | Recovery and WAL | Child-process termination after intent/outcome boundaries, SQLite WAL-tail truncation, repeated recovery, and unknown-outcome preservation pass on Windows and Linux Rust 1.78. |
 | CAS and security | CAS digest/immutability, quarantine, short-write and synthetic quota/permission paths pass. Generation identity, manifest identity, redaction profile, wrong-valid-database replacement, and full `.pong` byte scans fail closed. `foreign_valid_generation_database_cannot_replace_the_active_identity` additionally replaces the active file with a separately valid 0.2 database carrying a different generation/migration identity and observes `INTEGRITY_ERROR`. `artifact_consistency.rs` verifies retained raw-log hashes and FI-matrix artifact paths without changing acceptance status. |
@@ -332,12 +344,11 @@ and hashes before either native row can be accepted.
 
 These are recorded as unavailable evidence, not as passing assumptions.
 
-The supplied workspace is a Git repository on branch `dev` at HEAD
-`359abc306b554d592b532ebc182e543f97489043`, with remote
-`https://github.com/NJHTR/pong.git`. The working tree is clean and there is no
-release tag or owner-approved release commit. The retained executable evidence
-was captured before this closeout commit; that relationship is recorded in the
-bundle's `evidence_snapshot` fields. Evidence remains traceable by exact path,
+The supplied workspace is a Git repository on branch `dev` with remote
+`https://github.com/NJHTR/pong.git`. The bundle's traceability record points to
+the pre-closeout execution snapshot; the current evidence update is deliberately
+kept separate from those captured command results. There is no release tag or
+owner-approved release commit. Evidence remains traceable by exact path,
 command, toolchain, platform, test result, and retained artifact hash.
 
 ### External verification handoff

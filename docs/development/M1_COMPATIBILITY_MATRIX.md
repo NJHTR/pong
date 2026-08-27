@@ -13,9 +13,13 @@ acceptance.
 The external native-runner job is defined at
 [`../../.github/workflows/m1-release-evidence.yml`](../../.github/workflows/m1-release-evidence.yml)
 for Ubuntu 24.04 and macOS 14. Run `33074865773` completed both jobs and
-produced retained artifacts, but both jobs failed the full quality gates. The
-focused M1 suites passed. Native rows therefore remain `FAIL` pending a rerun
-of the corrected commit, not `PASS` or `BLOCKED`.
+produced retained artifacts, but both jobs failed the full quality gates. A
+second dispatch, run `33080915116` at commit
+`8d28075d44f5458e866c94ee33b95b430f7959d6`, was also retained: Linux again
+failed both full tests in `artifact_consistency`, while macOS failed the MSRV
+test/clippy path and produced an incomplete artifact. The focused M1 suites
+passed where captured. Native rows therefore remain `FAIL` pending a rerun of
+the corrected commit, not `PASS` or `BLOCKED`.
 
 This matrix is the checklist for M1 acceptance. A row is `PASS` only when the
 named executable artifact, platform, filesystem, toolchain, and cold-restart
@@ -33,6 +37,8 @@ substitute for a separately released old Pong binary.
 | Linux x86_64 GNU | Docker named volume backed by ext4 | Rust 1.78.0 | pinned image, fresh source volume, independent target volume, `TMPDIR` on ext4; fmt/check/test/clippy pass | migration/process-kill/recovery/WAL/property/Workspace/Snapshot/Operation suites pass | not a quota run | Evidence present; release acceptance pending; [`artifacts/m1-platform-runs/linux-ext4-rust-178-run-2-2026-08-26.json`](../../artifacts/m1-platform-runs/linux-ext4-rust-178-run-2-2026-08-26.json) |
 | Linux x86_64 GNU | native ext4 | Rust 1.78.0 | run `33074865773`: focused cold-reopen passed; full test failed in artifact-consistency | focused migration/recovery/PT-13/FI-10 passed | not exercised by this workflow | **FAIL**; rerun after evidence line-ending fix |
 | macOS arm64 | APFS | stable 1.98.0 + Rust 1.78.0 | run `33074865773`: focused cold-reopen passed; full test/clippy failed to compile host-resource test | focused migration/recovery/PT-13/FI-10 passed | not exercised by this workflow | **FAIL**; rerun after platform cfg fix |
+| Linux x86_64 GNU | native ext4 | stable 1.98.0 + Rust 1.78.0 | run `33080915116`: focused cold-reopen passed; stable/MSRV fmt/check/clippy passed; both full tests failed in artifact-consistency with retained-evidence hash drift | focused migration/recovery/compatibility/PT-13/FI-10 passed | not exercised by this workflow | **FAIL**; bundle-wide `-text` fix is committed, rerun required |
+| macOS arm64 | APFS | Rust 1.78.0 captured; stable capture absent | run `33080915116`: focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed; MSRV test/clippy failed; platform metadata, manifest, and stable logs are absent | focused suites passed where captured | not exercised by this workflow | **FAIL**; incomplete artifact, capture/upload fix and rerun required |
 
 The final Linux overlay rerun used image digest
 `sha256:0fea967628dc796a2b9d1d57ddb3af3b3f0a35b6c8c0e23690dbe0ceb71a2dc9` and

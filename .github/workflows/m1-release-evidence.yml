@@ -47,6 +47,7 @@ jobs:
 
       - name: Install Python for manifest generation
         uses: actions/setup-python@v5
+        continue-on-error: true
         with:
           python-version: "3.x"
 
@@ -61,16 +62,20 @@ jobs:
             repository_filesystem_type="$(df -T "${M1_TMPDIR}" | awk 'NR==2 {print $2}')"
             os_version="$(. /etc/os-release && printf '%s %s' "${NAME}" "${VERSION_ID}")"
           else
-            filesystem_type="$(stat -f '%T' "${GITHUB_WORKSPACE}")"
-            repository_filesystem_type="$(stat -f '%T' "${M1_TMPDIR}")"
+            filesystem_type="$(stat -f '%T' "${GITHUB_WORKSPACE}" 2>/dev/null || true)"
+            repository_filesystem_type="$(stat -f '%T' "${M1_TMPDIR}" 2>/dev/null || true)"
             if [[ -z "${filesystem_type}" || "${filesystem_type}" == "/" ]]; then
-              filesystem_type="$(diskutil info "${GITHUB_WORKSPACE}" | awk -F: '/File System Personality/ {gsub(/^ +/, "", $2); print $2; exit}')"
+              diskutil_output="$(diskutil info "${GITHUB_WORKSPACE}" 2>/dev/null || true)"
+              filesystem_type="$(printf '%s\n' "${diskutil_output}" | awk -F: '/File System Personality/ {gsub(/^ +/, "", $2); print $2; exit}')"
             fi
             if [[ -z "${repository_filesystem_type}" || "${repository_filesystem_type}" == "/" ]]; then
-              repository_filesystem_type="$(diskutil info "${M1_TMPDIR}" | awk -F: '/File System Personality/ {gsub(/^ +/, "", $2); print $2; exit}')"
+              diskutil_output="$(diskutil info "${M1_TMPDIR}" 2>/dev/null || true)"
+              repository_filesystem_type="$(printf '%s\n' "${diskutil_output}" | awk -F: '/File System Personality/ {gsub(/^ +/, "", $2); print $2; exit}')"
             fi
-            os_version="$(sw_vers -productVersion)"
+            os_version="$(sw_vers -productVersion 2>/dev/null || uname -sr)"
           fi
+          : "${filesystem_type:=unknown}"
+          : "${repository_filesystem_type:=unknown}"
           printf '%s\n' \
             "runner_os=${RUNNER_OS}" \
             "runner_arch=${RUNNER_ARCH}" \
@@ -90,6 +95,7 @@ jobs:
           cargo +1.78.0 --version | tee evidence/platform/cargo-msrv-178.txt
 
       - name: Run stable quality gates
+        if: always()
         shell: bash
         env:
           CARGO_TARGET_DIR: target/m1-ci-stable

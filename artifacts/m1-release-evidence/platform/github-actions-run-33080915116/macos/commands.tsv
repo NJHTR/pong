@@ -1,0 +1,9 @@
+msrv-178-fmt	cargo +1.78.0 fmt --all -- --check
+msrv-178-check	cargo +1.78.0 check --locked
+msrv-178-test	cargo +1.78.0 test --locked
+msrv-178-clippy	cargo +1.78.0 clippy --locked --all-targets -- -D warnings
+pt13-fi10	cargo +stable test --locked --test pt13_fi10 -- --nocapture
+migration	cargo +stable test --locked --test repository_migration -- --nocapture
+recovery	cargo +stable test --locked --test recovery_boundaries -- --nocapture
+compatibility	cargo +stable test --locked --test compatibility_boundaries -- --nocapture
+cold-reopen	cargo +stable test --locked -- --nocapture cold_reopen

@@ -291,3 +291,21 @@
 - The PT-14 raw log capture method is recorded as session-output reconstruction
   (not a fresh tee rerun); its SHA-256 is verified by the read-only artifact
   consistency test, and this capture caveat does not widen the gate decision.
+
+## Unreleased - M1 native evidence run #2 (2026-08-27)
+
+- Retained GitHub Actions run `33080915116` at commit
+  `8d28075d44f5458e866c94ee33b95b430f7959d6` and both downloaded native
+  evidence ZIPs. Linux SHA-256 is
+  `B3E457A9B936347E619C280B5DB5ACE06A9C7A7C206178193D85527BDF9E0B1E`;
+  macOS SHA-256 is
+  `01A1BC12E9DE8051F603EEDA3CC23A920419067F38503F38635856628083F16F`.
+- Recorded Linux stable/MSRV full-test failures in `artifact_consistency` due
+  retained evidence hash drift after checkout. The focused migration,
+  recovery, compatibility, PT-13/FI-10, and cold-reopen commands passed.
+- Recorded the macOS artifact boundary honestly: only the Rust 1.78 build logs
+  and focused logs were produced; MSRV test/clippy failed, and platform
+  metadata, manifest, stable logs, and stable exit records are absent.
+- Added the run to the M1 release matrix, compatibility matrix, roadmap, and
+  checksum/reference bundle. M1 remains `NOT PASSED`; the workflow capture
+  hardening must be pushed and a fresh successful native run is required.
