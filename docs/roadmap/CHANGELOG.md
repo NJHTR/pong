@@ -307,5 +307,6 @@
   and focused logs were produced; MSRV test/clippy failed, and platform
   metadata, manifest, stable logs, and stable exit records are absent.
 - Added the run to the M1 release matrix, compatibility matrix, roadmap, and
-  checksum/reference bundle. M1 remains `NOT PASSED`; the workflow capture
-  hardening must be pushed and a fresh successful native run is required.
+  checksum/reference bundle. Workflow capture-boundary hardening was pushed in
+  `2cf136e`; M1 remains `NOT PASSED` and a fresh successful native run is
+  required.

@@ -31,9 +31,9 @@ normalization, while macOS compiled a platform-inapplicable host-fault test.
 Run `33080915116` was retained after the first correction: Linux still failed
 both full tests in `artifact_consistency`, and macOS produced an incomplete
 artifact while its MSRV test/clippy path failed. Both failures are retained.
-The bundle-wide byte-preservation correction is pushed at `96a2f8c`; the local
-capture-boundary hardening in the workflow must be pushed and then manually
-rerun. Follow
+The bundle-wide byte-preservation correction is pushed at `96a2f8c`; workflow
+capture-boundary hardening is pushed at `2cf136e99091d8d074d1a0e597f72f06bd2d52f7`.
+A fresh manual dispatch is required. Follow
 [`M1_CI_EXECUTION_REQUIRED.md`](../development/M1_CI_EXECUTION_REQUIRED.md)
 for the external execution handoff.
 
@@ -47,8 +47,7 @@ cause, protected-boundary error-mapping fix, and stable/MSRV/concurrent rerun
 evidence, but broader filesystem coverage remains pending. M2/M3 remain
 internal test-gated slices and do not waive M1.
 
-**Next Action:** Commit and push the pending workflow capture hardening, then
-manually dispatch the native workflow again. Review
+**Next Action:** Manually dispatch the native workflow again. Review
 [`M1_EVIDENCE.md`](../development/M1_EVIDENCE.md)
 sections A-E, [`M1_COMPATIBILITY_MATRIX.md`](../development/M1_COMPATIBILITY_MATRIX.md),
 and `artifacts/m1-release-evidence/m1-release-summary.md`. PT-13/FI-10

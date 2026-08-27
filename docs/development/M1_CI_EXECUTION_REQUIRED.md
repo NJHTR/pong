@@ -16,14 +16,14 @@ stable exit records. Both ZIPs are retained under
 SHA-256 `01A1BC12E9DE8051F603EEDA3CC23A920419067F38503F38635856628083F16F`.
 The portability correction was committed as `359abc306b554d592b532ebc182e543f97489043`,
 the evidence metadata was rebound in `2310c822a6f5d3f942067e0ec7a322369f03df8a`,
-and the bundle-wide byte-preservation fix is in `96a2f8c`. The current workflow
-capture-boundary hardening is still local and must be pushed before the next
-manual dispatch.
+and the bundle-wide byte-preservation fix is in `96a2f8c`. Workflow
+capture-boundary hardening is included in `2cf136e99091d8d074d1a0e597f72f06bd2d52f7`
+and is pushed to `origin/dev`. A fresh manual dispatch is still required.
 
 ```text
-PUSH_REQUIRED = true
+PUSH_REQUIRED = false
 RERUN_REQUIRED = true
-PUSHED_HEAD = 96a2f8c (workflow hardening not yet pushed)
+PUSHED_HEAD = 2cf136e99091d8d074d1a0e597f72f06bd2d52f7
 ```
 
 ## Required external steps
