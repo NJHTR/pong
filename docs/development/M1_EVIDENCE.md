@@ -16,8 +16,8 @@ and accepted.
 | PT-13 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, three reruns | Native-platform and owner acceptance |
 | FI-10 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, A-J and repeated crash | Native filesystem/power-loss and owner acceptance |
 | Old Reader | BLOCKED | Compatibility absence record | No released v0.1 binary or tag | Independent binary, hash, fixture, read/write probe |
-| Native Linux | FAIL | GitHub Actions runs `33074865773`, `33080915116`, and `33085292318`, artifact `m1-linux-native-evidence` | Ubuntu 24.04 / ext4 / Rust 1.98 + 1.78 | Run #3 is complete but both stable/MSRV full tests still exited `101` in `artifact_consistency` against the pre-fix committed bytes; rerun after this byte-boundary fix is required |
-| Native macOS | FAIL | GitHub Actions runs `33074865773`, `33080915116`, and `33085292318`, artifact `m1-macos-native-evidence` | macOS 14 arm64 / filesystem `unknown` / Rust 1.98 + 1.78 | Run #3 is complete but both stable/MSRV full tests still exited `101` in `artifact_consistency`; filesystem metadata is unknown and cannot be called APFS; rerun required |
+| Native Linux | FAIL | GitHub Actions runs `33074865773`, `33080915116`, `33085292318`, and `33142438624`, artifact `m1-linux-native-evidence` | Ubuntu 24.04 / ext4 / Rust 1.98 + 1.78 | Run #4 still failed both full tests with the same committed `build-metadata.json` checksum drift; the release bundle checksum/reference boundary is now corrected and another rerun is required |
+| Native macOS | FAIL | GitHub Actions runs `33074865773`, `33080915116`, `33085292318`, and `33142438624`, artifact `m1-macos-native-evidence` | macOS 14 arm64 / filesystem `unknown` / Rust 1.98 + 1.78 | Run #4 still failed both full tests with the same checksum drift; filesystem metadata is unknown and cannot be called APFS; rerun required |
 | Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json` | `dev`; bundle traceability is a pre-closeout snapshot; no release tag | Release-owner-approved release tag |
 
 This is an evidence report, not a release claim. It separates executable
@@ -73,6 +73,8 @@ and macOS ZIP SHA-256
 The repository-wide `artifacts/** -text -diff` rule and explicit release-log
 reference now make the committed evidence byte boundary deterministic; a fresh
 native rerun is still required before either row can change from `FAIL`.
+
+A fourth manually dispatched run (`33142438624`, commit `e96131d9bb6d3799055401841d0cb710e4f497ff`) produced complete Linux and macOS artifacts. All format, check, clippy, focused, and cold-reopen commands passed; only the two full test commands per platform exited `101`. The exact failure was `tests/artifact_consistency.rs:157`: the committed LF `build-metadata.json` blob was hashed as `5E1561C7C3E32AF94B36D271700A50C41371920B3FFE6DEF5E634E8F77B134A5`, while `SHA256SUMS` and `artifact-references.json` still recorded the former Windows CRLF hash `BF4AD3F6FA334833D420DDB954AC94EFBEB70450B632DCDEC3ACBFB8990B5DE1`. The ZIP SHA-256 values are Linux `DA903E4D7C6E11D3DD08BEE598883BE813E606305FA56ABA91D2154ACD0E6666` and macOS `501832097AB33640CFE062A98293CC4A36C7B83C8FCAF3918253D89F2716AD34`. The checksum and reference records are now rebound to the committed LF bytes, and a clean index export plus local artifact-consistency test pass; Run #4 remains retained failure evidence and does not promote M1.
 
 ## Reproduction
 

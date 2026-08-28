@@ -1,5 +1,16 @@
 # M1 Native CI Execution Required
 
+**Run #4 audit update (2026-08-28):** workflow run `33142438624` at commit
+`e96131d9bb6d3799055401841d0cb710e4f497ff` produced complete Linux and macOS
+artifacts. Only the two full `cargo test` commands per platform failed, both
+at `artifact_consistency.rs:157` on the committed `build-metadata.json` hash:
+the references described Windows CRLF bytes while the clean checkout contained
+the canonical LF blob. Run #4 ZIP SHA-256 values are Linux
+`DA903E4D7C6E11D3DD08BEE598883BE813E606305FA56ABA91D2154ACD0E6666` and macOS
+`501832097AB33640CFE062A98293CC4A36C7B83C8FCAF3918253D89F2716AD34`.
+The release checksum/reference records are corrected in the current worktree;
+push them and dispatch once more. Run #4 remains `FAIL` evidence.
+
 **Run #3 audit update (2026-08-27):** workflow run `33085292318` at commit
 `60913c0179731d9fed1a052f9a190c8fa4f5a56e` produced complete Linux and macOS
 artifacts. Stable/MSRV fmt/check/clippy and focused M1 suites passed on both;
@@ -39,9 +50,9 @@ the release-log copy; those changes are committed and pushed in
 required.
 
 ```text
-PUSH_REQUIRED = false
+PUSH_REQUIRED = true
 RERUN_REQUIRED = true
-PUSHED_HEAD = 258a0c9cccfe11e994a6032a106644b4dcf90804
+PENDING_HEAD = current worktree (checksum/reference correction plus Run #4 retention)
 ```
 
 ## Required external steps
@@ -79,7 +90,7 @@ Until a successful rerun and retained artifacts exist, the authoritative state
 remains:
 
 ```text
-Native Linux = FAIL (runs 33074865773, 33080915116, 33085292318); rerun required
-Native macOS = FAIL (runs 33074865773, 33080915116, 33085292318); rerun required
+Native Linux = FAIL (runs 33074865773, 33080915116, 33085292318, 33142438624); rerun required
+Native macOS = FAIL (runs 33074865773, 33080915116, 33085292318, 33142438624); rerun required
 M1 Release Gate = NOT PASSED
 ```

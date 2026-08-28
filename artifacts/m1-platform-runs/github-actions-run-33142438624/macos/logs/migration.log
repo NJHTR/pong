@@ -1,0 +1,16 @@
+[1m[92m   Compiling[0m pong-core v0.1.0 (/Users/runner/work/pong/pong)
+[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 0.43s
+[1m[92m     Running[0m tests/repository_migration.rs (target/m1-ci-focused/debug/deps/repository_migration-f4e61c2244804b4f)
+
+running 8 tests
+test changed_source_rejects_retry_and_does_not_reuse_an_unpublished_target ... ok
+test invalid_migration_paths_are_rejected_before_the_repository_is_touched ... ok
+test foreign_valid_generation_database_cannot_replace_the_active_identity ... ok
+test legacy_migration_builds_a_generation_and_preserves_durable_state ... ok
+test legacy_v01_reader_boundary_rejects_the_generation_selector_before_mutation ... ok
+test corrupted_selector_or_active_manifest_fails_closed ... ok
+test migration_preserves_the_redaction_profile_and_full_tree_secret_boundary ... ok
+test migration_failpoints_expose_only_legacy_or_active_generation_after_cold_restart ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.89s
+

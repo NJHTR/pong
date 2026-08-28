@@ -28,6 +28,13 @@ The macOS platform metadata reports filesystem `unknown`. Native rows
 therefore remain `FAIL` pending a rerun after the byte-boundary correction,
 not `PASS` or `BLOCKED`.
 
+Run `33142438624` was the next dispatch after that correction attempt. It
+reproduced the same root cause on both runners: `build-metadata.json` was
+committed as LF while its bundle references still held the prior CRLF digest.
+All other native commands passed. The corrected committed digest is
+`5E1561C7C3E32AF94B36D271700A50C41371920B3FFE6DEF5E634E8F77B134A5`; the run
+remains retained `FAIL` evidence and requires one more dispatch after this fix.
+
 This matrix is the checklist for M1 acceptance. A row is `PASS` only when the
 named executable artifact, platform, filesystem, toolchain, and cold-restart
 inspection are retained. A source-level fixture or a direct SQL query is not a

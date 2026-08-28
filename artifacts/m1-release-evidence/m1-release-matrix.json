@@ -206,7 +206,7 @@
         "platform/github-actions-run-33080915116/macos/build/msrv-178-test.log",
         "platform/github-actions-run-33080915116/macos/build/msrv-178-clippy.log"
       ],
-      "environment": "GitHub Actions native runners; workflow runs 33074865773 and 33080915116",
+      "environment": "GitHub Actions native runners; workflow runs 33074865773, 33080915116, 33085292318, and 33142438624",
       "exit_codes": [
         101,
         101
@@ -229,7 +229,7 @@
         "CFEB5CDE5F09B0BC25DECF7FEAF318BF89ECCA5C4B9358413F3EBBF5D67E11B0",
         "B57883FBFF29F7EE2E6C5C4EE4986DBD7643B134BF8DF56D9B939D7CF85BB89D"
       ],
-      "note": "Run 33074865773 failed on checkout hash drift (Linux) and platform-inapplicable host-resource compilation (macOS). Run 33080915116 repeated the Linux artifact-consistency hash drift and produced an incomplete macOS artifact: MSRV test failed while clippy exited zero, and platform metadata, manifest, stable logs, and stable exit records were absent. The byte-preservation and capture-boundary fixes require another manual rerun."
+      "note": "Run 33074865773 failed on checkout hash drift (Linux) and platform-inapplicable host-resource compilation (macOS). Run 33080915116 repeated the Linux artifact-consistency hash drift and produced an incomplete macOS artifact. Run 33085292318 produced complete artifacts but repeated the committed-byte mismatch. Run 33142438624 also produced complete artifacts and isolated the remaining mismatch to stale build-metadata.json CRLF references. The checksum/reference correction requires another manual rerun."
     },
     {
       "id": "COMPAT-OLD-READER",
@@ -781,6 +781,82 @@
         "66D70DF80BA7DEDD85F605AF68357399727C2C13E95FC3195B25B6B5090ABA56"
       ],
       "note": "Complete Linux native artifact. Stable and Rust 1.78 fmt/check/clippy and all focused suites passed, but both full test commands exited 101 in artifact-consistency because committed evidence bytes differed from the references used by the run. This is retained failure evidence; rerun after the repository-wide byte-preservation fix is required."
+    },
+    {
+      "id": "PLATFORM-NATIVE-LINUX-EXT4-RUN-33142438624",
+      "category": "platform",
+      "status": "FAIL",
+      "release_status": "BLOCKED",
+      "scope": "native Linux host or VM on ext4; workflow run 33142438624",
+      "evidence": [
+        "platform/github-actions-run-33142438624/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33142438624/linux/artifact-manifest.json",
+        "platform/github-actions-run-33142438624/linux/build/stable-test.log",
+        "platform/github-actions-run-33142438624/linux/build/msrv-178-test.log"
+      ],
+      "environment": "GitHub Actions Ubuntu 24.04 x86_64, ext4, run 33142438624",
+      "exit_codes": [0, 0, 101, 0, 0, 0, 101, 0],
+      "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "platform/github-actions-run-33142438624/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33142438624/linux/artifact-manifest.json",
+        "platform/github-actions-run-33142438624/linux/build/stable-test.log",
+        "platform/github-actions-run-33142438624/linux/build/msrv-178-test.log"
+      ],
+      "sha256": [
+        "A1F53474711B01569F33832C060D0212EFB7E39FA125411A5681CB33C5D716F1",
+        "429E17F97A30D0E5DD29BCF961541AE00007B35E60750CC149A3D3E21785D761",
+        "AA1AC47145F2EEAC5B4965C233F1B6CC3A67FBA0E4D133C161EA5A9F77E92E53",
+        "436492DAA7917CB78CC3A3DEF8FA08A1579CE845472F2D50406866AF4BF50757"
+      ],
+      "note": "Complete Linux native artifact. Stable and Rust 1.78 fmt/check/clippy and all focused suites passed, but both full test commands exited 101 in artifact-consistency because build-metadata.json referenced the prior Windows CRLF bytes. This is retained failure evidence; rerun after the checksum correction is required."
+    },
+    {
+      "id": "PLATFORM-MACOS-ARM64-RUN-33142438624",
+      "category": "platform",
+      "status": "FAIL",
+      "release_status": "BLOCKED",
+      "scope": "native macOS arm64; workflow run 33142438624",
+      "evidence": [
+        "platform/github-actions-run-33142438624/macos/platform/platform-metadata.json",
+        "platform/github-actions-run-33142438624/macos/artifact-manifest.json",
+        "platform/github-actions-run-33142438624/macos/build/stable-test.log",
+        "platform/github-actions-run-33142438624/macos/build/msrv-178-test.log"
+      ],
+      "environment": "GitHub Actions macOS 14 arm64, filesystem metadata unknown, run 33142438624",
+      "exit_codes": [0, 0, 101, 0, 0, 0, 101, 0],
+      "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+      ],
+      "artifacts": [
+        "platform/github-actions-run-33142438624/macos/platform/platform-metadata.json",
+        "platform/github-actions-run-33142438624/macos/artifact-manifest.json",
+        "platform/github-actions-run-33142438624/macos/build/stable-test.log",
+        "platform/github-actions-run-33142438624/macos/build/msrv-178-test.log"
+      ],
+      "sha256": [
+        "89CCFE18E1971C071CD6E722ADAF61034F28A1909C17B9268AFFCEA42A385E88",
+        "FD80865D12C6C85E68A9D99B913BA1D000DE565D8F03F192B0D039F4054B671E",
+        "EDE6F39F9C7BCD654B9B4A228CDD45C209C3B4F769A91F5C58D6DAA9F01F7DA1",
+        "CB332F756952760888A904FE31C72BFA5A1A458CCD4F5C6FE47E4D5D64692C0B"
+      ],
+      "note": "Complete macOS artifact. Stable and Rust 1.78 fmt/check/clippy and all focused suites passed, but both full test commands exited 101 in artifact-consistency because build-metadata.json referenced the prior Windows CRLF bytes. Filesystem metadata is unknown and is not treated as APFS evidence. This is retained failure evidence; rerun is required."
     },
     {
       "id": "PLATFORM-MACOS-ARM64-RUN-33085292318",

@@ -1,0 +1,150 @@
+{
+  "record_version": "m1-native-platform-artifact-0.2",
+  "platform": {
+    "runner": "GitHub Actions 1000000106",
+    "runner_os": "macOS",
+    "runner_arch": "ARM64",
+    "os_version": "14.8.7",
+    "kernel": "Darwin 23.6.0",
+    "architecture": "arm64",
+    "filesystem": "unknown",
+    "repository_filesystem": "unknown",
+    "tmpdir": "/Users/runner/work/pong/pong/.m1-tmp",
+    "workspace": "/Users/runner/work/pong/pong"
+  },
+  "commit": "e96131d9bb6d3799055401841d0cb710e4f497ff",
+  "files": [
+    {
+      "path": "build/msrv-178-check.exit",
+      "bytes": 2
+    },
+    {
+      "path": "build/msrv-178-check.log",
+      "bytes": 3815
+    },
+    {
+      "path": "build/msrv-178-clippy.exit",
+      "bytes": 2
+    },
+    {
+      "path": "build/msrv-178-clippy.log",
+      "bytes": 1269
+    },
+    {
+      "path": "build/msrv-178-fmt.exit",
+      "bytes": 2
+    },
+    {
+      "path": "build/msrv-178-fmt.log",
+      "bytes": 0
+    },
+    {
+      "path": "build/msrv-178-test.exit",
+      "bytes": 4
+    },
+    {
+      "path": "build/msrv-178-test.log",
+      "bytes": 7949
+    },
+    {
+      "path": "build/stable-check.exit",
+      "bytes": 2
+    },
+    {
+      "path": "build/stable-check.log",
+      "bytes": 3815
+    },
+    {
+      "path": "build/stable-clippy.exit",
+      "bytes": 2
+    },
+    {
+      "path": "build/stable-clippy.log",
+      "bytes": 1269
+    },
+    {
+      "path": "build/stable-fmt.exit",
+      "bytes": 2
+    },
+    {
+      "path": "build/stable-fmt.log",
+      "bytes": 0
+    },
+    {
+      "path": "build/stable-test.exit",
+      "bytes": 4
+    },
+    {
+      "path": "build/stable-test.log",
+      "bytes": 7946
+    },
+    {
+      "path": "commands.tsv",
+      "bytes": 796
+    },
+    {
+      "path": "logs/cold-reopen.exit",
+      "bytes": 2
+    },
+    {
+      "path": "logs/cold-reopen.log",
+      "bytes": 6341
+    },
+    {
+      "path": "logs/compatibility.exit",
+      "bytes": 2
+    },
+    {
+      "path": "logs/compatibility.log",
+      "bytes": 1086
+    },
+    {
+      "path": "logs/migration.exit",
+      "bytes": 2
+    },
+    {
+      "path": "logs/migration.log",
+      "bytes": 1049
+    },
+    {
+      "path": "logs/pt13-fi10.exit",
+      "bytes": 2
+    },
+    {
+      "path": "logs/pt13-fi10.log",
+      "bytes": 3510
+    },
+    {
+      "path": "logs/recovery.exit",
+      "bytes": 2
+    },
+    {
+      "path": "logs/recovery.log",
+      "bytes": 900
+    },
+    {
+      "path": "platform/cargo-msrv-178.txt",
+      "bytes": 36
+    },
+    {
+      "path": "platform/cargo-stable.txt",
+      "bytes": 36
+    },
+    {
+      "path": "platform/platform-metadata.json",
+      "bytes": 2882
+    },
+    {
+      "path": "platform/platform.txt",
+      "bytes": 315
+    },
+    {
+      "path": "platform/rust-msrv-178.txt",
+      "bytes": 192
+    },
+    {
+      "path": "platform/rust-stable.txt",
+      "bytes": 192
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "record_version": "m1-native-platform-download-0.1",
+  "workflow": "M1 release evidence",
+  "workflow_run_id": "33142438624",
+  "workflow_run_attempt": "1",
+  "commit": "e96131d9bb6d3799055401841d0cb710e4f497ff",
+  "branch": "dev",
+  "status": "failure",
+  "jobs": {
+    "linux-native / stable + Rust 1.78": "failure",
+    "macos-native / stable + Rust 1.78": "failure"
+  },
+  "source_record": "../../../../m1-platform-runs/github-actions-run-33142438624/download-metadata.json",
+  "artifacts": [
+    {
+      "name": "m1-linux-native-evidence",
+      "downloaded_from": "C:/Users/NJHTR/Downloads/m1-linux-native-evidence (3).zip",
+      "sha256": "DA903E4D7C6E11D3DD08BEE598883BE813E606305FA56ABA91D2154ACD0E6666"
+    },
+    {
+      "name": "m1-macos-native-evidence",
+      "downloaded_from": "C:/Users/NJHTR/Downloads/m1-macos-native-evidence (3).zip",
+      "sha256": "501832097AB33640CFE062A98293CC4A36C7B83C8FCAF3918253D89F2716AD34"
+    }
+  ],
+  "disposition": "retained_failure_evidence; complete native artifacts retained for root-cause analysis"
+}

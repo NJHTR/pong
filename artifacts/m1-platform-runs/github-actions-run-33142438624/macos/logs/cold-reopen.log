@@ -1,0 +1,153 @@
+[1m[92m   Compiling[0m pong-core v0.1.0 (/Users/runner/work/pong/pong)
+[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 4.32s
+[1m[92m     Running[0m unittests src/lib.rs (target/m1-ci-focused/debug/deps/pong_core-88454141b4bfbe36)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/artifact_consistency.rs (target/m1-ci-focused/debug/deps/artifact_consistency-1cd1e2e6830b93dc)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/cas_failpoints.rs (target/m1-ci-focused/debug/deps/cas_failpoints-0c134ea8225e49f6)
+
+running 1 test
+test fi08_directory_sync_fault_cold_reopen_verifies_object_and_retry_is_idempotent ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+[1m[92m     Running[0m tests/compatibility_boundaries.rs (target/m1-ci-focused/debug/deps/compatibility_boundaries-f3cf53f7985333ad)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/event_projection.rs (target/m1-ci-focused/debug/deps/event_projection-000545d8635b6ce8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/host_resource_faults.rs (target/m1-ci-focused/debug/deps/host_resource_faults-13d95aff160f33ec)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/m1_primitives.rs (target/m1-ci-focused/debug/deps/m1_primitives-27304009fcb77ceb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/metadata_failpoints.rs (target/m1-ci-focused/debug/deps/metadata_failpoints-08da37f134cd0de2)
+
+running 2 tests
+test intent_after_commit_returns_fault_but_survives_cold_reopen ... ok
+test fi01_before_intent_commit_cold_reopen_preserves_pre_state_and_retry_publishes_once ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.02s
+
+[1m[92m     Running[0m tests/migration_fixtures.rs (target/m1-ci-focused/debug/deps/migration_fixtures-19a6ff6852ff1e7b)
+
+running 1 test
+test migration_interruption_fixture_requires_cold_reopen_and_forbids_mixed_state ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/operation_ledger.rs (target/m1-ci-focused/debug/deps/operation_ledger-b20307492f0e5beb)
+
+running 1 test
+test operation_commit_faults_are_pre_or_post_state_after_cold_reopen ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.02s
+
+[1m[92m     Running[0m tests/performance_measurements.rs (target/m1-ci-focused/debug/deps/performance_measurements-9cf6d15d4082a56c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/process_kill_migration.rs (target/m1-ci-focused/debug/deps/process_kill_migration-36d4890d5dcf6d30)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/process_kill_recovery.rs (target/m1-ci-focused/debug/deps/process_kill_recovery-f1237abcbbd0c88c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/property_corpus.rs (target/m1-ci-focused/debug/deps/property_corpus-8b8e4dc751157684)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/property_recovery_migration.rs (target/m1-ci-focused/debug/deps/property_recovery_migration-1f9d8526daa5ef2b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/pt13_fi10.rs (target/m1-ci-focused/debug/deps/pt13_fi10-b583def51f2985f8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/recovery_boundaries.rs (target/m1-ci-focused/debug/deps/recovery_boundaries-502da0deb6fcdee1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/repository_failpoints.rs (target/m1-ci-focused/debug/deps/repository_failpoints-0c5b0159243a1232)
+
+running 1 test
+test startup_recovery_fault_is_retried_after_cold_reopen_and_converges ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.04s
+
+[1m[92m     Running[0m tests/repository_migration.rs (target/m1-ci-focused/debug/deps/repository_migration-f4e61c2244804b4f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/security_boundaries.rs (target/m1-ci-focused/debug/deps/security_boundaries-be566977c75bb9aa)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/wal_tail_recovery.rs (target/m1-ci-focused/debug/deps/wal_tail_recovery-963821a7df160fa9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/workspace_faults.rs (target/m1-ci-focused/debug/deps/workspace_faults-d888a06962dc3b52)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+[1m[92m     Running[0m tests/workspace_snapshot.rs (target/m1-ci-focused/debug/deps/workspace_snapshot-4d5ee71a7e567d09)
+
+running 1 test
+test expired_lease_takeover_and_workspace_records_survive_cold_reopen ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.03s
+
+[1m[92m   Doc-tests[0m pong_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

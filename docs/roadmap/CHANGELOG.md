@@ -298,6 +298,18 @@
   (not a fresh tee rerun); its SHA-256 is verified by the read-only artifact
   consistency test, and this capture caveat does not widen the gate decision.
 
+## Unreleased - M1 native evidence run #4 audit (2026-08-28)
+
+- Retained GitHub Actions run `33142438624` and both complete native evidence
+  artifacts. All native format/check/clippy and focused M1 commands passed;
+  both full test commands on Linux and macOS failed at the same
+  `artifact_consistency` assertion.
+- Identified the deterministic cause: the committed LF `build-metadata.json`
+  blob differed from stale Windows CRLF digest/reference values. Rebound the
+  release `SHA256SUMS` and `artifact-references.json` records to the committed
+  LF bytes and verified a clean-index export plus local artifact-consistency
+  tests. M1 remains `NOT PASSED`; one fresh native dispatch is required.
+
 ## Unreleased - M1 native evidence run #2 (2026-08-27)
 
 - Retained GitHub Actions run `33080915116` at commit

@@ -192,7 +192,7 @@ fn assert_native_failure_artifacts(root: &Path, run_id: &str, macos_complete: bo
     .expect("native CI download metadata JSON");
     assert_eq!(metadata["workflow_run_id"], run_id);
     assert_eq!(metadata["status"], "failure");
-    if run_id == "33085292318" {
+    if run_id == "33085292318" || run_id == "33142438624" {
         for platform in ["linux", "macos"] {
             let commands = metadata["command_disposition"][platform]
                 .as_array()
@@ -357,6 +357,7 @@ fn retained_m1_raw_logs_and_fault_matrix_references_are_consistent() {
     assert_native_failure_artifacts(&root, "33074865773", true);
     assert_native_failure_artifacts(&root, "33080915116", false);
     assert_native_failure_artifacts(&root, "33085292318", true);
+    assert_native_failure_artifacts(&root, "33142438624", true);
 
     let matrix_path = root.join("artifacts/m1-fault-matrix.json");
     let matrix: Value =

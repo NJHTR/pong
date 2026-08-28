@@ -61,6 +61,14 @@ the handoff table, or record an owner-approved bounded exception. The ADR-0015
 performance decision and ADR-0016 projection contract remain proposed/pending
 release-owner acceptance.
 
+Run `33142438624` at commit `e96131d9bb6d3799055401841d0cb710e4f497ff` is
+retained as the fourth native failure record. Both complete artifacts show
+stable/MSRV fmt/check/clippy, focused M1 suites, and cold reopen passing, but
+both full test commands exited `101` in `artifact_consistency`: the committed
+LF `build-metadata.json` differed from stale CRLF hash/reference values. The
+corrected committed digest is now recorded in the bundle; push and dispatch
+again before accepting either native row.
+
 Run `33085292318` at commit `60913c0179731d9fed1a052f9a190c8fa4f5a56e` is
 retained as the third native failure record. Both Linux and macOS artifacts
 are complete; stable/MSRV fmt/check/clippy, focused M1 suites, and cold reopen
@@ -71,7 +79,7 @@ ZIP hashes are retained in the run download metadata. The repository-wide
 `artifacts/** -text -diff` rule and explicit release-log reference now fix the
 byte boundary; these changes are committed and pushed in
 `258a0c9cccfe11e994a6032a106644b4dcf90804`. A fresh native dispatch remains
-required.
+required after the checksum/reference correction.
 
 The retained Windows stable property evidence includes PT-01/02/03/04/05/06/
 07/08/11/12 at 10,000 cases each, PT-09 and PT-10 at 10,000 cases each, and the
@@ -97,9 +105,9 @@ working tree was clean, but no release tag or owner-approved release commit
 exists. The retained executable evidence was captured before this closeout
 commit; retain that snapshot relationship with the exact commands, toolchain
 identity, test results, and artifact hashes for external review. The current
-working tree contains the Run #3 retention and byte-boundary close-out in
-pushed commit `258a0c9cccfe11e994a6032a106644b4dcf90804`; dispatch the workflow
-against the current branch head before accepting either native row.
+working tree contains the Run #3 and Run #4 retention plus the checksum/reference
+correction; dispatch the workflow against the current branch head before
+accepting either native row.
 
 **Definition of Done:** Every M1 MUST-PASS row has platform-specific executable
 evidence or an explicitly accepted ADR disposition. The evidence report says
