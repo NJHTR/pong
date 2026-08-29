@@ -1,0 +1,11 @@
+command=PONG_HOST_FAULT_ROOT=D:\pong\.m1-fi13-closure-20260828 cargo test --locked --test host_resource_faults fi_13_real_windows_acl_read_revocation_fails_closed_and_recovers -- --ignored --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running tests\host_resource_faults.rs (target\m1-closure-fi13-20260828\debug\deps\host_resource_faults-69174d991ec60b92.exe)
+
+running 1 test
+FI-13 platform=windows filesystem=NTFS kernel_error=Some(5) pong_code=PERMISSION_DENIED
+test fi_13_real_windows_acl_read_revocation_fails_closed_and_recovers ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+exit_code=0

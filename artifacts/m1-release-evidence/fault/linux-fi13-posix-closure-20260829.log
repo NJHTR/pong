@@ -1,0 +1,15 @@
+COMMAND: CARGO_TARGET_DIR=/root/pong-linux-native-6cb62fb/target/m1-fi13-linux-20260829 host_resource_faults fi_13_real_linux_posix_permission_read_revocation_fails_closed_and_recovers --ignored --nocapture
+COMMIT: 6cb62fb455e92ab731a4bb5233856d10c1f1ce93
+DISTRIBUTION: Debian GNU/Linux 13 (trixie)
+KERNEL: 6.12.101+deb13-amd64
+FILESYSTEM: ext4
+MOUNT: /dev/sda1 ext4 /
+IDENTITY: uid=65534(nobody) gid=65534(nogroup) 组=65534(nogroup)
+
+running 1 test
+FI-13 platform=linux filesystem=ext4 permission_mechanism=POSIX_mode_bits uid=65534 gid=65534 mode_before=644 mode_denied=200 raw_errno=13 pong_error=PERMISSION_DENIED recovery=repository_valid cold_reopen=success
+test fi_13_real_linux_posix_permission_read_revocation_fails_closed_and_recovers ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.02s
+
+EXIT_CODE: 0

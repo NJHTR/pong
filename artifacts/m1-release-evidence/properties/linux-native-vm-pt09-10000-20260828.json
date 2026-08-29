@@ -1,0 +1,23 @@
+{
+  "record_version": "m1-property-evidence-0.2",
+  "captured_at": "2026-08-28T22:00:00+08:00",
+  "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "hostname": "rtc-node-1",
+  "platform": "linux-x86_64-gnu",
+  "filesystem": "ext4",
+  "evidence_class": "LINUX_NATIVE",
+  "property": {
+    "id": "PT-09",
+    "name": "recovery_converges_across_interleavings_and_commit_boundaries",
+    "requested_cases": 10000,
+    "executed_cases": 10000,
+    "status": "PASS"
+  },
+  "toolchain": "Rust 1.85.0 (MSRV 1.78.0 unavailable)",
+  "command": "PONG_PROPTEST_CASES=10000 cargo test --locked --offline --test property_recovery_migration pt09_recovery_converges_across_interleavings_and_commit_boundaries -- --nocapture",
+  "elapsed_seconds": 87.2,
+  "exit_code": 0,
+  "raw_log": "artifacts/m1-release-evidence/properties/linux-pt09-10000-20260828.log",
+  "raw_log_sha256": "EAC98E19A92D3F18214D062CAF77BF85F839B781B000779679EB2AD56312FC6C",
+  "retention": "retained Linux-native VM evidence; release-owner acceptance pending"
+}

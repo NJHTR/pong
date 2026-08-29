@@ -1,0 +1,62 @@
+{
+  "record_version": "m1-native-platform-download-0.2",
+  "workflow": "M1 release evidence",
+  "workflow_run_id": "33145714975",
+  "workflow_run_attempt": "1",
+  "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "branch": "dev",
+  "status": "success",
+  "jobs": {
+    "linux-native / stable + Rust 1.78": "success",
+    "macos-native / stable + Rust 1.78": "success"
+  },
+  "command_disposition": {
+    "linux": [
+      {"label":"stable-fmt","command":"cargo +stable fmt --all -- --check","exit_code":0},
+      {"label":"stable-check","command":"cargo +stable check --locked","exit_code":0},
+      {"label":"stable-test","command":"cargo +stable test --locked","exit_code":0},
+      {"label":"stable-clippy","command":"cargo +stable clippy --locked --all-targets -- -D warnings","exit_code":0},
+      {"label":"msrv-178-fmt","command":"cargo +1.78.0 fmt --all -- --check","exit_code":0},
+      {"label":"msrv-178-check","command":"cargo +1.78.0 check --locked","exit_code":0},
+      {"label":"msrv-178-test","command":"cargo +1.78.0 test --locked","exit_code":0},
+      {"label":"msrv-178-clippy","command":"cargo +1.78.0 clippy --locked --all-targets -- -D warnings","exit_code":0},
+      {"label":"pt13-fi10","command":"cargo +stable test --locked --test pt13_fi10 -- --nocapture","exit_code":0},
+      {"label":"migration","command":"cargo +stable test --locked --test repository_migration -- --nocapture","exit_code":0},
+      {"label":"recovery","command":"cargo +stable test --locked --test recovery_boundaries -- --nocapture","exit_code":0},
+      {"label":"compatibility","command":"cargo +stable test --locked --test compatibility_boundaries -- --nocapture","exit_code":0},
+      {"label":"cold-reopen","command":"cargo +stable test --locked -- --nocapture cold_reopen","exit_code":0}
+    ],
+    "macos": [
+      {"label":"stable-fmt","command":"cargo +stable fmt --all -- --check","exit_code":0},
+      {"label":"stable-check","command":"cargo +stable check --locked","exit_code":0},
+      {"label":"stable-test","command":"cargo +stable test --locked","exit_code":0},
+      {"label":"stable-clippy","command":"cargo +stable clippy --locked --all-targets -- -D warnings","exit_code":0},
+      {"label":"msrv-178-fmt","command":"cargo +1.78.0 fmt --all -- --check","exit_code":0},
+      {"label":"msrv-178-check","command":"cargo +1.78.0 check --locked","exit_code":0},
+      {"label":"msrv-178-test","command":"cargo +1.78.0 test --locked","exit_code":0},
+      {"label":"msrv-178-clippy","command":"cargo +1.78.0 clippy --locked --all-targets -- -D warnings","exit_code":0},
+      {"label":"pt13-fi10","command":"cargo +stable test --locked --test pt13_fi10 -- --nocapture","exit_code":0},
+      {"label":"migration","command":"cargo +stable test --locked --test repository_migration -- --nocapture","exit_code":0},
+      {"label":"recovery","command":"cargo +stable test --locked --test recovery_boundaries -- --nocapture","exit_code":0},
+      {"label":"compatibility","command":"cargo +stable test --locked --test compatibility_boundaries -- --nocapture","exit_code":0},
+      {"label":"cold-reopen","command":"cargo +stable test --locked -- --nocapture cold_reopen","exit_code":0}
+    ]
+  },
+  "artifacts": [
+    {
+      "name": "m1-linux-native-evidence",
+      "downloaded_from": "C:/Users/NJHTR/Downloads/m1-linux-native-evidence (4).zip",
+      "sha256": "C4880D66D2AC18A5F2E2EF1DA8C375A3689C4D11B9E26DCCC26A96B34819C58A"
+    },
+    {
+      "name": "m1-macos-native-evidence",
+      "downloaded_from": "C:/Users/NJHTR/Downloads/m1-macos-native-evidence (4).zip",
+      "sha256": "EC89DC1F4A28AC0834173184E8BFF5C08D0A0DA23803F0D057AF6BB48A49BA3A"
+    }
+  ],
+  "disposition": "retained_success_evidence; both native artifacts are complete and all recorded commands returned zero",
+  "observed": {
+    "linux": "Ubuntu 24.04 x86_64 with ext4 repository and temporary filesystems; stable and Rust 1.78 quality gates, focused M1 suites, and cold reopen passed",
+    "macos": "macOS 14 arm64; stable and Rust 1.78 quality gates, focused M1 suites, and cold reopen passed; filesystem metadata remains unknown"
+  }
+}

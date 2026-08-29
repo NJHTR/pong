@@ -173,13 +173,29 @@
       "injection": "permission revocation/read corruption",
       "tests": [
         "tests/host_resource_faults.rs::fi_13_real_windows_acl_read_revocation_fails_closed_and_recovers",
+        "tests/host_resource_faults.rs::fi_13_real_linux_posix_permission_read_revocation_fails_closed_and_recovers",
         "tests/recovery_boundaries.rs::corrupt_cas_object_is_quarantined_and_never_read_as_success"
       ],
-      "observed": "Windows NTFS ACL revocation maps raw error 5 to PERMISSION_DENIED; corrupt objects quarantine",
+      "observed": "Windows NTFS ACL revocation maps raw error 5 to PERMISSION_DENIED; Linux ext4 POSIX mode revocation maps raw errno 13 to PERMISSION_DENIED; corrupt objects quarantine",
       "real_host_gap": "Complete FI-13 schedule across all declared filesystems is missing",
+      "platform_rows": [
+        {
+          "platform": "linux-x86_64-gnu",
+          "filesystem": "ext4",
+          "evidence_class": "NATIVE",
+          "status": "PASS",
+          "exit_code": 0,
+          "evidence": [
+            "artifacts/m1-release-evidence/fault/linux-fi13-posix-closure-20260829.json",
+            "artifacts/m1-release-evidence/fault/linux-fi13-posix-closure-20260829.log"
+          ]
+        }
+      ],
       "retained_artifacts": [
         "artifacts/m1-fault-runs/windows-fi13-acl-audit-2026-08-26.json",
-        "artifacts/m1-fault-runs/windows-fi13-acl-audit-2026-08-26.log"
+        "artifacts/m1-fault-runs/windows-fi13-acl-audit-2026-08-26.log",
+        "artifacts/m1-release-evidence/fault/linux-fi13-posix-closure-20260829.json",
+        "artifacts/m1-release-evidence/fault/linux-fi13-posix-closure-20260829.log"
       ],
       "acceptance": "partial_platform_matrix"
     },

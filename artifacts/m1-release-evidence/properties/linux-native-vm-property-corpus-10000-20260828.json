@@ -1,0 +1,72 @@
+{
+  "record_version": "m1-property-evidence-0.2",
+  "captured_at": "2026-08-28T21:57:00+08:00",
+  "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "hostname": "rtc-node-1",
+  "platform": "linux-x86_64-gnu",
+  "filesystem": "ext4 repository; tmpfs not used for property corpus",
+  "evidence_class": "LINUX_NATIVE",
+  "toolchain": "Rust 1.85.0 (MSRV 1.78.0 unavailable)",
+  "target_directory": "/root/pong-linux-native-6cb62fb/target/linux-native-vm-6cb62fb-20260828",
+  "command": "PONG_PROPTEST_CASES=10000 cargo test --locked --offline --test property_corpus -- --nocapture",
+  "requested_cases_per_property": 10000,
+  "executed_cases_per_property": 10000,
+  "total_executed_cases": 100000,
+  "elapsed_seconds": 169.63,
+  "properties": [
+    {
+      "id": "PT-01",
+      "status": "PASS",
+      "seed": "0x50540001CAFE0001"
+    },
+    {
+      "id": "PT-02",
+      "status": "PASS",
+      "seed": "0x50540002CAFE0002"
+    },
+    {
+      "id": "PT-03",
+      "status": "PASS",
+      "seed": "0x50540003CAFE0003"
+    },
+    {
+      "id": "PT-04",
+      "status": "PASS",
+      "seed": "0x50540004CAFE0004"
+    },
+    {
+      "id": "PT-05",
+      "status": "PASS",
+      "seed": "0x50540005CAFE0005"
+    },
+    {
+      "id": "PT-06",
+      "status": "PASS",
+      "seed": "0x50540006CAFE0006"
+    },
+    {
+      "id": "PT-07",
+      "status": "PASS",
+      "seed": "0x50540007CAFE0007"
+    },
+    {
+      "id": "PT-08",
+      "status": "PASS",
+      "seed": "0x50540008CAFE0008"
+    },
+    {
+      "id": "PT-11",
+      "status": "PASS",
+      "seed": "0x50540011CAFE0011"
+    },
+    {
+      "id": "PT-12",
+      "status": "PASS",
+      "seed": "0x50540012CAFE0012"
+    }
+  ],
+  "exit_code": 0,
+  "raw_log": "artifacts/m1-release-evidence/properties/linux-property-corpus-10000-20260828.log",
+  "raw_log_sha256": "A93D9681D019C2EEAB97100547399B0F068BFC814506944496532CF514A5734A",
+  "retention": "retained Linux-native VM evidence; release-owner acceptance pending"
+}

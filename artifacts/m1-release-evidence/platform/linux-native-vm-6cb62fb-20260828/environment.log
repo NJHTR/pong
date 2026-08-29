@@ -1,0 +1,67 @@
+2026-08-28T21:53:52+08:00
+rtc-node-1
+Linux rtc-node-1 6.12.101+deb13-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.101-1 (2026-08-05) x86_64 GNU/Linux
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+NAME="Debian GNU/Linux"
+VERSION_ID="13"
+VERSION="13 (trixie)"
+VERSION_CODENAME=trixie
+DEBIAN_VERSION_FULL=13.6
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+TARGET SOURCE    FSTYPE OPTIONS
+/      /dev/sda1 ext4   rw,relatime,errors=remount-ro
+文件系统       类型   1K的块    已用     可用 已用% 挂载点
+/dev/sda1      ext4 59547564 6414556 50075756   12% /
+文件系统       类型  1K的块  已用   可用 已用% 挂载点
+tmpfs          tmpfs 991036 20800 970236    3% /tmp
+TARGET                         SOURCE FSTYPE OPTIONS
+/mnt/pong-fi14-native-20260828 tmpfs  tmpfs  rw,relatime,size=65536k,mode=700,inode64
+文件系统       类型  1K的块  已用  可用 已用% 挂载点
+tmpfs          tmpfs  65536     0 65536    0% /mnt/pong-fi14-native-20260828
+               total        used        free      shared  buff/cache   available
+内存：         1.9Gi       706Mi       332Mi       124Ki       1.0Gi       1.2Gi
+交换：         2.0Gi       164Mi       1.8Gi
+4
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 7517
+max locked memory           (kbytes, -l) 8192
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 1024
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 7517
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+rustc 1.85.0 (4d91de4e4 2025-02-17) (built from a source tarball)
+binary: rustc
+commit-hash: 4d91de4e48198da2e33413efdcd9cd2cc0c46688
+commit-date: 2025-02-17
+host: x86_64-unknown-linux-gnu
+release: 1.85.0
+LLVM version: 19.1.7
+cargo 1.85.0 (d73d2caf9 2024-12-31)
+release: 1.85.0
+commit-hash: d73d2caf9e41a39daf2a8d6ce60ec80bf354d2a7
+commit-date: 2024-12-31
+host: x86_64-unknown-linux-gnu
+libgit2: 1.9.0 (sys:0.20.0 system)
+libcurl: 8.14.1 (sys:0.4.78+curl-8.11.0 system ssl:OpenSSL/3.5.6)
+os: Debian 13.0.0 (trixie) [64-bit]
+rustfmt 1.8.0
+clippy 0.1.85
+git version 2.47.3
+6cb62fb455e92ab731a4bb5233856d10c1f1ce93
+## HEAD（非分支）
+origin	/root/pong-linux-native-6cb62fb.bundle (fetch)
+origin	/root/pong-linux-native-6cb62fb.bundle (push)
+db0ef0375d3d0d41289cca467307ee546fe9af9505502eee6db82eb0a4afafb9  /root/pong-linux-native-6cb62fb.bundle

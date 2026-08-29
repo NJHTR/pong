@@ -1,0 +1,21 @@
+{
+  "record_version": "m1-fault-run-0.2",
+  "fault_id": "FI-14",
+  "captured_at": "2026-08-28T21:50:00+08:00",
+  "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "hostname": "rtc-node-1",
+  "platform": "linux-x86_64-gnu",
+  "filesystem": "tmpfs (64 MiB dedicated mount)",
+  "evidence_class": "LINUX_NATIVE",
+  "executed_as": "root",
+  "scenario": "ENOSPC during CAS write",
+  "command": "PONG_HOST_FAULT_ROOT=/mnt/pong-fi14-native-20260828 cargo test --locked --offline --test host_resource_faults fi_14_real_enospc_during_cas_write_preserves_committed_history -- --ignored --nocapture",
+  "expected_result": "RESOURCE_EXHAUSTED; no readable partial object; committed history and cold reopen survive",
+  "observed_result": "errno=28; Pong RESOURCE_EXHAUSTED; test assertions passed",
+  "kernel_errno": 28,
+  "pong_code": "RESOURCE_EXHAUSTED",
+  "exit_code": 0,
+  "raw_log": "artifacts/m1-release-evidence/fault/linux-native-fi14-cas_write-20260828.log",
+  "raw_log_sha256": "3AC18A69842DD55E6D6AE9E5B4206BEB6FEDEFAF6635FCFE84F9F9DC32D9F19F",
+  "status": "PASS_for_Linux_tmpfs_row_only"
+}

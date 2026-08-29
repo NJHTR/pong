@@ -1,0 +1,20 @@
+{
+  "record_version": "m1-linux-native-commands-0.1",
+  "captured_at": "2026-08-28T21:53:52+08:00",
+  "evidence_class": "LINUX_NATIVE",
+  "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "platform": "Debian 13 x86_64 Linux VM rtc-node-1",
+  "filesystem": "ext4",
+  "toolchain": "Rust 1.85.0 system packages; project MSRV 1.78.0 unavailable",
+  "commands": [
+    {"label": "fmt", "command": "cargo fmt --all -- --check", "exit_code": 0, "log": "fmt.log"},
+    {"label": "check", "command": "cargo check --locked --offline", "exit_code": 0, "log": "check.log"},
+    {"label": "test", "command": "cargo test --all --locked --offline", "exit_code": 0, "log": "test.log"},
+    {"label": "clippy", "command": "cargo clippy --all-targets --all-features --locked --offline -- -D warnings", "exit_code": 0, "log": "clippy.log"}
+  ],
+  "notes": [
+    "The first networked cargo check was stopped after the VM crates.io connection stalled.",
+    "The locked dependency cache was transferred from the Windows host; no source or production code was changed.",
+    "The commands executed with Rust 1.85, not the declared MSRV 1.78."
+  ]
+}

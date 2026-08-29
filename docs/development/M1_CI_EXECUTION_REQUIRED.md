@@ -1,5 +1,18 @@
 # M1 Native CI Execution Required
 
+**Run #5 success update (2026-08-28):** workflow run `33145714975` at commit
+`6cb62fb455e92ab731a4bb5233856d10c1f1ce93` completed both native jobs
+successfully. Linux and macOS artifacts are retained under
+`artifacts/m1-platform-runs/github-actions-run-33145714975/` and indexed in
+the release bundle. Every one of the 13 recorded commands per platform
+returned exit code `0`, including full stable/MSRV tests and artifact
+consistency. ZIP SHA-256 values are Linux
+`C4880D66D2AC18A5F2E2EF1DA8C375A3689C4D11B9E26DCCC26A96B34819C58A` and macOS
+`EC89DC1F4A28AC0834173184E8BFF5C08D0A0DA23803F0D057AF6BB48A49BA3A`.
+The native executable evidence rows may now be marked `PASS`; M1 itself
+remains `NOT PASSED` pending the separately released old reader, complete
+fault/platform scope, performance budget, and named release-owner acceptance.
+
 **Run #4 audit update (2026-08-28):** workflow run `33142438624` at commit
 `e96131d9bb6d3799055401841d0cb710e4f497ff` produced complete Linux and macOS
 artifacts. Only the two full `cargo test` commands per platform failed, both
@@ -86,11 +99,11 @@ PENDING_HEAD = current worktree (checksum/reference correction plus Run #4 reten
   filesystem (tests use a workspace-local `TMPDIR`), Rust/Cargo versions,
   commit SHA, workflow run ID, exact commands, exit codes, and hashes.
 
-Until a successful rerun and retained artifacts exist, the authoritative state
-remains:
+The successful run `33145714975` and its retained artifacts are now the
+authoritative native executable evidence:
 
 ```text
-Native Linux = FAIL (runs 33074865773, 33080915116, 33085292318, 33142438624); rerun required
-Native macOS = FAIL (runs 33074865773, 33080915116, 33085292318, 33142438624); rerun required
+Native Linux = PASS (executable evidence; run 33145714975; ext4)
+Native macOS = PASS (executable evidence; run 33145714975; filesystem unknown)
 M1 Release Gate = NOT PASSED
 ```

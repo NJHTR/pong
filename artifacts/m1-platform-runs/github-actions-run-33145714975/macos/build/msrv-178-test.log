@@ -1,0 +1,376 @@
+[1m[32m Downloading[0m crates ...
+[1m[32m  Downloaded[0m rand_xorshift v0.4.0
+[1m[32m  Downloaded[0m lazy_static v1.5.0
+[1m[32m  Downloaded[0m unarray v0.1.4
+[1m[32m  Downloaded[0m tempfile v3.15.0
+[1m[32m  Downloaded[0m ppv-lite86 v0.2.21
+[1m[32m  Downloaded[0m num-traits v0.2.19
+[1m[32m  Downloaded[0m getrandom v0.3.4
+[1m[32m  Downloaded[0m getrandom v0.2.17
+[1m[32m  Downloaded[0m rand v0.9.5
+[1m[32m  Downloaded[0m fastrand v2.5.0
+[1m[32m  Downloaded[0m proptest v1.8.0
+[1m[32m  Downloaded[0m autocfg v1.5.1
+[1m[32m  Downloaded[0m rand_core v0.9.5
+[1m[32m  Downloaded[0m rand_chacha v0.9.0
+[1m[32m  Downloaded[0m errno v0.3.14
+[1m[32m  Downloaded[0m regex-syntax v0.8.11
+[1m[32m  Downloaded[0m rustix v0.38.44
+[1m[32m   Compiling[0m libc v0.2.189
+[1m[32m   Compiling[0m cfg-if v1.0.4
+[1m[32m   Compiling[0m zerocopy v0.8.56
+[1m[32m   Compiling[0m getrandom v0.3.4
+[1m[32m   Compiling[0m once_cell v1.21.4
+[1m[32m   Compiling[0m typenum v1.20.1
+[1m[32m   Compiling[0m generic-array v0.14.7
+[1m[32m   Compiling[0m bitflags v2.13.1
+[1m[32m   Compiling[0m rand_core v0.9.5
+[1m[32m   Compiling[0m autocfg v1.5.1
+[1m[32m   Compiling[0m serde_core v1.0.229
+[1m[32m   Compiling[0m num-traits v0.2.19
+[1m[32m   Compiling[0m crypto-common v0.1.7
+[1m[32m   Compiling[0m block-buffer v0.10.4
+[1m[32m   Compiling[0m rustix v0.38.44
+[1m[32m   Compiling[0m digest v0.10.7
+[1m[32m   Compiling[0m libsqlite3-sys v0.30.1
+[1m[32m   Compiling[0m zmij v1.0.23
+[1m[32m   Compiling[0m cpufeatures v0.2.17
+[1m[32m   Compiling[0m errno v0.3.14
+[1m[32m   Compiling[0m smallvec v1.15.2
+[1m[32m   Compiling[0m itoa v1.0.18
+[1m[32m   Compiling[0m ahash v0.8.12
+[1m[32m   Compiling[0m ppv-lite86 v0.2.21
+[1m[32m   Compiling[0m memchr v2.8.3
+[1m[32m   Compiling[0m hashbrown v0.14.5
+[1m[32m   Compiling[0m fallible-iterator v0.3.0
+[1m[32m   Compiling[0m fallible-streaming-iterator v0.1.9
+[1m[32m   Compiling[0m serde_json v1.0.151
+[1m[32m   Compiling[0m rand_chacha v0.9.0
+[1m[32m   Compiling[0m hashlink v0.9.1
+[1m[32m   Compiling[0m rusqlite v0.32.1
+[1m[32m   Compiling[0m serde v1.0.229
+[1m[32m   Compiling[0m sha2 v0.10.9
+[1m[32m   Compiling[0m thiserror v2.0.20
+[1m[32m   Compiling[0m rand v0.9.5
+[1m[32m   Compiling[0m rand_xorshift v0.4.0
+[1m[32m   Compiling[0m fs2 v0.4.3
+[1m[32m   Compiling[0m getrandom v0.2.17
+[1m[32m   Compiling[0m fastrand v2.5.0
+[1m[32m   Compiling[0m hex v0.4.3
+[1m[32m   Compiling[0m lazy_static v1.5.0
+[1m[32m   Compiling[0m unarray v0.1.4
+[1m[32m   Compiling[0m regex-syntax v0.8.11
+[1m[32m   Compiling[0m tempfile v3.15.0
+[1m[32m   Compiling[0m pong-core v0.1.0 (/Users/runner/work/pong/pong)
+[1m[32m   Compiling[0m proptest v1.8.0
+[1m[32m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 11.43s
+[1m[32m     Running[0m unittests src/lib.rs (target/m1-ci-msrv-178/debug/deps/pong_core-7561d77243f3e9b1)
+
+running 49 tests
+test atomic_replace::tests::sync_directory_accepts_an_existing_directory ... ok
+test atomic_replace::tests::no_replace_directory_publish_preserves_an_existing_destination ... ok
+test canonical::tests::domain_is_unambiguous ... ok
+test canonical::tests::object_keys_are_sorted_recursively ... ok
+test canonical::tests::equivalent_object_order_has_identical_bytes_and_digest ... ok
+test canonical::tests::strings_use_json_escaping ... ok
+test cas::tests::digest_includes_domain_separator_and_exact_bytes ... ok
+test cas::tests::configured_secret_is_rejected_before_cas_publication ... ok
+test atomic_replace::tests::atomic_replace_overwrites_existing_file ... ok
+test cas::tests::injected_permission_failure_is_stable_without_changing_host_acl ... ok
+test cas::tests::injected_directory_sync_failure_leaves_a_retryable_published_object ... ok
+test cas::tests::injected_publication_failure_cleans_staging ... ok
+test cas::tests::injected_quota_failure_cleans_partial_staging_bytes ... ok
+test cas::tests::injected_short_write_cleans_staging_and_publishes_nothing ... ok
+test cas::tests::existing_secret_bytes_block_cas_startup ... ok
+test cas::tests::malformed_digest_and_domain_are_rejected ... ok
+test cas::tests::put_get_and_repeat_are_verified ... ok
+test cas::tests::injected_startup_scan_failure_does_not_disable_normal_reopen ... ok
+test environment::tests::capture_is_allowlisted_and_deterministic ... ok
+test cas::tests::wrong_expected_digest_is_rejected_before_publication ... ok
+test error::tests::permission_denied_io_has_a_stable_domain_code ... ok
+test error::tests::protected_permission_retains_an_available_raw_os_error ... ok
+test error::tests::sqlite_full_has_a_stable_domain_code ... ok
+test error::tests::sqlite_read_only_has_a_stable_domain_code ... ok
+test cas::tests::tampering_is_integrity_error_and_quarantined ... ok
+test metadata::tests::duplicate_intent_with_changed_content_is_rejected ... ok
+test metadata::tests::duplicate_event_id_with_changed_metadata_is_rejected ... ok
+test metadata::tests::idempotency_returns_original_result_and_rejects_changed_digest ... ok
+test metadata::tests::events_have_monotonic_stream_sequences_and_deduplicate ... ok
+test metadata::tests::opening_database_with_existing_secret_fails_closed ... ok
+test metadata::tests::legacy_repository_without_profile_metadata_fails_closed ... ok
+test environment::tests::persisted_environment_identity_is_immutable ... ok
+test metadata::tests::ref_compare_and_swap_rejects_stale_writer ... ok
+test metadata::tests::repository_format_is_pinned ... ok
+test metadata::tests::unfinished_intent_is_visible_for_recovery ... ok
+test redaction::tests::byte_scan_fails_closed_without_disclosing_secret ... ok
+test redaction::tests::debug_representation_does_not_expose_registered_secrets ... ok
+test redaction::tests::redaction_is_deterministic_and_recursive ... ok
+test redaction::tests::secret_bearing_object_keys_are_replaced_without_collisions ... ok
+test redaction::tests::short_registered_secrets_are_rejected ... ok
+test repository::tests::init_creates_durable_layout_and_marker ... ok
+test metadata::tests::registered_secret_never_reaches_sqlite_or_wal_bytes ... ok
+test repository::tests::missing_marker_is_not_treated_as_an_initialized_repository ... ok
+test metadata::tests::redaction_profile_is_pinned_across_reopen ... ok
+test repository::tests::init_is_idempotent_and_open_reuses_the_same_format ... ok
+test repository::tests::opening_repository_classifies_orphan_intents_as_unknown ... ok
+test repository::tests::startup_does_not_recreate_missing_cas_directories ... ok
+test repository::tests::unsupported_marker_fails_before_metadata_open ... ok
+test repository::tests::repository_wires_one_redaction_policy_into_metadata_and_cas ... ok
+
+test result: ok. 49 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+[1m[32m     Running[0m tests/artifact_consistency.rs (target/m1-ci-msrv-178/debug/deps/artifact_consistency-a56e7faa8071b130)
+
+running 2 tests
+test retained_m1_raw_logs_and_fault_matrix_references_are_consistent ... ok
+test release_bundle_checksums_and_status_matrix_are_consistent ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+[1m[32m     Running[0m tests/cas_failpoints.rs (target/m1-ci-msrv-178/debug/deps/cas_failpoints-9f58e1e410b692cd)
+
+running 1 test
+test fi08_directory_sync_fault_cold_reopen_verifies_object_and_retry_is_idempotent ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[1m[32m     Running[0m tests/compatibility_boundaries.rs (target/m1-ci-msrv-178/debug/deps/compatibility_boundaries-b36e6965ef12a387)
+
+running 9 tests
+test incompatible_operations_object_fails_before_additive_schema_mutation ... ok
+test legacy_metadata_without_profile_is_rejected_before_schema_mutation ... ok
+test previous_event_schema_is_read_without_rewriting_opaque_fields ... ok
+test current_marker_fixture_round_trips_with_additive_fields ... ok
+test redaction_profile_mismatch_requires_explicit_compatibility_choice ... ok
+test unsupported_metadata_format_is_rejected_before_schema_mutation ... ok
+test unsupported_marker_version_fails_before_repository_is_healthy ... ok
+test v01_database_cold_open_keeps_legacy_rows_and_adds_additive_tables ... ok
+test migration_backs_up_raw_v01_without_mutating_source_schema ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+[1m[32m     Running[0m tests/event_projection.rs (target/m1-ci-msrv-178/debug/deps/event_projection-e3fe1cdd83286d69)
+
+running 3 tests
+test envelopes_have_project_cursor_and_legacy_event_compatibility ... ok
+test unknown_event_type_degrades_projection_without_dropping_source ... ok
+test projection_apply_is_idempotent_and_rebuild_is_stable ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+[1m[32m     Running[0m tests/host_resource_faults.rs (target/m1-ci-msrv-178/debug/deps/host_resource_faults-8bdb878abff1bcee)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[1m[32m     Running[0m tests/m1_primitives.rs (target/m1-ci-msrv-178/debug/deps/m1_primitives-06b9ded07b5abdef)
+
+running 2 tests
+test event_and_idempotency_records_are_replay_safe ... ok
+test cas_and_metadata_ports_share_m1_identity_rules ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+[1m[32m     Running[0m tests/metadata_failpoints.rs (target/m1-ci-msrv-178/debug/deps/metadata_failpoints-fb5cfb51b7f59114)
+
+running 6 tests
+test failpoints_are_disabled_by_default_and_one_shot ... ok
+test outcome_boundaries_preserve_pre_state_or_post_state ... ok
+test recovery_boundaries_never_fabricate_success_and_converge_to_unknown ... ok
+test intent_after_commit_returns_fault_but_survives_cold_reopen ... ok
+test fi01_before_intent_commit_cold_reopen_preserves_pre_state_and_retry_publishes_once ... ok
+test sqlite_commit_failpoints_cover_wal_pre_and_post_visibility ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+[1m[32m     Running[0m tests/migration_fixtures.rs (target/m1-ci-msrv-178/debug/deps/migration_fixtures-ebc197e10034d4a6)
+
+running 2 tests
+test migration_interruption_fixture_requires_cold_reopen_and_forbids_mixed_state ... ok
+test previous_generation_fixture_preserves_identity_and_opaque_data ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[1m[32m     Running[0m tests/operation_ledger.rs (target/m1-ci-msrv-178/debug/deps/operation_ledger-e0e384640712370e)
+
+running 8 tests
+test cancelled_unknown_and_recording_quality_are_explicit_states ... ok
+test operation_bindings_require_existing_same_project_records ... ok
+test operation_commit_faults_are_pre_or_post_state_after_cold_reopen ... ok
+test operation_request_retry_is_idempotent_but_changed_content_is_rejected ... ok
+test operation_finish_commit_faults_preserve_pre_or_post_state ... ok
+test operation_start_finish_is_durable_and_emits_ordered_events ... ok
+test terminal_outcome_is_idempotent_and_cannot_be_rewritten ... ok
+test operation_redaction_applies_before_sqlite_and_event_persistence ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+[1m[32m     Running[0m tests/performance_measurements.rs (target/m1-ci-msrv-178/debug/deps/performance_measurements-0bf8a6dcf6be879d)
+
+running 1 test
+test m1_performance_probe_writes_reproducible_record ... ignored, measurement-only; run explicitly with --ignored
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[1m[32m     Running[0m tests/process_kill_migration.rs (target/m1-ci-msrv-178/debug/deps/process_kill_migration-e1210ba056f58655)
+
+running 3 tests
+test child_migration_entrypoint ... ok
+
+running 1 test
+
+running 1 test
+test process_kill_before_selector_leaves_legacy_only ... ok
+test process_kill_after_selector_uses_new_generation_only ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+[1m[32m     Running[0m tests/process_kill_recovery.rs (target/m1-ci-msrv-178/debug/deps/process_kill_recovery-0935c63bfe81e27e)
+
+running 3 tests
+test child_process_entrypoint ... ok
+
+running 1 test
+
+running 1 test
+test process_kill_after_intent_never_becomes_success ... ok
+test process_kill_after_outcome_keeps_republishable_outbox ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+[1m[32m     Running[0m tests/property_corpus.rs (target/m1-ci-msrv-178/debug/deps/property_corpus-7b46cc5d8d6c22f3)
+
+running 10 tests
+test pt01_canonical_json_and_covered_bytes_have_one_identity ... ok
+test pt04_generated_ref_writer_order_has_one_cas_winner ... ok
+test pt02_concurrent_identical_cas_puts_converge ... ok
+test pt03_metadata_commit_boundary_is_pre_or_post_state has been running for over 60 seconds
+test pt05_event_sequences_are_contiguous_per_stream_and_duplicates_converge has been running for over 60 seconds
+test pt05_event_sequences_are_contiguous_per_stream_and_duplicates_converge ... ok
+test pt03_metadata_commit_boundary_is_pre_or_post_state ... ok
+test pt06_duplicate_event_permutations_converge_in_the_event_store has been running for over 60 seconds
+test pt06_duplicate_event_permutations_converge_in_the_event_store ... ok
+test pt07_same_key_and_digest_has_one_idempotency_transition ... ok
+test pt08_key_reuse_is_rejected_and_scopes_do_not_alias ... ok
+test pt12_redaction_is_deterministic_and_uses_an_opaque_fixed_marker ... ok
+test pt11_registered_secrets_are_closed_over_persisted_metadata_and_cas has been running for over 60 seconds
+test pt11_registered_secrets_are_closed_over_persisted_metadata_and_cas ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 324.31s
+
+[1m[32m     Running[0m tests/property_recovery_migration.rs (target/m1-ci-msrv-178/debug/deps/property_recovery_migration-3eb780ca15dae2b0)
+
+running 4 tests
+test pt09_recovery_converges_across_interleavings_and_commit_boundaries has been running for over 60 seconds
+test pt10_crash_schedules_never_turn_an_unresolved_intent_into_success has been running for over 60 seconds
+test pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently has been running for over 60 seconds
+test pt10_crash_schedules_never_turn_an_unresolved_intent_into_success ... ok
+test pt14_retry_does_not_retry_terminal_protected_denial ... ok
+test pt09_recovery_converges_across_interleavings_and_commit_boundaries ... ok
+test pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 626.31s
+
+[1m[32m     Running[0m tests/pt13_fi10.rs (target/m1-ci-msrv-178/debug/deps/pt13_fi10-f6a710894a8d013c)
+
+running 8 tests
+test fi10_repeated_crash_reopen_is_idempotent ... ok
+test pt13_duplicate_event_identity_and_stale_cursor_fail_closed ... ok
+test pt13_generation_assertions_fail_closed_and_matching_identity_succeeds ... ok
+test pt13_malformed_envelope_and_corrupted_projection_fail_closed ... ok
+test fi10_projection_failpoint_schedule_converges_to_clean_replay_after_reopen ... ok
+test pt13_source_generation_remains_available_for_audit_after_b_is_active ... ok
+test pt13_migration_a_to_b_preserves_projection_semantics_and_source_events ... ok
+test fi10_migration_interruption_keeps_generation_and_projection_aligned ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s
+
+[1m[32m     Running[0m tests/recovery_boundaries.rs (target/m1-ci-msrv-178/debug/deps/recovery_boundaries-9765729812502240)
+
+running 7 tests
+test corrupt_cas_object_is_quarantined_and_never_read_as_success ... ok
+test orphan_intents_are_marked_unknown_once_and_keep_the_intent_payload ... ok
+test outcome_and_published_transitions_are_idempotent ... ok
+test outcome_durable_rows_remain_available_for_publication_recovery ... ok
+test idempotency_record_survives_restart_without_second_mutation ... ok
+test unsupported_repository_format_is_rejected_before_open ... ok
+test committed_metadata_survives_reopen_and_uses_full_wal_durability ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+[1m[32m     Running[0m tests/repository_failpoints.rs (target/m1-ci-msrv-178/debug/deps/repository_failpoints-4269dfa25de16f31)
+
+running 2 tests
+test repository_cas_quota_fixture_is_one_shot_and_cleans_staging ... ok
+test startup_recovery_fault_is_retried_after_cold_reopen_and_converges ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+[1m[32m     Running[0m tests/repository_migration.rs (target/m1-ci-msrv-178/debug/deps/repository_migration-f3f9b481a83f83b3)
+
+running 8 tests
+test changed_source_rejects_retry_and_does_not_reuse_an_unpublished_target ... ok
+test invalid_migration_paths_are_rejected_before_the_repository_is_touched ... ok
+test foreign_valid_generation_database_cannot_replace_the_active_identity ... ok
+test legacy_migration_builds_a_generation_and_preserves_durable_state ... ok
+test legacy_v01_reader_boundary_rejects_the_generation_selector_before_mutation ... ok
+test corrupted_selector_or_active_manifest_fails_closed ... ok
+test migration_preserves_the_redaction_profile_and_full_tree_secret_boundary ... ok
+test migration_failpoints_expose_only_legacy_or_active_generation_after_cold_restart ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s
+
+[1m[32m     Running[0m tests/security_boundaries.rs (target/m1-ci-msrv-178/debug/deps/security_boundaries-6e72c6439e1627dc)
+
+running 1 test
+test full_pong_tree_is_secret_free_and_unknown_files_fail_closed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+[1m[32m     Running[0m tests/wal_tail_recovery.rs (target/m1-ci-msrv-178/debug/deps/wal_tail_recovery-e08a7779421c1f75)
+
+running 1 test
+test truncated_wal_tail_never_fabricates_an_event_after_cold_restart ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+[1m[32m     Running[0m tests/workspace_faults.rs (target/m1-ci-msrv-178/debug/deps/workspace_faults-2525aaeb59ab2e52)
+
+running 8 tests
+test cas_blob_and_manifest_publication_faults_leave_no_partial_object ... ok
+test materialization_cleanup_failure_reports_recovery_required_and_retains_orphan ... ok
+test manager_cas_failure_does_not_advance_workspace_head_or_revision ... ok
+test materialization_fault_actions_have_stable_domain_codes ... ok
+test manager_head_update_commit_failure_leaves_head_and_revision_unchanged ... ok
+test orphan_materialization_cleanup_is_explicit_and_reopen_safe ... ok
+test materialization_write_sync_tree_sync_and_rename_failures_clean_temporary_only ... ok
+test parent_sync_failure_is_outcome_unknown_and_preserves_published_destination ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+[1m[32m     Running[0m tests/workspace_snapshot.rs (target/m1-ci-msrv-178/debug/deps/workspace_snapshot-0f40b7c7b48dd96b)
+
+running 13 tests
+test environment_facts_never_persist_sensitive_allowlist_keys ... ok
+test local_driver_rejects_reparse_ancestors_for_create_and_materialize ... ok
+test local_snapshot_enforces_file_count_and_single_file_size_limits ... ok
+test lease_epoch_and_workspace_revision_reject_stale_writers ... ok
+test local_snapshot_is_canonical_and_materializes_without_partial_destination ... ok
+test malformed_tree_paths_fail_closed_before_materialization ... ok
+test expired_lease_takeover_and_workspace_records_survive_cold_reopen ... ok
+test post_commit_workspace_creation_error_keeps_the_committed_materialization ... ok
+test workspace_creation_rejects_missing_or_wrong_project_environment_without_leaking_directory ... ok
+test workspace_snapshot_rejects_symlinks ... ok
+test workspace_update_rejects_missing_and_wrong_project_environment_bindings ... ok
+test workspace_manager_keeps_physical_path_outside_pong_and_advances_head_under_lease ... ok
+test registered_secret_blocks_manager_snapshot_without_advancing_workspace ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+[1m[32m   Doc-tests[0m pong_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

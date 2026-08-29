@@ -1,0 +1,21 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running tests/property_corpus.rs (target/linux-native-vm-6cb62fb-20260828/debug/deps/property_corpus-5166a23cd2ba2b09)
+
+running 10 tests
+test pt01_canonical_json_and_covered_bytes_have_one_identity ... ok
+test pt02_concurrent_identical_cas_puts_converge ... ok
+test pt04_generated_ref_writer_order_has_one_cas_winner ... ok
+test pt03_metadata_commit_boundary_is_pre_or_post_state has been running for over 60 seconds
+test pt05_event_sequences_are_contiguous_per_stream_and_duplicates_converge has been running for over 60 seconds
+test pt07_same_key_and_digest_has_one_idempotency_transition ... ok
+test pt03_metadata_commit_boundary_is_pre_or_post_state ... ok
+test pt06_duplicate_event_permutations_converge_in_the_event_store has been running for over 60 seconds
+test pt08_key_reuse_is_rejected_and_scopes_do_not_alias ... ok
+test pt12_redaction_is_deterministic_and_uses_an_opaque_fixed_marker ... ok
+test pt06_duplicate_event_permutations_converge_in_the_event_store ... ok
+test pt05_event_sequences_are_contiguous_per_stream_and_duplicates_converge ... ok
+test pt11_registered_secrets_are_closed_over_persisted_metadata_and_cas has been running for over 60 seconds
+test pt11_registered_secrets_are_closed_over_persisted_metadata_and_cas ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 169.63s
+

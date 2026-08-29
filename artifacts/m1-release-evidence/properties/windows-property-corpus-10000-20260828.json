@@ -1,0 +1,31 @@
+{
+  "record_version": "m1-property-evidence-0.1",
+  "captured_at": "2026-08-28T18:27:23+08:00",
+  "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "platform": "windows-x86_64-msvc",
+  "filesystem": "NTFS",
+  "evidence_class": "NATIVE",
+  "toolchain": "current Windows stable Rust toolchain",
+  "target_directory": "D:\\pong\\target\\m1-closure-property-corpus-20260828",
+  "command": "PONG_PROPTEST_CASES=10000 CARGO_TARGET_DIR=D:\\pong\\target\\m1-closure-property-corpus-20260828 cargo test --locked --test property_corpus -- --nocapture",
+  "requested_cases_per_property": 10000,
+  "executed_cases_per_property": 10000,
+  "total_executed_cases": 100000,
+  "properties": [
+    {"id": "PT-01", "status": "PASS", "seed": "0x50540001CAFE0001"},
+    {"id": "PT-02", "status": "PASS", "seed": "0x50540002CAFE0002"},
+    {"id": "PT-03", "status": "PASS", "seed": "0x50540003CAFE0003"},
+    {"id": "PT-04", "status": "PASS", "seed": "0x50540004CAFE0004"},
+    {"id": "PT-05", "status": "PASS", "seed": "0x50540005CAFE0005"},
+    {"id": "PT-06", "status": "PASS", "seed": "0x50540006CAFE0006"},
+    {"id": "PT-07", "status": "PASS", "seed": "0x50540007CAFE0007"},
+    {"id": "PT-08", "status": "PASS", "seed": "0x50540008CAFE0008"},
+    {"id": "PT-11", "status": "PASS", "seed": "0x50540011CAFE0011"},
+    {"id": "PT-12", "status": "PASS", "seed": "0x50540012CAFE0012"}
+  ],
+  "exit_code": 0,
+  "raw_log": "artifacts/m1-release-evidence/properties/windows-property-corpus-10000-20260828.log",
+  "raw_log_sha256": "066D93FF84A760D78AD264353FC9137F2A5CE34BEA1DBFB6895509EF7C853250",
+  "retention": "retained release-evidence record; acceptance remains pending",
+  "release_owner": "unassigned"
+}

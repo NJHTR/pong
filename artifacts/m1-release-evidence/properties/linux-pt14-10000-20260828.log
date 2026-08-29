@@ -1,0 +1,9 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running tests/property_recovery_migration.rs (target/linux-native-vm-6cb62fb-20260828/debug/deps/property_recovery_migration-9bb9e8ac957cad50)
+
+running 1 test
+test pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently has been running for over 60 seconds
+test pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 242.85s
+

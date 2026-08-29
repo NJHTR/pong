@@ -1,0 +1,24 @@
+{
+  "record_version": "m1-property-evidence-0.2",
+  "captured_at": "2026-08-28T22:06:00+08:00",
+  "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "hostname": "rtc-node-1",
+  "platform": "linux-x86_64-gnu",
+  "filesystem": "ext4",
+  "evidence_class": "LINUX_NATIVE",
+  "property": {
+    "id": "PT-14",
+    "name": "migration_failpoints_are_old_or_verified_new_and_retry_idempotently",
+    "requested_cases": 10000,
+    "executed_cases": 10008,
+    "migration_points": 9,
+    "status": "PASS"
+  },
+  "toolchain": "Rust 1.85.0 (MSRV 1.78.0 unavailable)",
+  "command": "PONG_PROPTEST_CASES=10000 cargo test --locked --offline --test property_recovery_migration pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently -- --nocapture",
+  "elapsed_seconds": 242.85,
+  "exit_code": 0,
+  "raw_log": "artifacts/m1-release-evidence/properties/linux-pt14-10000-20260828.log",
+  "raw_log_sha256": "FB938F5246BF12D2276FCF9EE7A84AF5BE2EE75BE0C7164107557DAEFE2C47D8",
+  "retention": "retained Linux-native VM evidence; release-owner acceptance pending"
+}

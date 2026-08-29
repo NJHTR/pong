@@ -2,6 +2,41 @@
 
 **Status: M1 Release Gate NOT PASSED.**
 
+The closure audit and action register are [`M1_FINAL_GATE_AUDIT.md`](M1_FINAL_GATE_AUDIT.md)
+and [`M1_FINAL_GATE_CLOSURE_PLAN.md`](M1_FINAL_GATE_CLOSURE_PLAN.md). The
+performance decision template is [`M1_PERFORMANCE_ACCEPTANCE.md`](M1_PERFORMANCE_ACCEPTANCE.md);
+the owner-only approval record is [`M1_RELEASE_OWNER_SIGNOFF.md`](M1_RELEASE_OWNER_SIGNOFF.md).
+These documents do not promote missing evidence or pending decisions.
+
+## Final Acceptance Overlay (2026-08-29)
+
+The historical audit entries in this document remain retained evidence and are
+not rewritten. Release Owner `NJHTR` subsequently supplied a formal textual
+declaration accepting the bounded M1 scope and governance decisions:
+
+```text
+OWNER_DECISION = ACCEPTED
+OLD_READER = ACCEPTED EXCEPTION / OUT OF SCOPE
+FI_03 = DEFERRED TO M2+
+ADR_0015 = ACCEPTED AS INFORMATIONAL BASELINE
+ADR_0016 = ACCEPTED
+RELEASE_OWNER_SIGNOFF = ACCEPTED
+```
+
+The retained technical evidence is `PASS` only for the named scope. The
+working tree is still dirty, the accepted records are not in a clean committed
+candidate, and no release tag exists. Therefore the current release state is:
+
+```text
+TECHNICAL_GATE = PASS (scope-bounded)
+GOVERNANCE_GATE = ACCEPTED
+CANDIDATE_FREEZE = PENDING
+M1_RELEASE_GATE = BLOCKED / NOT_PASSED
+```
+
+See [`M1_FINAL_GATE_REPORT.md`](M1_FINAL_GATE_REPORT.md) for the current final
+acceptance result and the remaining candidate-freeze sequence.
+
 The auditable close-out bundle is
 [`artifacts/m1-release-evidence/`](../../artifacts/m1-release-evidence/), with
 the normalized matrix, build metadata, retained raw evidence, source
@@ -16,9 +51,9 @@ and accepted.
 | PT-13 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, three reruns | Native-platform and owner acceptance |
 | FI-10 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, A-J and repeated crash | Native filesystem/power-loss and owner acceptance |
 | Old Reader | BLOCKED | Compatibility absence record | No released v0.1 binary or tag | Independent binary, hash, fixture, read/write probe |
-| Native Linux | FAIL | GitHub Actions runs `33074865773`, `33080915116`, `33085292318`, and `33142438624`, artifact `m1-linux-native-evidence` | Ubuntu 24.04 / ext4 / Rust 1.98 + 1.78 | Run #4 still failed both full tests with the same committed `build-metadata.json` checksum drift; the release bundle checksum/reference boundary is now corrected and another rerun is required |
-| Native macOS | FAIL | GitHub Actions runs `33074865773`, `33080915116`, `33085292318`, and `33142438624`, artifact `m1-macos-native-evidence` | macOS 14 arm64 / filesystem `unknown` / Rust 1.98 + 1.78 | Run #4 still failed both full tests with the same checksum drift; filesystem metadata is unknown and cannot be called APFS; rerun required |
-| Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json` | `dev`; bundle traceability is a pre-closeout snapshot; no release tag | Release-owner-approved release tag |
+| Native Linux | PASS (executable evidence) | GitHub Actions run `33145714975`, artifact `m1-linux-native-evidence`; historical failures retained | Ubuntu 24.04 x86_64 / ext4 / Rust 1.98 + 1.78 | Evidence passes all 13 commands and full tests; release-owner acceptance, old-reader, fault, and budget rows remain open |
+| Native macOS | PASS (executable evidence) | GitHub Actions run `33145714975`, artifact `m1-macos-native-evidence`; historical failures retained | macOS 14 arm64 / filesystem `unknown` / Rust 1.98 + 1.78 | Evidence passes all 13 commands and full tests; filesystem is unknown, not APFS; release-owner acceptance, old-reader, fault, and budget rows remain open |
+| Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json`; regenerated `traceability/release-traceability.json` | `dev` at `6cb62fb`; current evidence tree is dirty, no release tag, and no owner approval | Clean owner-approved release snapshot and tag |
 
 This is an evidence report, not a release claim. It separates executable
 evidence from implementation that still lacks the platform, compatibility,
@@ -75,6 +110,21 @@ reference now make the committed evidence byte boundary deterministic; a fresh
 native rerun is still required before either row can change from `FAIL`.
 
 A fourth manually dispatched run (`33142438624`, commit `e96131d9bb6d3799055401841d0cb710e4f497ff`) produced complete Linux and macOS artifacts. All format, check, clippy, focused, and cold-reopen commands passed; only the two full test commands per platform exited `101`. The exact failure was `tests/artifact_consistency.rs:157`: the committed LF `build-metadata.json` blob was hashed as `5E1561C7C3E32AF94B36D271700A50C41371920B3FFE6DEF5E634E8F77B134A5`, while `SHA256SUMS` and `artifact-references.json` still recorded the former Windows CRLF hash `BF4AD3F6FA334833D420DDB954AC94EFBEB70450B632DCDEC3ACBFB8990B5DE1`. The ZIP SHA-256 values are Linux `DA903E4D7C6E11D3DD08BEE598883BE813E606305FA56ABA91D2154ACD0E6666` and macOS `501832097AB33640CFE062A98293CC4A36C7B83C8FCAF3918253D89F2716AD34`. The checksum and reference records are now rebound to the committed LF bytes, and a clean index export plus local artifact-consistency test pass; Run #4 remains retained failure evidence and does not promote M1.
+
+A fifth manually dispatched run (`33145714975`, commit
+`6cb62fb455e92ab731a4bb5233856d10c1f1ce93`) completed successfully on both
+native runners. The retained Linux and macOS artifacts contain complete
+platform metadata, manifests, nested `SHA256SUMS`, command records, and
+per-command exit files. All 13 commands on each platform returned `0`,
+including stable and Rust 1.78 `fmt`, `check`, full `test`, clippy,
+migration, recovery, compatibility, PT-13/FI-10, and cold reopen. The ZIP
+SHA-256 values are Linux
+`C4880D66D2AC18A5F2E2EF1DA8C375A3689C4D11B9E26DCCC26A96B34819C58A` and macOS
+`EC89DC1F4A28AC0834173184E8BFF5C08D0A0DA23803F0D057AF6BB48A49BA3A`.
+Run #5 changes the native Linux and macOS rows from executable `FAIL` to
+executable `PASS`; it does not by itself pass M1 because the release-owner,
+old-reader, complete fault, property-scope, and performance-budget decisions
+remain unaccepted.
 
 ## Reproduction
 
@@ -239,6 +289,8 @@ The following claims have executable evidence in the current implementation:
 | Native macOS run `33080915116` | GitHub Actions macOS 14 arm64; filesystem metadata unavailable; [`download metadata`](../../artifacts/m1-platform-runs/github-actions-run-33080915116/download-metadata.json) and retained artifact | Focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed; MSRV `test` exited `101` and MSRV clippy exited `0`; the artifact contains no platform metadata, manifest, stable logs, or stable exit records. | Incomplete failure evidence; capture/upload path must be fixed and rerun. |
 | Native Linux run `33085292318` | GitHub Actions Ubuntu 24.04/ext4; [`download metadata`](../../artifacts/m1-platform-runs/github-actions-run-33085292318/download-metadata.json) and retained artifact | Complete artifact. Stable/MSRV `fmt`, `check`, and clippy plus focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed; both full `test` commands exited `101` in `artifact_consistency` because committed evidence bytes differed from the references used by the run. | Failure evidence only; byte-boundary fix is now in the worktree and another native rerun is required. |
 | Native macOS run `33085292318` | GitHub Actions macOS 14 arm64; [`download metadata`](../../artifacts/m1-platform-runs/github-actions-run-33085292318/download-metadata.json) and retained artifact | Complete artifact. Stable/MSRV `fmt`, `check`, and clippy plus focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed; both full `test` commands exited `101` in `artifact_consistency` for the same committed-byte mismatch. Filesystem metadata is `unknown`. | Failure evidence only; do not infer APFS support; another native rerun is required. |
+| Native Linux run `33145714975` | GitHub Actions Ubuntu 24.04 x86_64/ext4; [`download metadata`](../../artifacts/m1-platform-runs/github-actions-run-33145714975/download-metadata.json) and retained artifact | Complete artifact. Stable/MSRV `fmt`, `check`, full `test`, clippy, focused M1 suites, and cold reopen all returned `0`; all 13 command records are zero. | Executable evidence `PASS`; release-owner, old-reader, fault, and performance acceptance remain open. |
+| Native macOS run `33145714975` | GitHub Actions macOS 14 arm64; filesystem metadata `unknown`; [`download metadata`](../../artifacts/m1-platform-runs/github-actions-run-33145714975/download-metadata.json) and retained artifact | Complete artifact. Stable/MSRV `fmt`, `check`, full `test`, clippy, focused M1 suites, and cold reopen all returned `0`; all 13 command records are zero. | Executable evidence `PASS`; filesystem is not claimed as APFS; release-owner, old-reader, fault, and performance acceptance remain open. |
 | Migration atomicity | `tests/repository_migration.rs`, `tests/process_kill_migration.rs`, and `tests/property_recovery_migration.rs` exercise SQLite Online Backup, target verification, selector replacement, child termination, retry idempotency, and old-only/new-only visibility. No test adopts a merely existing partial generation. |
 | Recovery and WAL | Child-process termination after intent/outcome boundaries, SQLite WAL-tail truncation, repeated recovery, and unknown-outcome preservation pass on Windows and Linux Rust 1.78. |
 | CAS and security | CAS digest/immutability, quarantine, short-write and synthetic quota/permission paths pass. Generation identity, manifest identity, redaction profile, wrong-valid-database replacement, and full `.pong` byte scans fail closed. `foreign_valid_generation_database_cannot_replace_the_active_identity` additionally replaces the active file with a separately valid 0.2 database carrying a different generation/migration identity and observes `INTEGRITY_ERROR`. `artifact_consistency.rs` verifies retained raw-log hashes and FI-matrix artifact paths without changing acceptance status. |
@@ -364,11 +416,12 @@ and hashes before either native row can be accepted.
 These are recorded as unavailable evidence, not as passing assumptions.
 
 The supplied workspace is a Git repository on branch `dev` with remote
-`https://github.com/NJHTR/pong.git`. The bundle's traceability record points to
-the pre-closeout execution snapshot; the current evidence update is deliberately
-kept separate from those captured command results. There is no release tag or
-owner-approved release commit. Evidence remains traceable by exact path,
-command, toolchain, platform, test result, and retained artifact hash.
+`https://github.com/NJHTR/pong.git`. The regenerated traceability record now
+points to the audited HEAD `6cb62fb` and the retained native workflow
+`33145714975`; it records the working tree as dirty because this evidence
+closeout is uncommitted. There is no release tag or owner-approved release
+commit. Evidence remains traceable by exact path, command, toolchain, platform,
+test result, and retained artifact hash.
 
 ### External verification handoff
 

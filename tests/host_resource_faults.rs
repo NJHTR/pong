@@ -237,6 +237,107 @@ fn filesystem_type(path: &Path) -> String {
 }
 
 #[cfg(target_os = "linux")]
+fn mounted_filesystem_type(path: &Path) -> String {
+    let output = Command::new("findmnt")
+        .args(["-no", "FSTYPE", "--target"])
+        .arg(path)
+        .output()
+        .expect("run findmnt for filesystem type");
+    assert!(
+        output.status.success(),
+        "findmnt filesystem query must succeed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8(output.stdout)
+        .expect("findmnt output is UTF-8")
+        .trim()
+        .to_owned()
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+#[ignore = "FI-13 host evidence: run as an unprivileged user on a dedicated ext4 scratch directory"]
+fn fi_13_real_linux_posix_permission_read_revocation_fails_closed_and_recovers() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let scratch = empty_host_fault_root();
+    let filesystem = mounted_filesystem_type(scratch.path());
+    assert_eq!(
+        filesystem, "ext4",
+        "FI-13 Linux evidence must run on the dedicated ext4 VM filesystem"
+    );
+    let uid = unsafe { libc::getuid() };
+    let gid = unsafe { libc::getgid() };
+    assert_ne!(
+        uid, 0,
+        "FI-13 POSIX mode-bit denial must run as an unprivileged identity"
+    );
+
+    let directory = repository_in(scratch.path());
+    let mut repository = Repository::init(directory.path()).expect("initialize repository");
+    let committed = repository
+        .cas()
+        .put("snapshot/v1", b"committed-before-posix-revocation")
+        .expect("publish committed object");
+    repository
+        .metadata_mut()
+        .compare_and_swap_ref(
+            "refs/heads/main",
+            None,
+            &committed.to_hex(),
+            "2026-08-24T00:00:00Z",
+        )
+        .expect("publish committed ref");
+    let metadata_path = repository.active_metadata_path();
+    let original_mode = fs::metadata(&metadata_path)
+        .expect("stat metadata before revocation")
+        .permissions()
+        .mode()
+        & 0o777;
+    assert_ne!(
+        original_mode & 0o400,
+        0,
+        "metadata must be owner-readable first"
+    );
+    drop(repository);
+
+    let denied_mode = original_mode & !0o444;
+    fs::set_permissions(&metadata_path, fs::Permissions::from_mode(denied_mode))
+        .expect("revoke POSIX read permissions");
+    let kernel_error = fs::read(&metadata_path).expect_err("POSIX mode bits must deny a real read");
+    assert_eq!(kernel_error.kind(), std::io::ErrorKind::PermissionDenied);
+    let raw_errno = kernel_error
+        .raw_os_error()
+        .expect("EACCES must expose a Linux errno");
+    assert_eq!(raw_errno, 13, "Linux permission denial must be EACCES");
+    let open_error = Repository::open(directory.path()).expect_err("startup must fail closed");
+    let observed_code = open_error.code();
+    assert_eq!(observed_code, "PERMISSION_DENIED");
+    println!(
+        "FI-13 platform=linux filesystem={filesystem} permission_mechanism=POSIX_mode_bits uid={uid} gid={gid} mode_before={original_mode:o} mode_denied={denied_mode:o} raw_errno={raw_errno} pong_error={observed_code} recovery=repository_valid cold_reopen=success"
+    );
+
+    fs::set_permissions(&metadata_path, fs::Permissions::from_mode(original_mode))
+        .expect("restore POSIX read permissions");
+    let reopened =
+        Repository::open(directory.path()).expect("cold reopen after permission restore");
+    assert_eq!(
+        reopened
+            .metadata()
+            .get_ref("refs/heads/main")
+            .expect("read committed ref"),
+        Some(committed.to_hex())
+    );
+    assert_eq!(
+        reopened
+            .cas()
+            .get("snapshot/v1", committed)
+            .expect("read committed object"),
+        b"committed-before-posix-revocation"
+    );
+}
+
+#[cfg(target_os = "linux")]
 struct FullFilesystem {
     _filler: tempfile::NamedTempFile,
     initial_available: u64,

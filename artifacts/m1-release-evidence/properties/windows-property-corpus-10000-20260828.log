@@ -1,0 +1,12 @@
+command=PONG_PROPTEST_CASES=10000 CARGO_TARGET_DIR=D:\pong\target\m1-closure-property-corpus-20260828 cargo test --locked --test property_corpus -- --nocapture
+commit=6cb62fb455e92ab731a4bb5233856d10c1f1ce93
+platform=windows-x86_64-msvc
+filesystem=NTFS
+evidence_class=NATIVE
+requested_cases=10000 per property
+tests=10
+properties=PT-01,PT-02,PT-03,PT-04,PT-05,PT-06,PT-07,PT-08,PT-11,PT-12
+result=10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+executed_cases=10000 per property; 100000 total
+exit_code=0
+wall_elapsed_seconds=570.43

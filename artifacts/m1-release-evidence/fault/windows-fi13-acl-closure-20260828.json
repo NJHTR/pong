@@ -1,0 +1,21 @@
+{
+  "record_version": "m1-fault-run-0.2",
+  "fault_id": "FI-13",
+  "captured_at": "2026-08-28T18:29:25+08:00",
+  "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "platform": "windows-x86_64-msvc",
+  "filesystem": "NTFS",
+  "evidence_class": "NATIVE",
+  "execution_method": "cargo ignored host-resource test with dedicated scratch directory",
+  "external_dependency": "Windows icacls ACL provider; no Docker or synthetic failpoint",
+  "scenario": "revoke read ACL from repository data, reopen, restore ACL, and cold reopen",
+  "expected_result": "permission denial is classified as PERMISSION_DENIED; committed data remains readable after ACL restoration",
+  "observed_result": "kernel raw_os_error=5; Pong code=PERMISSION_DENIED; ACL restoration, committed ref/CAS read, and cold reopen passed",
+  "command": "PONG_HOST_FAULT_ROOT=D:\\pong\\.m1-fi13-closure-20260828 CARGO_TARGET_DIR=D:\\pong\\target\\m1-closure-fi13-20260828 cargo test --locked --test host_resource_faults fi_13_real_windows_acl_read_revocation_fails_closed_and_recovers -- --ignored --nocapture",
+  "exit_code": 0,
+  "raw_log": "artifacts/m1-release-evidence/fault/windows-fi13-acl-closure-20260828-success.log",
+  "raw_log_sha256": "2D34BD6D4BCDC70E0AC21FB9E6DF68745D7F224DC0392D11C55243ECFECC92C2",
+  "status": "PASS_for_Windows_NTFS_row_only",
+  "acceptance": "partial_platform_matrix",
+  "release_owner": "unassigned"
+}

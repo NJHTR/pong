@@ -1,0 +1,24 @@
+    Checking once_cell v1.21.4
+    Checking getrandom v0.3.4
+    Checking bitflags v2.13.1
+    Checking ppv-lite86 v0.2.21
+    Checking rand_core v0.9.5
+    Checking ahash v0.8.12
+    Checking linux-raw-sys v0.4.15
+    Checking rand v0.9.5
+    Checking hashbrown v0.14.5
+    Checking rand_chacha v0.9.0
+    Checking rustix v0.38.44
+    Checking rand_xorshift v0.4.0
+    Checking num-traits v0.2.19
+    Checking getrandom v0.2.17
+    Checking hashlink v0.9.1
+    Checking fastrand v2.5.0
+    Checking regex-syntax v0.8.11
+    Checking rusqlite v0.32.1
+    Checking lazy_static v1.5.0
+    Checking unarray v0.1.4
+    Checking pong-core v0.1.0 (/root/pong-linux-native-6cb62fb)
+    Checking tempfile v3.15.0
+    Checking proptest v1.8.0
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.42s

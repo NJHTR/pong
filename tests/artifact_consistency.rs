@@ -236,6 +236,148 @@ fn assert_native_failure_artifacts(root: &Path, run_id: &str, macos_complete: bo
     }
 }
 
+fn assert_native_success_artifacts(root: &Path, run_id: &str) {
+    let run = root.join(format!(
+        "artifacts/m1-platform-runs/github-actions-run-{run_id}"
+    ));
+    let metadata: Value = serde_json::from_slice(
+        &fs::read(run.join("download-metadata.json")).expect("native CI download metadata"),
+    )
+    .expect("native CI download metadata JSON");
+    assert_eq!(metadata["workflow_run_id"], run_id);
+    assert_eq!(metadata["status"], "success");
+    assert_eq!(
+        metadata["commit"],
+        "6cb62fb455e92ab731a4bb5233856d10c1f1ce93"
+    );
+
+    for (platform, expected_filesystem) in [("linux", "ext4"), ("macos", "unknown")] {
+        let platform_root = run.join(platform);
+        let commands = metadata["command_disposition"][platform]
+            .as_array()
+            .unwrap_or_else(|| panic!("run {run_id} is missing {platform} command disposition"));
+        assert_eq!(
+            commands.len(),
+            13,
+            "run {run_id} must retain all native command dispositions for {platform}"
+        );
+        assert!(
+            commands.iter().all(|command| {
+                command.get("label").and_then(Value::as_str).is_some()
+                    && command.get("command").and_then(Value::as_str).is_some()
+                    && command["exit_code"].as_i64() == Some(0)
+            }),
+            "run {run_id} contains a non-zero or incomplete {platform} command disposition"
+        );
+
+        let command_lines = fs::read_to_string(platform_root.join("commands.tsv"))
+            .expect("native command manifest")
+            .lines()
+            .map(|line| {
+                line.split_once('\t')
+                    .unwrap_or_else(|| panic!("malformed command manifest line: {line}"))
+                    .0
+                    .to_owned()
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(command_lines.len(), commands.len());
+        for label in command_lines {
+            let exit_path = platform_root.join(format!(
+                "{}/{}.exit",
+                if label.starts_with("stable-") || label.starts_with("msrv-") {
+                    "build"
+                } else {
+                    "logs"
+                },
+                label
+            ));
+            assert_eq!(
+                fs::read_to_string(&exit_path)
+                    .unwrap_or_else(|error| panic!("{}: {error}", exit_path.display()))
+                    .trim(),
+                "0",
+                "native command did not exit zero: {}",
+                exit_path.display()
+            );
+        }
+
+        let platform_metadata_path = platform_root.join("platform/platform-metadata.json");
+        let platform_metadata: Value = serde_json::from_slice(
+            &fs::read(&platform_metadata_path)
+                .unwrap_or_else(|error| panic!("{}: {error}", platform_metadata_path.display())),
+        )
+        .unwrap_or_else(|error| {
+            panic!(
+                "{} is invalid JSON: {error}",
+                platform_metadata_path.display()
+            )
+        });
+        assert_eq!(platform_metadata["commit"], metadata["commit"]);
+        assert_eq!(platform_metadata["workflow_run_id"], run_id);
+        assert_eq!(
+            platform_metadata["environment"]["filesystem"],
+            expected_filesystem
+        );
+
+        let manifest_path = platform_root.join("artifact-manifest.json");
+        let manifest: Value = serde_json::from_slice(
+            &fs::read(&manifest_path)
+                .unwrap_or_else(|error| panic!("{}: {error}", manifest_path.display())),
+        )
+        .unwrap_or_else(|error| panic!("{} is invalid JSON: {error}", manifest_path.display()));
+        assert_eq!(manifest["commit"], metadata["commit"]);
+        let files = manifest["files"].as_array().expect("native artifact files");
+        assert!(!files.is_empty());
+        for file in files {
+            let relative = file["path"].as_str().expect("native artifact path");
+            let resolved = relative_artifact_path(&platform_root, relative);
+            assert!(resolved.is_file(), "native artifact is missing: {relative}");
+            assert_eq!(
+                fs::metadata(&resolved)
+                    .unwrap_or_else(|error| panic!("{}: {error}", resolved.display()))
+                    .len(),
+                file["bytes"].as_u64().expect("native artifact byte count")
+            );
+        }
+
+        let sums_path = platform_root.join("SHA256SUMS");
+        let sums = fs::read_to_string(&sums_path).expect("native artifact SHA256SUMS");
+        let mut listed = 0usize;
+        for line in sums.lines().filter(|line| !line.trim().is_empty()) {
+            let (expected, relative) = line
+                .split_once("  ")
+                .unwrap_or_else(|| panic!("malformed native SHA256SUMS line: {line}"));
+            assert_eq!(expected.len(), 64);
+            assert!(expected.bytes().all(|byte| byte.is_ascii_hexdigit()));
+            assert!(relative.starts_with("evidence/"));
+            let relative = relative.strip_prefix("evidence/").expect("evidence prefix");
+            let resolved = relative_artifact_path(&platform_root, relative);
+            assert!(
+                resolved.is_file(),
+                "native checksum references missing file: {relative}"
+            );
+            assert_eq!(
+                hex::encode_upper(Sha256::digest(
+                    fs::read(&resolved)
+                        .unwrap_or_else(|error| panic!("{}: {error}", resolved.display())),
+                )),
+                expected.to_ascii_uppercase(),
+                "native artifact hash drift: {relative}"
+            );
+            listed += 1;
+        }
+        let actual_files = {
+            let mut files = Vec::new();
+            collect_files(&platform_root, &mut files);
+            files.into_iter().filter(|path| path != &sums_path).count()
+        };
+        assert_eq!(
+            listed, actual_files,
+            "native SHA256SUMS does not cover all files"
+        );
+    }
+}
+
 fn collect_files(directory: &Path, files: &mut Vec<PathBuf>) {
     for entry in fs::read_dir(directory).expect("artifact subdirectory") {
         let path = entry.expect("artifact subdirectory entry").path();
@@ -358,6 +500,7 @@ fn retained_m1_raw_logs_and_fault_matrix_references_are_consistent() {
     assert_native_failure_artifacts(&root, "33080915116", false);
     assert_native_failure_artifacts(&root, "33085292318", true);
     assert_native_failure_artifacts(&root, "33142438624", true);
+    assert_native_success_artifacts(&root, "33145714975");
 
     let matrix_path = root.join("artifacts/m1-fault-matrix.json");
     let matrix: Value =

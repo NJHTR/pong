@@ -2,6 +2,15 @@
 
 **Status: evidence package in progress; no release support claim is made.**
 
+> **Final acceptance overlay (2026-08-29):** Release Owner `NJHTR` accepted
+> Windows x86_64/NTFS and Linux x86_64/ext4 as the required M1 rows, with
+> macOS limited to GitHub-hosted qualification and filesystem `unknown`. Old
+> Reader is `ACCEPTED EXCEPTION / OUT OF SCOPE` for unreleased/internal pre-M1
+> formats. The pending/unassigned entries below are retained historical audit
+> context and are superseded for governance by `M1_OWNER_DECISION_RECORD.md`
+> and `M1_RELEASE_OWNER_SIGNOFF.md`. Candidate freeze is still pending, so
+> `M1_RELEASE_GATE = BLOCKED / NOT_PASSED`.
+
 The current close-out bundle is indexed at
 [`artifacts/m1-release-evidence/m1-release-matrix.json`](../../artifacts/m1-release-evidence/m1-release-matrix.json)
 with copied raw evidence, source references, and checksums in
@@ -35,6 +44,16 @@ All other native commands passed. The corrected committed digest is
 `5E1561C7C3E32AF94B36D271700A50C41371920B3FFE6DEF5E634E8F77B134A5`; the run
 remains retained `FAIL` evidence and requires one more dispatch after this fix.
 
+Run `33145714975` is the successful follow-up on commit
+`6cb62fb455e92ab731a4bb5233856d10c1f1ce93`. Both native jobs completed all
+stable/MSRV quality gates, full tests, focused suites, and cold reopen with
+exit code `0`. Linux recorded ext4; macOS filesystem metadata remained
+`unknown` and is not promoted to APFS. The run's complete artifacts and
+checksums are retained under
+`artifacts/m1-platform-runs/github-actions-run-33145714975/` and indexed in
+the release bundle. These rows are executable evidence `PASS`, while release
+acceptance remains `BLOCKED` until the other M1 decisions are accepted.
+
 This matrix is the checklist for M1 acceptance. A row is `PASS` only when the
 named executable artifact, platform, filesystem, toolchain, and cold-restart
 inspection are retained. A source-level fixture or a direct SQL query is not a
@@ -55,6 +74,8 @@ substitute for a separately released old Pong binary.
 | macOS arm64 | unknown | Rust 1.78.0 captured; stable capture absent | run `33080915116`: focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed; MSRV test exited `101`, MSRV clippy exited `0`; platform metadata, manifest, and stable logs are absent | focused suites passed where captured | not exercised by this workflow | **FAIL**; incomplete artifact, capture/upload fix and rerun required |
 | Linux x86_64 GNU | native ext4 | stable 1.98.0 + Rust 1.78.0 | run `33085292318`: complete artifact; stable/MSRV fmt/check/clippy and focused suites passed, but both full tests exited `101` in artifact-consistency | focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed | not exercised by this workflow | **FAIL**; committed-byte mismatch evidence retained, rerun after byte-boundary correction required |
 | macOS arm64 | unknown | stable 1.98.0 + Rust 1.78.0 | run `33085292318`: complete artifact; stable/MSRV fmt/check/clippy and focused suites passed, but both full tests exited `101` in artifact-consistency | focused migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed | not exercised by this workflow | **FAIL**; filesystem identity is unknown, committed-byte mismatch evidence retained, rerun required |
+| Linux x86_64 GNU | native ext4 | stable 1.98.0 + Rust 1.78.0 | run `33145714975`: complete artifact; stable/MSRV fmt/check/test/clippy and focused suites passed; all 13 command exits are `0` | migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed | not exercised by this workflow | **PASS** executable evidence; release acceptance pending |
+| macOS arm64 | unknown | stable 1.98.0 + Rust 1.78.0 | run `33145714975`: complete artifact; stable/MSRV fmt/check/test/clippy and focused suites passed; all 13 command exits are `0` | migration/recovery/compatibility/PT-13/FI-10/cold-reopen passed | not exercised by this workflow | **PASS** executable evidence; filesystem unknown and release acceptance pending |
 
 The final Linux overlay rerun used image digest
 `sha256:0fea967628dc796a2b9d1d57ddb3af3b3f0a35b6c8c0e23690dbe0ceb71a2dc9` and

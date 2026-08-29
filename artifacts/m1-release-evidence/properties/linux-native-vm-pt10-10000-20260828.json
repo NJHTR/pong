@@ -1,0 +1,23 @@
+{
+  "record_version": "m1-property-evidence-0.2",
+  "captured_at": "2026-08-28T22:02:00+08:00",
+  "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "hostname": "rtc-node-1",
+  "platform": "linux-x86_64-gnu",
+  "filesystem": "ext4",
+  "evidence_class": "LINUX_NATIVE",
+  "property": {
+    "id": "PT-10",
+    "name": "crash_schedules_never_turn_an_unresolved_intent_into_success",
+    "requested_cases": 10000,
+    "executed_cases": 10000,
+    "status": "PASS"
+  },
+  "toolchain": "Rust 1.85.0 (MSRV 1.78.0 unavailable)",
+  "command": "PONG_PROPTEST_CASES=10000 cargo test --locked --offline --test property_recovery_migration pt10_crash_schedules_never_turn_an_unresolved_intent_into_success -- --nocapture",
+  "elapsed_seconds": 57.71,
+  "exit_code": 0,
+  "raw_log": "artifacts/m1-release-evidence/properties/linux-pt10-10000-20260828.log",
+  "raw_log_sha256": "F57E6C1A1FFB10E741B23D691BB51A1A5EA20F955A5FB989BD0DB04B623783BA",
+  "retention": "retained Linux-native VM evidence; release-owner acceptance pending"
+}

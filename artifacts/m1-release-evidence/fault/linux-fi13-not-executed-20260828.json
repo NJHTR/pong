@@ -1,0 +1,13 @@
+{
+  "record_version": "m1-fault-run-0.1",
+  "fault_id": "FI-13",
+  "captured_at": "2026-08-28T22:08:00+08:00",
+  "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "hostname": "rtc-node-1",
+  "platform": "linux-x86_64-gnu",
+  "filesystem": "ext4",
+  "evidence_class": "UNAVAILABLE",
+  "status": "NOT_EXECUTED",
+  "reason": "The repository exposes only a Windows icacls ACL test for FI-13; no Linux chmod/chown/ACL test entry exists. No equivalent test was invented in this closure pass.",
+  "external_dependency": "A future Linux permission harness or explicitly scoped external test is required."
+}

@@ -1,0 +1,13 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running tests/host_resource_faults.rs (target/linux-native-vm-6cb62fb-20260828/debug/deps/host_resource_faults-5457abf3ff554fc2)
+
+running 3 tests
+FI-14:metadata platform=linux filesystem=tmpfs initial_available=66908160 bytes_written=66846720 kernel_error=28 pong_code=RESOURCE_EXHAUSTED
+test fi_14_real_enospc_during_metadata_write_preserves_committed_history ... ok
+FI-14:cas platform=linux filesystem=tmpfs initial_available=66936832 bytes_written=66912256 kernel_error=28 pong_code=RESOURCE_EXHAUSTED
+test fi_14_real_enospc_during_cas_write_preserves_committed_history ... ok
+FI-14:journal platform=linux filesystem=tmpfs initial_available=66928640 bytes_written=66912256 kernel_error=28 pong_code=RESOURCE_EXHAUSTED
+test fi_14_real_enospc_during_journal_write_preserves_committed_history ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+

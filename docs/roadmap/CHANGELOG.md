@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased - M1 release-scope decision execution (2026-08-28)
+
+- Recorded a proposal for the M1 supported rows: Windows x86_64/NTFS, Linux x86_64/ext4, and a GitHub-hosted macOS runner with filesystem `unknown`. This is a pending Owner decision, not an accepted support claim.
+- Separated the durability/correctness/recovery baseline from universal platform certification, external-provider certification, pre-M1 compatibility, and performance-capacity certification. FI-03 deferral, Linux FI-13 applicability, old-reader exclusion, the one-CI-corpus property policy, and the ADR-0015/ADR-0016 decisions remain pending.
+- Updated the Owner action package and roadmap handoff. No production code, release tag, or final release report was created, and no native/property suite was rerun in this scope-decision pass. M1 remains `BLOCKED / NOT_PASSED`.
+- Audited the release bundle packaging boundary: top-level `SHA256SUMS` verifies its entries, while the selected `artifact-references.json` index has a stale self-entry and unindexed supplemental files. This is recorded as a packaging-hygiene caveat to reconcile or label during candidate freeze, not as a new Gate condition.
+
+## Unreleased - M1 final gate closure audit (2026-08-28)
+
+- Added `M1_FINAL_GATE_CLOSURE_PLAN.md`, `M1_PERFORMANCE_ACCEPTANCE.md`, and the human-only `M1_RELEASE_OWNER_SIGNOFF.md` template.
+- Regenerated release traceability for HEAD `6cb62fb` and retained native workflow `33145714975`; the record explicitly remains blocked because the working tree is dirty, no release tag exists, and owner approval is pending.
+- Re-ran the isolated full `--all`/`--all-features` quality gates, projection, property, fault, compatibility, migration, recovery, and artifact-consistency suites. All executable current-host checks passed; missing external evidence remains blocked and M1 is not passed.
+
+## Unreleased - M1 native platform evidence success (2026-08-28)
+
+- Retained successful GitHub Actions run `33145714975` at commit `6cb62fb`; both Ubuntu 24.04/ext4 and macOS 14 arm64 jobs passed all 13 recorded stable/MSRV, focused, and cold-reopen commands with exit code `0`.
+- Imported complete Linux/macOS manifests, command exit records, nested checksums, and ZIP hashes into the source evidence tree and release bundle.
+- Extended `artifact_consistency` to validate successful native artifacts, commit/run identity, complete manifests, all-zero command dispositions, and nested checksum coverage. Native rows are executable evidence `PASS`; M1 release decision remains `NOT PASSED` pending old-reader, fault, budget, and owner acceptance.
+
 ## Unreleased - M1 evidence close-out (2026-08-27)
 
 - Retained GitHub Actions native evidence run `33085292318` for Linux and macOS; both artifacts are complete but remain `FAIL` because full tests detected committed evidence byte/hash drift.

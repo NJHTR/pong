@@ -1,6 +1,6 @@
 {
   "record_version": "m1-release-matrix-0.1",
-  "generated_on": "2026-08-27",
+  "generated_on": "2026-08-29",
   "milestone": "M1",
   "status_vocabulary": [
     "PASS",
@@ -9,7 +9,20 @@
     "NOT_APPLICABLE"
   ],
   "release_decision": "NOT_PASSED",
-  "release_owner": "UNASSIGNED",
+  "release_owner": "NJHTR",
+  "governance_decision": "ACCEPTED",
+  "owner_date": "2026-08-29",
+  "candidate_freeze": "PENDING",
+  "entry_semantics": "Entries retain their evidence-time release disposition. The owner decision overlay below is authoritative for governance; the release remains NOT_PASSED until a clean candidate is frozen and verified.",
+  "decision_overlay": {
+    "old_reader": "ACCEPTED EXCEPTION / OUT OF SCOPE",
+    "fi_03": "DEFERRED TO M2+",
+    "fi_07_fi_14": "Qualified only for the retained Linux tmpfs resource model",
+    "fi_13": "PASS for Windows NTFS and Linux ext4",
+    "property_policy": "Canonical 10000 cases per generated property plus accepted-platform qualification",
+    "adr_0015": "ACCEPTED AS INFORMATIONAL BASELINE",
+    "adr_0016": "ACCEPTED"
+  },
   "entries": [
     {
       "id": "PT-13",
@@ -194,42 +207,56 @@
     {
       "id": "PLATFORM-MATRIX",
       "category": "platform",
-      "status": "FAIL",
+      "status": "PASS",
       "release_status": "BLOCKED",
       "scope": "Windows native, Linux container/native, macOS native",
       "evidence": [
-        "platform/platform-matrix.json",
-        ".github/workflows/m1-release-evidence.yml",
-        "platform/github-actions-run-33074865773/linux/platform/platform-metadata.json",
-        "platform/github-actions-run-33074865773/macos/platform/platform-metadata.json",
-        "platform/github-actions-run-33080915116/linux/platform/platform-metadata.json",
-        "platform/github-actions-run-33080915116/macos/build/msrv-178-test.log",
-        "platform/github-actions-run-33080915116/macos/build/msrv-178-clippy.log"
+        "platform/github-actions-run-33145714975/download-metadata.json",
+        "platform/github-actions-run-33145714975/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33145714975/macos/platform/platform-metadata.json"
       ],
-      "environment": "GitHub Actions native runners; workflow runs 33074865773, 33080915116, 33085292318, and 33142438624",
+      "environment": "GitHub Actions native runners; successful workflow run 33145714975 on commit 6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
       "exit_codes": [
-        101,
-        101
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
       ],
       "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
         "cargo +stable test --locked",
-        "cargo +1.78.0 test --locked"
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings",
+        "cargo +stable test --locked --test pt13_fi10 -- --nocapture",
+        "cargo +stable test --locked --test repository_migration -- --nocapture",
+        "cargo +stable test --locked --test recovery_boundaries -- --nocapture",
+        "cargo +stable test --locked --test compatibility_boundaries -- --nocapture",
+        "cargo +stable test --locked -- --nocapture cold_reopen"
       ],
       "artifacts": [
-        "platform/github-actions-run-33074865773/linux/platform/platform-metadata.json",
-        "platform/github-actions-run-33074865773/macos/platform/platform-metadata.json",
-        "platform/github-actions-run-33080915116/linux/platform/platform-metadata.json",
-        "platform/github-actions-run-33080915116/macos/build/msrv-178-test.log",
-        "platform/github-actions-run-33080915116/macos/build/msrv-178-clippy.log"
+        "platform/github-actions-run-33145714975/download-metadata.json",
+        "platform/github-actions-run-33145714975/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33145714975/macos/platform/platform-metadata.json"
       ],
       "sha256": [
-        "7C5BA28E7088BFD4DB91210B3D351972B311C9E5BE04F6425106AEFB19942DC0",
-        "E9E90F93A0EC68BDE270C5CA265E91D3C4145073718A027BBE27D01271F7A2EC",
-        "17393A609A3E95F05E270C7F8D645A030D0FFB5B0348A0B4BAE9D97065A5AF14",
-        "CFEB5CDE5F09B0BC25DECF7FEAF318BF89ECCA5C4B9358413F3EBBF5D67E11B0",
-        "B57883FBFF29F7EE2E6C5C4EE4986DBD7643B134BF8DF56D9B939D7CF85BB89D"
+        "8B7B8B29F2FCC026ADB096F8AB2B69253380363CE7DBB7A2C6226A8F318D0913",
+        "7390E06C8918F531C6801B17DE895C1053EDB87CF9E2D11F9281A8B3D51760AF",
+        "0BFFEED212804B7E8772FDC8785DA6819F1C243D666F33625BB890E3D3782A4C"
       ],
-      "note": "Run 33074865773 failed on checkout hash drift (Linux) and platform-inapplicable host-resource compilation (macOS). Run 33080915116 repeated the Linux artifact-consistency hash drift and produced an incomplete macOS artifact. Run 33085292318 produced complete artifacts but repeated the committed-byte mismatch. Run 33142438624 also produced complete artifacts and isolated the remaining mismatch to stale build-metadata.json CRLF references. The checksum/reference correction requires another manual rerun."
+      "note": "Run 33145714975 passed both native jobs. All 13 recorded commands per platform returned zero; Linux reports ext4 and macOS filesystem remains unknown. This is executable evidence only; old-reader, fault, budget, and release-owner acceptance remain open."
     },
     {
       "id": "COMPAT-OLD-READER",
@@ -257,66 +284,116 @@
     {
       "id": "PLATFORM-NATIVE-LINUX-EXT4",
       "category": "platform",
-      "status": "FAIL",
+      "status": "PASS",
       "release_status": "BLOCKED",
       "scope": "native Linux host or VM on ext4",
       "evidence": [
-        "platform/github-actions-run-33074865773/linux/platform/platform-metadata.json",
-        "platform/github-actions-run-33074865773/linux/build/stable-test.log",
-        "platform/github-actions-run-33074865773/linux/build/msrv-178-test.log"
+        "platform/github-actions-run-33145714975/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33145714975/linux/artifact-manifest.json",
+        "platform/github-actions-run-33145714975/linux/commands.tsv",
+        "platform/github-actions-run-33145714975/linux/SHA256SUMS"
       ],
-      "environment": "GitHub Actions Ubuntu 24.04, ext4, run 33074865773",
+      "environment": "GitHub Actions Ubuntu 24.04 x86_64, ext4, run 33145714975",
       "exit_codes": [
-        101,
-        101
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
       ],
       "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
         "cargo +stable test --locked",
-        "cargo +1.78.0 test --locked"
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings",
+        "cargo +stable test --locked --test pt13_fi10 -- --nocapture",
+        "cargo +stable test --locked --test repository_migration -- --nocapture",
+        "cargo +stable test --locked --test recovery_boundaries -- --nocapture",
+        "cargo +stable test --locked --test compatibility_boundaries -- --nocapture",
+        "cargo +stable test --locked -- --nocapture cold_reopen"
       ],
       "artifacts": [
-        "platform/github-actions-run-33074865773/linux/build/stable-test.log",
-        "platform/github-actions-run-33074865773/linux/build/msrv-178-test.log"
+        "platform/github-actions-run-33145714975/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33145714975/linux/artifact-manifest.json",
+        "platform/github-actions-run-33145714975/linux/commands.tsv",
+        "platform/github-actions-run-33145714975/linux/SHA256SUMS"
       ],
       "sha256": [
-        "2151348897604B62655847BDFE5949E8B71F92DAF31A5DD3C22830C09F758AEA",
-        "761681E4AC68CA730DA5B512F93E305C9338869882B238E25BF3BA34317DB298"
+        "7390E06C8918F531C6801B17DE895C1053EDB87CF9E2D11F9281A8B3D51760AF",
+        "9A745B3DA6988A9E0A981D8CD9C2217FB4B96C92F7B9B7AEF72BBB71A54D4792",
+        "FF17E3FA4301468EEFA2EAF344CF675980A4E4280461E671DD1745EAD8C31E05",
+        "72990CDCD0236293518F17CEB9F01750FC70CFD0AFF7B635852DAB0A423E2A9F"
       ],
-      "note": "Native runner evidence is retained, but both full test commands failed in artifact-consistency. The row cannot pass until the byte-exact evidence fix is rerun."
+      "note": "Run 33145714975 is a complete successful native Linux artifact: stable/MSRV quality gates, focused M1 suites, cold reopen, and full tests all returned zero. This changes executable evidence to PASS; release acceptance remains blocked."
     },
     {
       "id": "PLATFORM-MACOS",
       "category": "platform",
-      "status": "FAIL",
+      "status": "PASS",
       "release_status": "BLOCKED",
       "scope": "macOS or another declared target",
       "evidence": [
-        "platform/github-actions-run-33074865773/macos/platform/platform-metadata.json",
-        "platform/github-actions-run-33074865773/macos/build/stable-test.log",
-        "platform/github-actions-run-33074865773/macos/build/stable-clippy.log"
+        "platform/github-actions-run-33145714975/macos/platform/platform-metadata.json",
+        "platform/github-actions-run-33145714975/macos/artifact-manifest.json",
+        "platform/github-actions-run-33145714975/macos/commands.tsv",
+        "platform/github-actions-run-33145714975/macos/SHA256SUMS"
       ],
-      "environment": "GitHub Actions macOS 14 arm64 APFS, run 33074865773",
+      "environment": "GitHub Actions macOS 14 arm64, filesystem metadata unknown, run 33145714975",
       "exit_codes": [
-        101,
-        101,
-        101,
-        101
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
       ],
       "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
         "cargo +stable test --locked",
         "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
         "cargo +1.78.0 test --locked",
-        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings"
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings",
+        "cargo +stable test --locked --test pt13_fi10 -- --nocapture",
+        "cargo +stable test --locked --test repository_migration -- --nocapture",
+        "cargo +stable test --locked --test recovery_boundaries -- --nocapture",
+        "cargo +stable test --locked --test compatibility_boundaries -- --nocapture",
+        "cargo +stable test --locked -- --nocapture cold_reopen"
       ],
       "artifacts": [
-        "platform/github-actions-run-33074865773/macos/build/stable-test.log",
-        "platform/github-actions-run-33074865773/macos/build/stable-clippy.log"
+        "platform/github-actions-run-33145714975/macos/platform/platform-metadata.json",
+        "platform/github-actions-run-33145714975/macos/artifact-manifest.json",
+        "platform/github-actions-run-33145714975/macos/commands.tsv",
+        "platform/github-actions-run-33145714975/macos/SHA256SUMS"
       ],
       "sha256": [
-        "F1B43C3471BD9B37330012627029DC9FA3338D8E17080F89F87F92541CECAA0A",
-        "A7ADAD441CAF0F61D14343953CACEA50AC66A576D1AA85EC3F13D1CD7ED5425B"
+        "0BFFEED212804B7E8772FDC8785DA6819F1C243D666F33625BB890E3D3782A4C",
+        "E962F7A298973B543AEAE296E040F7F8940BB56EF761DBC69B5883A79D6D0058",
+        "FF17E3FA4301468EEFA2EAF344CF675980A4E4280461E671DD1745EAD8C31E05",
+        "5FEAE54EFDFAFB8C0D90AC9BC9E9B209B537A6CB58D7D3C6C41A5444AAA52856"
       ],
-      "note": "Native runner evidence is retained, but full test/clippy commands failed because host_resource_faults.rs compiled platform-inapplicable helpers. The row cannot pass until the platform cfg fix is rerun."
+      "note": "Run 33145714975 is a complete successful macOS arm64 artifact: stable/MSRV quality gates, focused M1 suites, cold reopen, and full tests all returned zero. Filesystem metadata is unknown and is not treated as APFS evidence; release acceptance remains blocked."
     },
     {
       "id": "FI-01",
@@ -550,11 +627,26 @@
       "status": "BLOCKED",
       "release_status": "BLOCKED",
       "scope": "Windows NTFS ACL plus corruption",
+      "platform_rows": [
+        {
+          "platform": "linux-x86_64-gnu",
+          "filesystem": "ext4",
+          "evidence_class": "NATIVE",
+          "status": "PASS",
+          "exit_code": 0,
+          "evidence": [
+            "artifacts/m1-release-evidence/fault/linux-fi13-posix-closure-20260829.json",
+            "artifacts/m1-release-evidence/fault/linux-fi13-posix-closure-20260829.log"
+          ]
+        }
+      ],
       "evidence": [
         "artifacts/m1-fault-runs/windows-fi13-acl-audit-2026-08-26.json",
-        "artifacts/m1-fault-runs/windows-fi13-acl-audit-2026-08-26.log"
+        "artifacts/m1-fault-runs/windows-fi13-acl-audit-2026-08-26.log",
+        "artifacts/m1-release-evidence/fault/linux-fi13-posix-closure-20260829.json",
+        "artifacts/m1-release-evidence/fault/linux-fi13-posix-closure-20260829.log"
       ],
-      "note": "Real Windows ACL evidence is partial; complete declared-filesystem schedule is missing."
+      "note": "Linux ext4 POSIX permission row passes with retained native VM evidence; complete declared-filesystem schedule is still missing, so FI-13 remains blocked at matrix level."
     },
     {
       "id": "FI-14",
@@ -619,7 +711,7 @@
       "status": "PASS",
       "release_status": "BLOCKED",
       "scope": "repository metadata",
-      "note": "Git repository exists on branch dev at HEAD 359abc306b554d592b532ebc182e543f97489043 with origin remote; the working tree is clean, but no release tag or release-owner-approved commit is accepted. Evidence commands were captured before this closeout commit.",
+      "note": "Git repository exists on branch dev at HEAD 6cb62fb455e92ab731a4bb5233856d10c1f1ce93 with origin remote; the working tree is dirty because evidence/documentation changes are uncommitted, and no release tag or release-owner-approved commit is accepted. Native evidence run 33145714975 is bound to this commit.",
       "environment": "repository metadata",
       "exit_codes": [
         0
@@ -640,7 +732,7 @@
       ],
       "sha256": [
         "AE95E682DBD44E141F1844CFEA0B028D10ECB3DD30937BD5C27B03F7C1603CAB",
-        "038DBDCF88CE54F6EF4EFDBD02506040362C87ACAD39E54CF7B75DD7AFB44F1E"
+        "466E041D05E47B98C683795B5F92A59FC7D83B4231C8D8457BC8306A0EFF4B96"
       ]
     },
     {
@@ -795,7 +887,16 @@
         "platform/github-actions-run-33142438624/linux/build/msrv-178-test.log"
       ],
       "environment": "GitHub Actions Ubuntu 24.04 x86_64, ext4, run 33142438624",
-      "exit_codes": [0, 0, 101, 0, 0, 0, 101, 0],
+      "exit_codes": [
+        0,
+        0,
+        101,
+        0,
+        0,
+        0,
+        101,
+        0
+      ],
       "commands": [
         "cargo +stable fmt --all -- --check",
         "cargo +stable check --locked",
@@ -833,7 +934,16 @@
         "platform/github-actions-run-33142438624/macos/build/msrv-178-test.log"
       ],
       "environment": "GitHub Actions macOS 14 arm64, filesystem metadata unknown, run 33142438624",
-      "exit_codes": [0, 0, 101, 0, 0, 0, 101, 0],
+      "exit_codes": [
+        0,
+        0,
+        101,
+        0,
+        0,
+        0,
+        101,
+        0
+      ],
       "commands": [
         "cargo +stable fmt --all -- --check",
         "cargo +stable check --locked",
@@ -904,6 +1014,120 @@
         "83631AA3EFBE6A5457FC72FAF5C9012B6F09F18A0018EF802D812A2321EEC192"
       ],
       "note": "Complete macOS artifact. Stable and Rust 1.78 fmt/check/clippy and all focused suites passed, but both full test commands exited 101 in artifact-consistency because committed evidence bytes differed from the references used by the run. Filesystem metadata is unknown and is not treated as APFS evidence. This is retained failure evidence; rerun is required."
+    },
+    {
+      "id": "PLATFORM-NATIVE-LINUX-EXT4-RUN-33145714975",
+      "category": "platform",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "native Linux host or VM on ext4; workflow run 33145714975",
+      "evidence": [
+        "platform/github-actions-run-33145714975/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33145714975/linux/artifact-manifest.json",
+        "platform/github-actions-run-33145714975/linux/commands.tsv",
+        "platform/github-actions-run-33145714975/linux/SHA256SUMS"
+      ],
+      "environment": "GitHub Actions Ubuntu 24.04 x86_64, ext4, run 33145714975",
+      "exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings",
+        "cargo +stable test --locked --test pt13_fi10 -- --nocapture",
+        "cargo +stable test --locked --test repository_migration -- --nocapture",
+        "cargo +stable test --locked --test recovery_boundaries -- --nocapture",
+        "cargo +stable test --locked --test compatibility_boundaries -- --nocapture",
+        "cargo +stable test --locked -- --nocapture cold_reopen"
+      ],
+      "artifacts": [
+        "platform/github-actions-run-33145714975/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33145714975/linux/artifact-manifest.json",
+        "platform/github-actions-run-33145714975/linux/commands.tsv",
+        "platform/github-actions-run-33145714975/linux/SHA256SUMS"
+      ],
+      "sha256": [
+        "7390E06C8918F531C6801B17DE895C1053EDB87CF9E2D11F9281A8B3D51760AF",
+        "9A745B3DA6988A9E0A981D8CD9C2217FB4B96C92F7B9B7AEF72BBB71A54D4792",
+        "FF17E3FA4301468EEFA2EAF344CF675980A4E4280461E671DD1745EAD8C31E05",
+        "72990CDCD0236293518F17CEB9F01750FC70CFD0AFF7B635852DAB0A423E2A9F"
+      ],
+      "note": "Successful native Linux evidence from run 33145714975; all 13 commands returned zero and the artifact manifest/checksum set is complete. Release acceptance remains blocked."
+    },
+    {
+      "id": "PLATFORM-MACOS-ARM64-RUN-33145714975",
+      "category": "platform",
+      "status": "PASS",
+      "release_status": "BLOCKED",
+      "scope": "native macOS arm64; workflow run 33145714975",
+      "evidence": [
+        "platform/github-actions-run-33145714975/macos/platform/platform-metadata.json",
+        "platform/github-actions-run-33145714975/macos/artifact-manifest.json",
+        "platform/github-actions-run-33145714975/macos/commands.tsv",
+        "platform/github-actions-run-33145714975/macos/SHA256SUMS"
+      ],
+      "environment": "GitHub Actions macOS 14 arm64, filesystem metadata unknown, run 33145714975",
+      "exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings",
+        "cargo +stable test --locked --test pt13_fi10 -- --nocapture",
+        "cargo +stable test --locked --test repository_migration -- --nocapture",
+        "cargo +stable test --locked --test recovery_boundaries -- --nocapture",
+        "cargo +stable test --locked --test compatibility_boundaries -- --nocapture",
+        "cargo +stable test --locked -- --nocapture cold_reopen"
+      ],
+      "artifacts": [
+        "platform/github-actions-run-33145714975/macos/platform/platform-metadata.json",
+        "platform/github-actions-run-33145714975/macos/artifact-manifest.json",
+        "platform/github-actions-run-33145714975/macos/commands.tsv",
+        "platform/github-actions-run-33145714975/macos/SHA256SUMS"
+      ],
+      "sha256": [
+        "0BFFEED212804B7E8772FDC8785DA6819F1C243D666F33625BB890E3D3782A4C",
+        "E962F7A298973B543AEAE296E040F7F8940BB56EF761DBC69B5883A79D6D0058",
+        "FF17E3FA4301468EEFA2EAF344CF675980A4E4280461E671DD1745EAD8C31E05",
+        "5FEAE54EFDFAFB8C0D90AC9BC9E9B209B537A6CB58D7D3C6C41A5444AAA52856"
+      ],
+      "note": "Successful native macOS evidence from run 33145714975; all 13 commands returned zero and the artifact manifest/checksum set is complete. Filesystem metadata is unknown; release acceptance remains blocked."
     }
   ]
 }

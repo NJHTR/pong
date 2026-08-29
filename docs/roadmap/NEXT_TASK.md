@@ -1,6 +1,6 @@
 # Next Task
 
-**Current Phase:** Phase 1 - Durable primitives release audit
+**Current Phase:** Phase 1 - M1 release-scope decision closure
 
 **Current Milestone:** M1 Durable local repository (release gate not passed)
 
@@ -9,19 +9,24 @@ claim. No new M2/M3 feature work or public CLI, runtime, SDK, server, or UI
 work is authorized until M1 is accepted. Existing internal slices remain frozen
 evidence only.
 
-**Current Task:** Close the M1 evidence package without changing the settled
-storage architecture. The event envelope and generation-bound projection core
-is implemented as an internal slice; PT-13 migration fixtures and FI-10
-crash/rebuild evidence are retained for the current Windows host. The release
-bundle at `artifacts/m1-release-evidence/` indexes the platform/MSRV runs,
-fault disposition, property records, and measurement-only performance data.
-The old-binary artifact, accepted platform scope, fault schedule, budget, and
-owner sign-off are still missing. Keep all work below Runtime, SDK, CLI, server,
-and framework adapters.
+**Current Task:** Execute the M1 release-scope decision package without
+changing the settled storage architecture or production code. The proposed
+scope is Windows x86_64/NTFS, Linux x86_64/ext4, and a GitHub-hosted macOS
+runner whose filesystem remains `unknown`; this scope is not accepted until
+the Release Owner records it. The release bundle at
+`artifacts/m1-release-evidence/` contains executable platform, fault, property,
+projection, and measurement evidence within its stated boundaries. Keep
+FI-03, Linux FI-13, old-reader compatibility, property policy, ADR-0015, and
+ADR-0016 as explicit proposals/pending decisions. Do not start M2 or add
+Runtime, SDK, CLI, server, or framework-adapter work.
 
 The minimal native-platform workflow is now defined at
-`.github/workflows/m1-release-evidence.yml`; the first real run produced
-artifacts but failed both native rows and therefore does not advance M1.
+`.github/workflows/m1-release-evidence.yml`. Runs `33074865773` through
+`33142438624` are retained historical failures. Follow-up run `33145714975`
+at commit `6cb62fb455e92ab731a4bb5233856d10c1f1ce93` completed both native
+jobs successfully; all 13 commands per platform returned zero and the
+artifacts are now executable evidence `PASS`. This does not advance M1 until
+the remaining release-blocking evidence and owner acceptance are closed.
 
 The workflow emits stable/MSRV logs, per-command exit codes, cold-reopen output,
 workspace-local test-repository filesystem metadata, an artifact manifest, and
@@ -36,30 +41,31 @@ The earlier bundle-wide byte-preservation correction is pushed at `96a2f8c`;
 workflow capture-boundary hardening is pushed at
 `2cf136e99091d8d074d1a0e597f72f06bd2d52f7`. This close-out additionally
 widens the Git byte boundary to all `artifacts/**` and fixes the PT-13/FI-10
-release-log reference; commit and push these local changes before dispatching
-the workflow again. Follow
+release-log reference; the successful run is now retained and indexed. Follow
 [`M1_CI_EXECUTION_REQUIRED.md`](../development/M1_CI_EXECUTION_REQUIRED.md)
 for the external execution handoff.
 
-**Blocked By:** The evidence report still records missing separately released
-old-reader compatibility, incomplete supported-platform/cold-restart coverage,
-absent accepted budgets, and current-host-only FI-10/PT-13 projection
-rebuild/migration acceptance described by proposed
-[`ADR-0016`](../decisions/ADR/ADR-0016-projection-contract.md). The historical
-Windows PT-14 selector/journal publication `IO_ERROR` has a reproduced root
-cause, protected-boundary error-mapping fix, and stable/MSRV/concurrent rerun
-evidence, but broader filesystem coverage remains pending. M2/M3 remain
-internal test-gated slices and do not waive M1.
+**Blocked By:** Release Owner decisions are still required for the proposed
+platform and fault scope, FI-03 deferral, Linux FI-13 applicability,
+pre-M1/old-reader compatibility, the one-corpus property policy, ADR-0015,
+ADR-0016, and the signed release-owner record. Traceability is also blocked by
+the dirty working tree and absence of a candidate tag. The selected
+`artifact-references.json` index has a packaging-hygiene caveat (it is not a
+one-to-one checksum mirror and contains a stale self-entry); reconcile or
+label it during candidate freeze without adding a new Gate condition. M2/M3
+remain internal test-gated slices and do not waive M1.
 
-**Next Action:** Manually dispatch the native workflow again. Review
-[`M1_EVIDENCE.md`](../development/M1_EVIDENCE.md)
-sections A-E, [`M1_COMPATIBILITY_MATRIX.md`](../development/M1_COMPATIBILITY_MATRIX.md),
-and `artifacts/m1-release-evidence/m1-release-summary.md`. PT-13/FI-10
-current-host fixtures are complete. Obtain the external old-reader, native
-Linux ext4/macOS, Windows disk-full, and full fault-schedule evidence listed in
-the handoff table, or record an owner-approved bounded exception. The ADR-0015
-performance decision and ADR-0016 projection contract remain proposed/pending
-release-owner acceptance.
+**Next Action:** Stop technical M1 expansion and hand the prepared decision
+package to the Release Owner. Review [`M1_RELEASE_SCOPE_DECISION.md`](../development/M1_RELEASE_SCOPE_DECISION.md),
+[`M1_FAULT_SCOPE_DECISION.md`](../development/M1_FAULT_SCOPE_DECISION.md),
+[`M1_PROPERTY_SCOPE_DECISION.md`](../development/M1_PROPERTY_SCOPE_DECISION.md),
+[`M1_PERFORMANCE_SCOPE_DECISION.md`](../development/M1_PERFORMANCE_SCOPE_DECISION.md),
+[`M1_PROJECTION_ACCEPTANCE.md`](../development/M1_PROJECTION_ACCEPTANCE.md),
+and [`M1_OWNER_ACTION_LIST.md`](../development/M1_OWNER_ACTION_LIST.md).
+No native/property suite is to be rerun in this scope-decision pass. The Owner
+must either supply the missing external evidence or record bounded exclusions,
+then accept/reject ADR-0015 and ADR-0016, freeze the final evidence snapshot,
+and complete the sign-off. Do not create a tag or enter M2 from this task.
 
 Run `33142438624` at commit `e96131d9bb6d3799055401841d0cb710e4f497ff` is
 retained as the fourth native failure record. Both complete artifacts show
@@ -100,14 +106,16 @@ release-owner requirements.
 The 2026-08-27 close-out reran the complete Windows stable Rust 1.95.0 and
 Rust 1.78.0 MSRV gates in independent target directories; every command
 returned exit code `0`. Git traceability is available (`dev` at
-`359abc306b554d592b532ebc182e543f97489043`, remote `origin`); the pre-closeout
-working tree was clean, but no release tag or owner-approved release commit
-exists. The retained executable evidence was captured before this closeout
-commit; retain that snapshot relationship with the exact commands, toolchain
-identity, test results, and artifact hashes for external review. The current
-working tree contains the Run #3 and Run #4 retention plus the checksum/reference
-correction; dispatch the workflow against the current branch head before
-accepting either native row.
+`6cb62fb455e92ab731a4bb5233856d10c1f1ce93`, remote `origin`); the regenerated
+traceability record correctly reports the current evidence tree as dirty, with
+no release tag or owner-approved release commit. The retained executable
+evidence is bound to native workflow `33145714975` at commit `6cb62fb` with
+exact commands, toolchain identity, test results, and artifact hashes. Native
+follow-up run `33145714975` at commit `6cb62fb` completed
+both jobs successfully with all 13 commands per platform returning `0`; its
+complete artifacts are retained and native evidence rows are executable
+`PASS`. M1 remains blocked by the old-reader, complete fault/property scope,
+performance budget, and release-owner decisions.
 
 **Definition of Done:** Every M1 MUST-PASS row has platform-specific executable
 evidence or an explicitly accepted ADR disposition. The evidence report says

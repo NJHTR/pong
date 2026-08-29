@@ -1,0 +1,17 @@
+[1m[92m   Compiling[0m pong-core v0.1.0 (/Users/runner/work/pong/pong)
+[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+[1m[92m     Running[0m tests/compatibility_boundaries.rs (target/m1-ci-focused/debug/deps/compatibility_boundaries-f3cf53f7985333ad)
+
+running 9 tests
+test legacy_metadata_without_profile_is_rejected_before_schema_mutation ... ok
+test incompatible_operations_object_fails_before_additive_schema_mutation ... ok
+test previous_event_schema_is_read_without_rewriting_opaque_fields ... ok
+test current_marker_fixture_round_trips_with_additive_fields ... ok
+test redaction_profile_mismatch_requires_explicit_compatibility_choice ... ok
+test unsupported_metadata_format_is_rejected_before_schema_mutation ... ok
+test unsupported_marker_version_fails_before_repository_is_healthy ... ok
+test v01_database_cold_open_keeps_legacy_rows_and_adds_additive_tables ... ok
+test migration_backs_up_raw_v01_without_mutating_source_schema ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
