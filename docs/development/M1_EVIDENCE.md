@@ -1,12 +1,13 @@
 # M1 Evidence
 
-**Status: M1 Release Gate NOT PASSED.**
+**Status: M1 Release Gate READY FOR RELEASE (TAG NOT CREATED).**
 
 The closure audit and action register are [`M1_FINAL_GATE_AUDIT.md`](M1_FINAL_GATE_AUDIT.md)
 and [`M1_FINAL_GATE_CLOSURE_PLAN.md`](M1_FINAL_GATE_CLOSURE_PLAN.md). The
 performance decision template is [`M1_PERFORMANCE_ACCEPTANCE.md`](M1_PERFORMANCE_ACCEPTANCE.md);
 the owner-only approval record is [`M1_RELEASE_OWNER_SIGNOFF.md`](M1_RELEASE_OWNER_SIGNOFF.md).
-These documents do not promote missing evidence or pending decisions.
+These documents do not promote missing evidence or pending decisions. Final
+candidate CI is now retained from GitHub-hosted Run `33253638226`.
 
 ## Final Acceptance Overlay (2026-08-29)
 
@@ -25,20 +26,20 @@ RELEASE_OWNER_SIGNOFF = ACCEPTED
 
 The retained technical evidence is `PASS` only for the named scope. The
 accepted records are frozen in source commit
-`58e9e875cd5a781a94f921ec215e231cffdfafe6`, and the working tree was clean
-after that commit. No release tag exists and final candidate CI is pending.
+`58e9e875cd5a781a94f921ec215e231cffdfafe6`. Final candidate CI Run
+`33253638226` passed at binding commit `b20fc903...`; no release tag exists.
 Therefore the current release state is:
 
 ```text
 TECHNICAL_GATE = PASS (scope-bounded)
 GOVERNANCE_GATE = ACCEPTED
 CANDIDATE_FREEZE = FROZEN
-FINAL_CI = PENDING
-M1_RELEASE_GATE = BLOCKED / NOT_PASSED
+FINAL_CI = PASS
+M1_RELEASE_GATE = READY_FOR_RELEASE (TAG_NOT_CREATED)
 ```
 
 See [`M1_FINAL_GATE_REPORT.md`](M1_FINAL_GATE_REPORT.md) for the current final
-acceptance result and the remaining candidate-freeze sequence.
+acceptance result and the owner-controlled tagging sequence.
 
 The auditable close-out bundle is
 [`artifacts/m1-release-evidence/`](../../artifacts/m1-release-evidence/), with
@@ -54,9 +55,9 @@ and accepted.
 | PT-13 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, three reruns | Native-platform and owner acceptance |
 | FI-10 | PASS | `m1-pt13-fi10-summary.json` / raw log | Windows host, A-J and repeated crash | Native filesystem/power-loss and owner acceptance |
 | Old Reader | BLOCKED | Compatibility absence record | No released v0.1 binary or tag | Independent binary, hash, fixture, read/write probe |
-| Native Linux | PASS (executable evidence) | GitHub Actions run `33145714975`, artifact `m1-linux-native-evidence`; historical failures retained | Ubuntu 24.04 x86_64 / ext4 / Rust 1.98 + 1.78 | Evidence passes all 13 commands and full tests; release-owner acceptance, old-reader, fault, and budget rows remain open |
-| Native macOS | PASS (executable evidence) | GitHub Actions run `33145714975`, artifact `m1-macos-native-evidence`; historical failures retained | macOS 14 arm64 / filesystem `unknown` / Rust 1.98 + 1.78 | Evidence passes all 13 commands and full tests; filesystem is unknown, not APFS; release-owner acceptance, old-reader, fault, and budget rows remain open |
-| Git traceability | PASS (repository) / BLOCKED (release) | `build-metadata.json`; regenerated `traceability/release-traceability.json` | `dev` at `6cb62fb`; current evidence tree is dirty, no release tag, and no owner approval | Clean owner-approved release snapshot and tag |
+| Native Linux | PASS (executable evidence) | Final GitHub-hosted Run `33253638226`; predecessor Run `33145714975` retained | Ubuntu 24.04 x86_64 / ext4 / Rust 1.98 + 1.78 | All 13 commands and full tests passed; final-CI evidence is bound to source candidate `58e9e875...` via `b20fc903...` |
+| Native macOS | PASS qualification | Final GitHub-hosted Run `33253638226`; predecessor Run `33145714975` retained | macOS 14 arm64 / filesystem `unknown` / Rust 1.98 + 1.78 | All 13 commands and full tests passed; filesystem is unknown, not APFS |
+| Git traceability | PASS (candidate) | `traceability/release-traceability.json`; Run #6 metadata and checksums | Source candidate `58e9e875...`, binding `b20fc903...`; no release tag | Normal owner-controlled tag process remains |
 
 This is an evidence report, not a release claim. It separates executable
 evidence from implementation that still lacks the platform, compatibility,
@@ -402,7 +403,8 @@ does not accept them as complete yet:
 
 ## C. BLOCKED BY ENVIRONMENT
 
-The following evidence cannot be honestly produced in this workspace:
+The following historical audit boundaries are retained for honesty and are not
+part of the accepted M1 release claim:
 
 - a separately released historical Pong v0.1 executable and its old-reader
   mutation/open matrix;
@@ -411,20 +413,19 @@ The following evidence cannot be honestly produced in this workspace:
   SQLite/CAS corruption cases, and a complete external-process kill schedule;
 - an independent acceptance decision for performance/capacity budgets.
 
-The first hosted native-platform execution is retained as a failed run. A
-workflow definition or failed artifact is not a platform pass; the corrected
-commit must complete the same commands and retain new logs, filesystem identity,
-and hashes before either native row can be accepted.
+The failed hosted runs remain retained as historical records. Final hosted Run
+`33253638226` completed successfully and is the accepted final-CI evidence for
+Linux/macOS; the older failures are not overwritten.
 
 These are recorded as unavailable evidence, not as passing assumptions.
 
 The supplied workspace is a Git repository on branch `dev` with remote
-`https://github.com/NJHTR/pong.git`. The regenerated traceability record now
-points to the audited HEAD `6cb62fb` and the retained native workflow
-`33145714975`; it records the working tree as dirty because this evidence
-closeout is uncommitted. There is no release tag or owner-approved release
-commit. Evidence remains traceable by exact path, command, toolchain, platform,
-test result, and retained artifact hash.
+`https://github.com/NJHTR/pong.git`. Traceability identifies source candidate
+`58e9e875...`, binding commit `b20fc903...`, predecessor Run `33145714975`, and
+final Run `33253638226`. The working tree is dirty only while this evidence
+close-out is being committed; no release tag exists. Evidence remains
+traceable by exact path, command, toolchain, platform, test result, and
+retained artifact hash.
 
 ### External verification handoff
 
@@ -445,21 +446,19 @@ identity, and the cold-reopen result to the corresponding matrix row.
 ## Release-owner acceptance register
 
 This is the authoritative sign-off record for this evidence package. Evidence
-in section A is executable but does not become a release claim until a named
-owner records a decision and date. The current placeholders are deliberately
-unassigned.
+in section A is executable and the named Release Owner decision is recorded
+below; historical rows remain retained for auditability.
 
 | Artifact / decision | Owner | Status | Decision date | Retained record |
 | --- | --- | --- | --- | --- |
-| Platform and filesystem matrix | Unassigned | Pending; no row accepted | Not recorded | `M1_COMPATIBILITY_MATRIX.md` |
-| Historical v0.1 reader compatibility | Unassigned | Blocked; binary/hash/probe missing | Not recorded | `M1_COMPATIBILITY_MATRIX.md` |
-| FI-01 through FI-14 disposition | Unassigned | Pending; complete declared-platform evidence missing | Not recorded | [`artifacts/m1-fault-matrix.json`](../../artifacts/m1-fault-matrix.json) and fault artifacts |
-| Property corpus and regression records | Unassigned | Pending; bounded subsets only | Not recorded | Section A and `proptest-regressions/` |
-| ADR-0015 performance/capacity budget | Unassigned | Proposed; acceptance pending | Not recorded | [`ADR-0015`](../decisions/ADR/ADR-0015-m1-performance-capacity-budget.md) |
+| Platform and filesystem matrix | NJHTR | Accepted for bounded scope | 2026-08-29 | `M1_COMPATIBILITY_MATRIX.md` |
+| Historical v0.1 reader compatibility | NJHTR | Accepted exception / out of scope | 2026-08-29 | `M1_COMPATIBILITY_MATRIX.md` |
+| FI-01 through FI-14 disposition | NJHTR | Accepted bounded scope and deferments | 2026-08-29 | [`artifacts/m1-fault-matrix.json`](../../artifacts/m1-fault-matrix.json) and fault artifacts |
+| Property corpus and regression records | NJHTR | Accepted canonical 10,000-case policy | 2026-08-29 | Section A and `proptest-regressions/` |
+| ADR-0015 performance/capacity budget | NJHTR | Accepted as informational baseline | 2026-08-29 | [`ADR-0015`](../decisions/ADR/ADR-0015-m1-performance-capacity-budget.md) |
 
-**No M1 artifact is accepted at this time.** Changing a row to `Accepted`
-requires the named release owner to attach the retained record and an explicit
-scope or exception; a green local test alone is insufficient.
+The retained evidence is accepted only within the explicit scope and exceptions
+recorded by NJHTR. A green test alone does not widen that scope.
 
 ## D. KNOWN RISKS
 
@@ -499,21 +498,18 @@ scope or exception; a green local test alone is insufficient.
 
 ## E. RELEASE ACCEPTANCE
 
-**NOT PASSED.**
+**READY FOR RELEASE (TAG NOT CREATED).**
 
-The gate remains blocked by the missing separately released old-reader matrix,
-unaccepted supported-platform/cold-restart matrix, incomplete real fault
-matrix, current-host-only FI-10/PT-13 projection migration evidence, and
-absent accepted performance/capacity budgets. The historical
-Windows PT-14 selector/journal publication error now has a reproduced root
-cause, an error-mapping fix, and stable/MSRV/concurrent rerun evidence;
-cross-platform directory-sync coverage is still not complete.
-The current implementation is useful internal Rust evidence, but it is not a
-released Pong Core or a stable public API. Existing M2/M3 slices are frozen
-and do not authorize further phase work until M1 is accepted.
+The Release Owner accepted the bounded platform, fault, property, compatibility,
+performance, and projection dispositions on 2026-08-29. Final GitHub-hosted
+Linux/macOS CI Run `33253638226` passed all 13 recorded commands per platform
+at binding commit `b20fc903...` for source candidate `58e9e875...`. Windows
+local native evidence and VMware Debian 13 Linux-native evidence remain
+distinct retained support records; Windows has no GitHub Actions requirement.
 
-The next release-gate action is external review and evidence collection: attach
-the separately released old reader, native platform rows, native disk-full and
-power-loss-like schedules, and an accepted ADR-0015 budget, then record a named
-release-owner decision. Until those artifacts are accepted, the roadmap must
-not advance to public API, SDK, CLI, or framework adapters.
+Old-reader compatibility and FI-03 remain explicit accepted exception/deferment
+boundaries, not unobserved test passes. ADR-0015 and ADR-0016 source files
+remain `Proposed`; their Owner decisions are recorded separately. The release
+tag is intentionally uncreated and must follow the normal owner-controlled
+release process. Existing M2/M3 slices remain frozen and do not authorize
+additional phase work from this task.

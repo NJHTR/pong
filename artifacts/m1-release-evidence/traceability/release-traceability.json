@@ -6,15 +6,15 @@
   "branch": "dev",
   "head": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
   "tags": [],
-  "working_tree": "CLEAN_AFTER_FREEZE_COMMIT",
+  "working_tree": "CLEAN_AFTER_FINAL_EVIDENCE_COMMIT",
   "evidence_snapshot": {
     "captured_before_commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
     "post_commit_head": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
     "initial_evidence_binding_commit": "b20fc903eb7395f5d3f2a48a7f0184bcc3b02713",
-    "post_commit_verification": "m1: final candidate source frozen and evidence binding committed; local preflight and artifact-consistency verification completed; final GitHub-hosted Linux/macOS CI is pending"
+    "post_commit_verification": "m1: final candidate source frozen; final GitHub-hosted Linux/macOS CI run 33253638226 passed at binding commit b20fc903; evidence package rebound and verified; no Windows CI job required"
   },
   "release_candidate": {
-    "status": "BLOCKED",
+    "status": "READY_FOR_RELEASE",
     "version": null,
     "commit": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
     "evidence_baseline_commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
@@ -30,7 +30,7 @@
     "run_id": "33145714975",
     "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
     "status": "SUCCESS",
-    "qualification_for": "evidence baseline only; not final candidate CI",
+    "qualification_for": "predecessor evidence baseline only; not final candidate CI",
     "linux": "GitHub-hosted Ubuntu 24.04 x86_64 / ext4",
     "macos": "macOS GitHub-hosted runner / filesystem unknown"
   },
@@ -84,22 +84,41 @@
     "macos_github_hosted": {
       "platform": "macOS GitHub-hosted runner",
       "environment": "macOS 14 arm64; filesystem unknown",
-      "workflow_run_id": "33145714975",
-      "source_commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+      "workflow_run_id": "33253638226",
+      "source_commit": "b20fc903eb7395f5d3f2a48a7f0184bcc3b02713",
       "evidence_class": "GITHUB_HOSTED",
       "scope": "qualification only",
-      "status": "PASS_QUALIFICATION"
+      "status": "PASS_QUALIFICATION",
+      "final_ci_evidence": "platform/github-actions-run-33253638226/macos"
+    },
+    "final_ci_linux": {
+      "platform": "Linux GitHub-hosted runner",
+      "environment": "Ubuntu 24.04 x86_64 / ext4",
+      "workflow_run_id": "33253638226",
+      "source_commit": "b20fc903eb7395f5d3f2a48a7f0184bcc3b02713",
+      "evidence_class": "GITHUB_HOSTED",
+      "scope": "final candidate CI verification",
+      "evidence_path": "platform/github-actions-run-33253638226/linux",
+      "status": "PASS"
     }
   },
   "final_ci": {
-    "status": "PENDING",
+    "status": "PASS",
     "candidate_commit": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
     "required_github_hosted_platforms": [
       "Linux",
       "macOS"
     ],
     "windows_requirement": "NONE; Windows uses retained local native evidence",
-    "workflow": ".github/workflows/m1-release-evidence.yml"
+    "workflow": ".github/workflows/m1-release-evidence.yml",
+    "workflow_run_id": "33253638226",
+    "workflow_commit": "b20fc903eb7395f5d3f2a48a7f0184bcc3b02713",
+    "source_candidate": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
+    "evidence_paths": [
+      "platform/github-actions-run-33253638226/linux",
+      "platform/github-actions-run-33253638226/macos"
+    ],
+    "result": "SUCCESS; all 13 commands per Linux/macOS platform returned zero"
   },
   "artifacts": {
     "bundle": "artifacts/m1-release-evidence/",
@@ -107,7 +126,8 @@
     "checksums": "artifacts/m1-release-evidence/SHA256SUMS",
     "predecessor_native_run": "artifacts/m1-release-evidence/platform/github-actions-run-33145714975/",
     "fault_matrix": "artifacts/m1-fault-matrix.json",
-    "property_evidence": "artifacts/m1-release-evidence/properties/"
+    "property_evidence": "artifacts/m1-release-evidence/properties/",
+    "final_candidate_workflow": "platform/github-actions-run-33253638226/"
   },
   "scope": {
     "fault": "FI-03 deferred to M2+; FI-07/FI-14 limited to retained Linux tmpfs resource model; FI-13 Windows NTFS and Linux ext4",
@@ -128,5 +148,19 @@
     "git tag --list",
     "git ls-remote --tags origin"
   ],
-  "reason": "Windows local native and VMware Debian 13 Linux-native evidence are retained at predecessor evidence baseline 6cb62fb; macOS qualification is retained from GitHub-hosted Run 33145714975 at the same baseline. Owner NJHTR accepted the bounded M1 governance decisions on 2026-08-29, source commit 58e9e875cd5a781a94f921ec215e231cffdfafe6 freezes the reviewed M1 content, and b20fc903eb7395f5d3f2a48a7f0184bcc3b02713 binds its traceability. Final GitHub-hosted Linux/macOS CI for the frozen source has not been dispatched; Windows requires no GitHub Actions job. No release tag exists, so release readiness remains blocked pending final CI."
+  "reason": "Windows local native and VMware Debian 13 Linux-native evidence remain retained for the accepted platform scope at predecessor evidence baseline 6cb62fb; macOS qualification and final GitHub-hosted Linux/macOS CI are retained from Run 33253638226 at binding commit b20fc903 for source candidate 58e9e875. All 13 commands per required hosted platform returned zero and artifact manifests/checksums match. No Windows GitHub Actions job is required. No release tag exists; normal release/tag process remains owner-controlled.",
+  "final_candidate_workflow": {
+    "workflow": "M1 release evidence",
+    "run_id": "33253638226",
+    "run_attempt": "1",
+    "commit": "b20fc903eb7395f5d3f2a48a7f0184bcc3b02713",
+    "source_candidate": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
+    "status": "SUCCESS",
+    "linux": "GitHub-hosted Ubuntu 24.04 x86_64 / ext4",
+    "macos": "macOS GitHub-hosted runner / macOS 14 arm64 / filesystem unknown",
+    "evidence_paths": [
+      "platform/github-actions-run-33253638226/linux",
+      "platform/github-actions-run-33253638226/macos"
+    ]
+  }
 }

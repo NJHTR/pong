@@ -15,8 +15,8 @@
   "candidate_freeze": "FROZEN",
   "candidate_source_commit": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
   "evidence_baseline_commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
-  "final_ci": "PENDING",
-  "entry_semantics": "Entries retain their evidence-time release disposition. The owner decision overlay below is authoritative for governance; the release remains NOT_PASSED until a clean candidate is frozen and verified.",
+  "final_ci": "PASS",
+  "entry_semantics": "Entries retain their evidence-time release disposition. Final-CI readiness is recorded separately; release_decision remains NOT_PASSED until the normal release/tag process is completed.",
   "decision_overlay": {
     "old_reader": "ACCEPTED EXCEPTION / OUT OF SCOPE",
     "fi_03": "DEFERRED TO M2+",
@@ -214,11 +214,11 @@
       "release_status": "BLOCKED",
       "scope": "Windows native, Linux container/native, macOS native",
       "evidence": [
-        "platform/github-actions-run-33145714975/download-metadata.json",
-        "platform/github-actions-run-33145714975/linux/platform/platform-metadata.json",
-        "platform/github-actions-run-33145714975/macos/platform/platform-metadata.json"
+        "platform/github-actions-run-33253638226/download-metadata.json",
+        "platform/github-actions-run-33253638226/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33253638226/macos/platform/platform-metadata.json"
       ],
-      "environment": "GitHub Actions native runners; successful workflow run 33145714975 on commit 6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+      "environment": "Accepted platform evidence model: Windows local native NTFS; Linux VMware Debian 13 ext4; macOS GitHub-hosted qualification. Final CI Run 33253638226 at binding commit b20fc903eb7395f5d3f2a48a7f0184bcc3b02713",
       "exit_codes": [
         0,
         0,
@@ -259,7 +259,7 @@
         "7390E06C8918F531C6801B17DE895C1053EDB87CF9E2D11F9281A8B3D51760AF",
         "0BFFEED212804B7E8772FDC8785DA6819F1C243D666F33625BB890E3D3782A4C"
       ],
-      "note": "Run 33145714975 passed both native jobs. All 13 recorded commands per platform returned zero; Linux reports ext4 and macOS filesystem remains unknown. This is executable evidence only; old-reader, fault, budget, and release-owner acceptance remain open."
+      "note": "Final candidate platform model is Windows local native, Linux VMware native support evidence, and macOS GitHub-hosted qualification. Run 33253638226 passed final Linux/macOS CI; Windows has no GitHub Actions requirement."
     },
     {
       "id": "COMPAT-OLD-READER",
@@ -714,7 +714,7 @@
       "status": "PASS",
       "release_status": "BLOCKED",
       "scope": "repository metadata",
-      "note": "Git repository exists on branch dev at HEAD 6cb62fb455e92ab731a4bb5233856d10c1f1ce93 with origin remote; the working tree is dirty because evidence/documentation changes are uncommitted, and no release tag or release-owner-approved commit is accepted. Native evidence run 33145714975 is bound to this commit.",
+      "note": "Candidate source 58e9e875 is frozen; binding commit b20fc903 records final CI Run 33253638226. Evidence package is committed locally; no release tag exists.",
       "environment": "repository metadata",
       "exit_codes": [
         0
@@ -742,21 +742,21 @@
       "id": "RELEASE-OWNER",
       "category": "governance",
       "status": "BLOCKED",
-      "release_status": "BLOCKED",
+      "release_status": "READY_FOR_RELEASE",
       "scope": "M1 acceptance register",
-      "note": "No named owner, decision date, accepted platform scope, or approved exception is recorded."
+      "note": "NJHTR accepted the bounded M1 scope, exceptions, ADR decisions, and sign-off on 2026-08-29."
     },
     {
       "id": "RELEASE-CANDIDATE",
       "category": "traceability",
       "status": "BLOCKED",
-      "release_status": "BLOCKED",
+      "release_status": "READY_FOR_RELEASE",
       "scope": "clean M1 release candidate commit/tag",
       "evidence": [
         "traceability/release-traceability.json",
         "traceability/release-traceability.log"
       ],
-      "note": "Working tree is dirty; no release commit/tag was created without owner approval."
+      "note": "Frozen source candidate 58e9e875 is traceable to final CI Run 33253638226 via binding commit b20fc903. Release tag intentionally not created."
     },
     {
       "id": "M1-RELEASE-GATE",
@@ -764,7 +764,7 @@
       "status": "BLOCKED",
       "release_status": "NOT_PASSED",
       "scope": "all M1 MUST-PASS rows",
-      "note": "Evidence is incomplete or not accepted; do not enter M2."
+      "note": "Final technical and governance evidence is complete for the accepted scope; final CI PASS. Release tag remains uncreated and owner-controlled."
     },
     {
       "id": "PLATFORM-NATIVE-LINUX-EXT4-RUN-33080915116",
@@ -1131,6 +1131,142 @@
         "5FEAE54EFDFAFB8C0D90AC9BC9E9B209B537A6CB58D7D3C6C41A5444AAA52856"
       ],
       "note": "Successful native macOS evidence from run 33145714975; all 13 commands returned zero and the artifact manifest/checksum set is complete. Filesystem metadata is unknown; release acceptance remains blocked."
+    },
+    {
+      "id": "PLATFORM-FINAL-CI-LINUX-EXT4-RUN-33253638226",
+      "category": "final_ci",
+      "status": "PASS",
+      "release_status": "READY_FOR_RELEASE",
+      "scope": "frozen M1 source candidate final CI; GitHub-hosted platform qualification",
+      "evidence": [
+        "platform/github-actions-run-33253638226/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33253638226/linux/artifact-manifest.json",
+        "platform/github-actions-run-33253638226/linux/commands.tsv",
+        "platform/github-actions-run-33253638226/linux/SHA256SUMS"
+      ],
+      "environment": "GitHub-hosted Ubuntu 24.04 x86_64 / ext4",
+      "workflow_run_id": "33253638226",
+      "source_candidate_commit": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
+      "evidence_commit": "b20fc903eb7395f5d3f2a48a7f0184bcc3b02713",
+      "exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings",
+        "cargo +stable test --locked --test pt13_fi10 -- --nocapture",
+        "cargo +stable test --locked --test repository_migration -- --nocapture",
+        "cargo +stable test --locked --test recovery_boundaries -- --nocapture",
+        "cargo +stable test --locked --test compatibility_boundaries -- --nocapture",
+        "cargo +stable test --locked -- --nocapture cold_reopen"
+      ],
+      "artifacts": [
+        "platform/github-actions-run-33253638226/linux/platform/platform-metadata.json",
+        "platform/github-actions-run-33253638226/linux/artifact-manifest.json",
+        "platform/github-actions-run-33253638226/linux/commands.tsv",
+        "platform/github-actions-run-33253638226/linux/SHA256SUMS"
+      ],
+      "sha256": [
+        "4A3FDD90723548C10C01684F32E9F4C26BD1FF4AF375828D2E04C918B42261C1",
+        "E5F72CEE5FFB5DBF091DFA97A92872C065BF0866D5AA4ADB121878B4287FEDFA",
+        "FF17E3FA4301468EEFA2EAF344CF675980A4E4280461E671DD1745EAD8C31E05",
+        "842FA39486268081B829DE6D6DB4916A5B22B2673B40932B092E46F7DF983526"
+      ],
+      "note": "Final candidate CI run 33253638226 passed all 13 recorded commands. This row verifies the frozen source binding commit; Windows has no GitHub Actions requirement."
+    },
+    {
+      "id": "PLATFORM-FINAL-CI-MACOS-ARM64-RUN-33253638226",
+      "category": "final_ci",
+      "status": "PASS",
+      "release_status": "READY_FOR_RELEASE",
+      "scope": "frozen M1 source candidate final CI; GitHub-hosted platform qualification",
+      "evidence": [
+        "platform/github-actions-run-33253638226/macos/platform/platform-metadata.json",
+        "platform/github-actions-run-33253638226/macos/artifact-manifest.json",
+        "platform/github-actions-run-33253638226/macos/commands.tsv",
+        "platform/github-actions-run-33253638226/macos/SHA256SUMS"
+      ],
+      "environment": "macOS GitHub-hosted runner / macOS 14 arm64 / filesystem unknown",
+      "workflow_run_id": "33253638226",
+      "source_candidate_commit": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
+      "evidence_commit": "b20fc903eb7395f5d3f2a48a7f0184bcc3b02713",
+      "exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "commands": [
+        "cargo +stable fmt --all -- --check",
+        "cargo +stable check --locked",
+        "cargo +stable test --locked",
+        "cargo +stable clippy --locked --all-targets -- -D warnings",
+        "cargo +1.78.0 fmt --all -- --check",
+        "cargo +1.78.0 check --locked",
+        "cargo +1.78.0 test --locked",
+        "cargo +1.78.0 clippy --locked --all-targets -- -D warnings",
+        "cargo +stable test --locked --test pt13_fi10 -- --nocapture",
+        "cargo +stable test --locked --test repository_migration -- --nocapture",
+        "cargo +stable test --locked --test recovery_boundaries -- --nocapture",
+        "cargo +stable test --locked --test compatibility_boundaries -- --nocapture",
+        "cargo +stable test --locked -- --nocapture cold_reopen"
+      ],
+      "artifacts": [
+        "platform/github-actions-run-33253638226/macos/platform/platform-metadata.json",
+        "platform/github-actions-run-33253638226/macos/artifact-manifest.json",
+        "platform/github-actions-run-33253638226/macos/commands.tsv",
+        "platform/github-actions-run-33253638226/macos/SHA256SUMS"
+      ],
+      "sha256": [
+        "4663998E5E059FFAD56B1F01C114E7F848B78A2E27F87562DAF4C17D40B23034",
+        "252C0C0D3CD224F15C1EB1F4884E07992E725B204F47DEA79ED23189A554F1ED",
+        "FF17E3FA4301468EEFA2EAF344CF675980A4E4280461E671DD1745EAD8C31E05",
+        "60809AE7098FCE4DA6CC70E3E6795D9BEE92C8FF3E55861F8625B01F9D86027F"
+      ],
+      "note": "Final candidate CI run 33253638226 passed all 13 recorded commands. This row verifies the frozen source binding commit; Windows has no GitHub Actions requirement."
     }
-  ]
+  ],
+  "final_ci_workflow": {
+    "workflow": "M1 release evidence",
+    "run_id": "33253638226",
+    "commit": "b20fc903eb7395f5d3f2a48a7f0184bcc3b02713",
+    "source_candidate": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
+    "status": "SUCCESS",
+    "platforms": [
+      "Linux GitHub-hosted runner / Ubuntu 24.04 / ext4",
+      "macOS GitHub-hosted runner / macOS 14 arm64 / filesystem unknown"
+    ],
+    "windows_requirement": "NONE; Windows uses retained local native evidence",
+    "evidence": [
+      "platform/github-actions-run-33253638226/linux",
+      "platform/github-actions-run-33253638226/macos"
+    ]
+  }
 }

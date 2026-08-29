@@ -1,19 +1,18 @@
 # Next Task
 
-**Current Phase:** Phase 1 - M1 release-scope decision closure
+**Current Phase:** Phase 1 - M1 final candidate readiness
 
-**Current Milestone:** M1 Durable local repository (release gate not passed)
+**Current Milestone:** M1 Durable local repository (ready for release; tag not created)
 
-**M1 release gate:** **Not passed.** M1 remains a prerequisite for any release
-claim. No new M2/M3 feature work or public CLI, runtime, SDK, server, or UI
-work is authorized until M1 is accepted. Existing internal slices remain frozen
-evidence only.
+**M1 release gate:** **Ready for release (final CI passed; tag not created).**
+M1 remains a prerequisite for any tagged release claim. No new M2/M3 feature
+work or public CLI, runtime, SDK, server, or UI work is authorized from this
+task. Existing internal slices remain frozen evidence only.
 
-**Current Task:** Execute the M1 release-scope decision package without
-changing the settled storage architecture or production code. The proposed
-scope is Windows x86_64/NTFS, Linux x86_64/ext4, and a GitHub-hosted macOS
-runner whose filesystem remains `unknown`; this scope is not accepted until
-the Release Owner records it. The release bundle at
+**Current Task:** Preserve the accepted M1 scope and complete the normal
+owner-controlled release/tag process. The accepted scope is Windows
+x86_64/NTFS, Linux x86_64/ext4, and a GitHub-hosted macOS runner whose
+filesystem remains `unknown`. The release bundle at
 `artifacts/m1-release-evidence/` contains executable platform, fault, property,
 projection, and measurement evidence within its stated boundaries. Keep
 FI-03, Linux FI-13, old-reader compatibility, property policy, ADR-0015, and
@@ -25,8 +24,9 @@ The minimal native-platform workflow is now defined at
 `33142438624` are retained historical failures. Follow-up run `33145714975`
 at commit `6cb62fb455e92ab731a4bb5233856d10c1f1ce93` completed both native
 jobs successfully; all 13 commands per platform returned zero and the
-artifacts are now executable evidence `PASS`. This does not advance M1 until
-the remaining release-blocking evidence and owner acceptance are closed.
+artifacts remain retained predecessor evidence. Final candidate CI Run
+`33253638226` at binding commit `b20fc903...` also completed both required
+GitHub-hosted jobs successfully; Windows has no GitHub Actions requirement.
 
 The workflow emits stable/MSRV logs, per-command exit codes, cold-reopen output,
 workspace-local test-repository filesystem metadata, an artifact manifest, and
@@ -45,18 +45,15 @@ release-log reference; the successful run is now retained and indexed. Follow
 [`M1_CI_EXECUTION_REQUIRED.md`](../development/M1_CI_EXECUTION_REQUIRED.md)
 for the external execution handoff.
 
-**Blocked By:** Release Owner decisions are still required for the proposed
-platform and fault scope, FI-03 deferral, Linux FI-13 applicability,
-pre-M1/old-reader compatibility, the one-corpus property policy, ADR-0015,
-ADR-0016, and the signed release-owner record. Traceability is also blocked by
-the dirty working tree and absence of a candidate tag. The selected
-`artifact-references.json` index has a packaging-hygiene caveat (it is not a
-one-to-one checksum mirror and contains a stale self-entry); reconcile or
-label it during candidate freeze without adding a new Gate condition. M2/M3
+**Blocked By:** No coding, testing, or evidence blocker remains for the
+accepted M1 scope. The source candidate is `58e9e875...`, final CI is Run
+`33253638226`, and the retained bundle has been checksummed. The normal
+owner-controlled release tag is intentionally not created in this task. M2/M3
 remain internal test-gated slices and do not waive M1.
 
-**Next Action:** Stop technical M1 expansion and hand the prepared decision
-package to the Release Owner. Review [`M1_RELEASE_SCOPE_DECISION.md`](../development/M1_RELEASE_SCOPE_DECISION.md),
+**Next Action:** Release Owner reviews the frozen candidate and Run
+`33253638226` evidence, then uses the normal controlled process to create and
+push the release tag. Review [`M1_RELEASE_SCOPE_DECISION.md`](../development/M1_RELEASE_SCOPE_DECISION.md),
 [`M1_FAULT_SCOPE_DECISION.md`](../development/M1_FAULT_SCOPE_DECISION.md),
 [`M1_PROPERTY_SCOPE_DECISION.md`](../development/M1_PROPERTY_SCOPE_DECISION.md),
 [`M1_PERFORMANCE_SCOPE_DECISION.md`](../development/M1_PERFORMANCE_SCOPE_DECISION.md),

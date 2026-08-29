@@ -2,28 +2,29 @@
 
 Updated 2026-08-29 from frozen source candidate
 `58e9e875cd5a781a94f921ec215e231cffdfafe6`. This is an accepted-governance
-evidence bundle, not a final-CI release artifact.
+evidence bundle with final-CI evidence for the frozen candidate. It is not a
+tagged release artifact.
 
 ## Decision
 
-`M1 Release Gate: BLOCKED / NOT PASSED`
+`M1 Release Gate: READY FOR RELEASE (TAG NOT CREATED)`
 
 The bounded M1 technical gate is `PASS`, and Release Owner `NJHTR` accepted
 the governance decisions on 2026-08-29 by textual owner declaration. Source
-candidate freeze is complete at `58e9e875...`; evidence binding is recorded at
-`b20fc903...`. Final GitHub-hosted Linux/macOS CI has not yet run against that
-commit, so release readiness remains blocked. Windows is covered by retained
-local native evidence and has no final GitHub job requirement. No release tag
-exists.
+candidate freeze is complete at `58e9e875...`; final-CI evidence binding is
+recorded at `b20fc903...`. GitHub-hosted Run `33253638226` passed Linux and
+macOS, with all 13 commands per platform returning zero. Windows is covered by
+retained local native evidence and has no final GitHub job requirement. No
+release tag exists.
 
 ## Evidence disposition
 
 | Area | Status | Release status | Reason |
 | --- | --- | --- | --- |
-| Technical gate | PASS | BLOCKED | Scope-bounded build, test, clippy, platform, fault, property, projection, and evidence checks pass. Final CI is pending for the frozen source candidate. |
-| Windows x86_64 / NTFS | PASS | BLOCKED | Required M1 platform; retained Windows local native evidence is accepted; no GitHub job is required. |
-| Linux x86_64 / ext4 | PASS | BLOCKED | Required M1 platform; VMware Debian 13 Linux-native evidence is retained. |
-| macOS qualification | PASS | BLOCKED | macOS GitHub-hosted runner only; filesystem is `unknown`, with no physical-Mac or APFS claim. |
+| Technical gate | PASS | PASS | Scope-bounded build, test, clippy, platform, fault, property, projection, performance-measurement, final-CI, and evidence checks pass. |
+| Windows x86_64 / NTFS | PASS | PASS | Required M1 platform; retained Windows local native evidence is accepted; no GitHub job is required. |
+| Linux x86_64 / ext4 | PASS | PASS | Required M1 platform; VMware Debian 13 Linux-native support evidence plus final GitHub-hosted CI Run `33253638226`. |
+| macOS qualification | PASS | PASS_QUALIFICATION | macOS GitHub-hosted runner only; filesystem is `unknown`, with no physical-Mac or APFS claim; final CI Run `33253638226`. |
 | FI-03 | DEFERRED TO M2+ | BLOCKED | Owner-approved scope deferment; this is not a test pass. |
 | FI-07 / FI-14 | PASS (bounded) | BLOCKED | Only the retained Linux `tmpfs` resource model is claimed. |
 | FI-13 | PASS (bounded) | BLOCKED | Windows NTFS and Linux ext4 permission evidence; macOS permission fault is not required. |
@@ -32,7 +33,7 @@ exists.
 | Performance | PASS measurement | BLOCKED | Accepted as informational baseline, not capacity certification; source ADR-0015 remains `Proposed`. |
 | Projection contract | ACCEPTED | BLOCKED | Owner accepted ADR-0016 as the M1 contract; source ADR remains `Proposed`. |
 | Release owner | ACCEPTED | BLOCKED | NJHTR, 2026-08-29, textual owner declaration. |
-| Candidate freeze | FROZEN | BLOCKED | Source commit `58e9e875...` is cleanly committed; final GitHub-hosted Linux/macOS CI and tag remain pending. |
+| Candidate freeze | FROZEN | READY_FOR_RELEASE | Source commit `58e9e875...` is cleanly committed; final CI Run `33253638226` is reconciled. Release tag remains owner-controlled and uncreated. |
 
 ## Artifact use
 

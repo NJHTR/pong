@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased - M1 final candidate CI closure (2026-08-29)
+
+- Retained successful GitHub Actions Run `33253638226` at binding commit
+  `b20fc903eb7395f5d3f2a48a7f0184bcc3b02713` for frozen source candidate
+  `58e9e875cd5a781a94f921ec215e231cffdfafe6`.
+- Linux Ubuntu 24.04/ext4 and macOS 14 arm64/unknown-filesystem jobs each
+  returned zero for all 13 recorded commands. Windows remains covered by
+  retained local native evidence; no Windows GitHub job is required.
+- Imported both final-CI artifacts, manifests, nested checksums, and download
+  metadata. Rebuilt the full bundle `SHA256SUMS` over 524 files and updated
+  traceability/matrix references without modifying production code, ADRs,
+  workflow, tag, or remote state.
+- M1 is `READY_FOR_RELEASE`; the release tag remains intentionally uncreated
+  and must follow the normal owner-controlled release process.
+
 ## Unreleased - M1 release-scope decision execution (2026-08-28)
 
 - Recorded a proposal for the M1 supported rows: Windows x86_64/NTFS, Linux x86_64/ext4, and a GitHub-hosted macOS runner with filesystem `unknown`. This is a pending Owner decision, not an accepted support claim.

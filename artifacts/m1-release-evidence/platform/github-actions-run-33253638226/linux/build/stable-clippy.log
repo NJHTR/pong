@@ -1,0 +1,24 @@
+[1m[92m    Checking[0m once_cell v1.21.4
+[1m[92m    Checking[0m getrandom v0.3.4
+[1m[92m    Checking[0m bitflags v2.13.1
+[1m[92m    Checking[0m ppv-lite86 v0.2.21
+[1m[92m    Checking[0m rand_core v0.9.5
+[1m[92m    Checking[0m ahash v0.8.12
+[1m[92m    Checking[0m linux-raw-sys v0.4.15
+[1m[92m    Checking[0m rand v0.9.5
+[1m[92m    Checking[0m hashbrown v0.14.5
+[1m[92m    Checking[0m rand_chacha v0.9.0
+[1m[92m    Checking[0m rustix v0.38.44
+[1m[92m    Checking[0m rand_xorshift v0.4.0
+[1m[92m    Checking[0m num-traits v0.2.19
+[1m[92m    Checking[0m getrandom v0.2.17
+[1m[92m    Checking[0m hashlink v0.9.1
+[1m[92m    Checking[0m lazy_static v1.5.0
+[1m[92m    Checking[0m fastrand v2.5.0
+[1m[92m    Checking[0m unarray v0.1.4
+[1m[92m    Checking[0m regex-syntax v0.8.11
+[1m[92m    Checking[0m rusqlite v0.32.1
+[1m[92m    Checking[0m pong-core v0.1.0 (/home/runner/work/pong/pong)
+[1m[92m    Checking[0m tempfile v3.15.0
+[1m[92m    Checking[0m proptest v1.8.0
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 6.14s

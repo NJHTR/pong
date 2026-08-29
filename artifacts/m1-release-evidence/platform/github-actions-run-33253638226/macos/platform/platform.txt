@@ -1,0 +1,12 @@
+runner_os=macOS
+runner_arch=ARM64
+os_version=14.8.7
+kernel=Darwin 23.6.0
+architecture=arm64
+filesystem_type=unknown
+repository_filesystem_type=unknown
+tmpdir=/Users/runner/work/pong/pong/.m1-tmp
+workspace=/Users/runner/work/pong/pong
+commit=b20fc903eb7395f5d3f2a48a7f0184bcc3b02713
+run_id=33253638226
+run_attempt=1

@@ -281,8 +281,8 @@
   {
     "bundle_path": "m1-release-matrix.json",
     "source_path": "generated normalized release matrix",
-    "sha256": "55B17DAD25334D4C3CE1BD75D7C314DA1DC2D22F26B95095DBFE8A9957308E98",
-    "bytes": 46590,
+    "sha256": "A806276D713B36AACC6348DA6CE8B0AC2474CAFE7AA2DC761EC00B5D5386680B",
+    "bytes": 52812,
     "timestamp": "2026-08-29T12:10:00Z",
     "environment": "M1 final candidate freeze bookkeeping",
     "command": "Rebound after candidate source commit 58e9e875"
@@ -290,8 +290,8 @@
   {
     "bundle_path": "m1-release-summary.md",
     "source_path": "generated release summary",
-    "sha256": "2D53F3FA483AA64A0A8430EB4E5DEFD4D501ED03DB269982433D16324502AA81",
-    "bytes": 3266,
+    "sha256": "28F7BA3F02BEC12F432120E8A18AB28D5B87861D0417198B3CE1CD403DF330EC",
+    "bytes": 3437,
     "timestamp": "2026-08-29T13:19:15Z",
     "environment": "M1 final candidate evidence model reconciliation",
     "command": "Rebound after platform evidence model correction; source candidate 58e9e875"
@@ -470,8 +470,8 @@
   {
     "bundle_path": "traceability/release-traceability.json",
     "source_path": "generated M1 release evidence artifact",
-    "sha256": "10D221CCC9F1D40A6F4D78D96F6C59DFDB6B3FAC0DA9CEFF66AD6A5BCFADC5E9",
-    "bytes": 5921,
+    "sha256": "2A2FC0D1E29220C2B25ECB51F22ADEAB655E454EC85DB70E4655FF08F6E6E95A",
+    "bytes": 7534,
     "timestamp": "2026-08-29T13:19:15Z",
     "environment": "M1 final candidate evidence model reconciliation",
     "command": "Rebound after platform evidence model correction; source candidate 58e9e875"
@@ -479,8 +479,8 @@
   {
     "bundle_path": "traceability/release-traceability.log",
     "source_path": "generated M1 release evidence artifact",
-    "sha256": "8C55CC07B0946B0524F91D99D3B6B74E4E699CC306E82DDB3A209DECE188393A",
-    "bytes": 1467,
+    "sha256": "23BC63EF7EC83C05C953A3708E012F3829115694613B9A1AA5D1DECB2C153C5B",
+    "bytes": 1462,
     "timestamp": "2026-08-29T13:19:15Z",
     "environment": "M1 final candidate evidence model reconciliation",
     "command": "Rebound after platform evidence model correction; source candidate 58e9e875"
@@ -4012,5 +4012,644 @@
     "timestamp": "2026-08-29T09:13:51Z",
     "environment": "Linux native VM rtc-node-1; Debian 13; ext4; execution as nobody",
     "command": "runuser -u nobody -- env PONG_HOST_FAULT_ROOT=/var/tmp/pong-fi13-linux-20260829 host_resource_faults fi_13_real_linux_posix_permission_read_revocation_fails_closed_and_recovers --ignored --nocapture"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/download-metadata.json",
+    "source_path": "GitHub Actions Run 33253638226/download-metadata.json",
+    "sha256": "12B6724E5FCBCC96110C8881A5BC01F96A88D0BA453F394458F5BAD54DBEE2B7",
+    "bytes": 5342,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "M1 final candidate GitHub-hosted evidence download; workflow run 33253638226",
+    "command": "Downloaded from GitHub Actions workflow Run 33253638226"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/artifact-manifest.json",
+    "source_path": "GitHub Actions Run 33253638226/linux/artifact-manifest.json",
+    "sha256": "E5F72CEE5FFB5DBF091DFA97A92872C065BF0866D5AA4ADB121878B4287FEDFA",
+    "bytes": 2875,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence artifact manifest"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/commands.tsv",
+    "source_path": "GitHub Actions Run 33253638226/linux/commands.tsv",
+    "sha256": "FF17E3FA4301468EEFA2EAF344CF675980A4E4280461E671DD1745EAD8C31E05",
+    "bytes": 796,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence command manifest"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/SHA256SUMS",
+    "source_path": "GitHub Actions Run 33253638226/linux/SHA256SUMS",
+    "sha256": "842FA39486268081B829DE6D6DB4916A5B22B2673B40932B092E46F7DF983526",
+    "bytes": 3335,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence nested checksum manifest"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/msrv-178-check.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/msrv-178-check.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/msrv-178-check.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/msrv-178-check.log",
+    "sha256": "5F584AB74A30AD881E51F77C1FDF28BCCEC8A1E817345DDE5E17D2FDB0F615BD",
+    "bytes": 3814,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/msrv-178-clippy.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/msrv-178-clippy.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/msrv-178-clippy.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/msrv-178-clippy.log",
+    "sha256": "EB946B202DD846FCE5579CD2AD6295360F76301F91A946293B9943DCD6063AF8",
+    "bytes": 1114,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/msrv-178-fmt.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/msrv-178-fmt.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/msrv-178-fmt.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/msrv-178-fmt.log",
+    "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "bytes": 0,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/msrv-178-test.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/msrv-178-test.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/msrv-178-test.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/msrv-178-test.log",
+    "sha256": "B4E15DF39428BB4DC6DE0C43044D24E21B1E398CAA5973FF5D6433BC65D16558",
+    "bytes": 21413,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/stable-check.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/stable-check.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/stable-check.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/stable-check.log",
+    "sha256": "409BB9A431EAB070BF6C3786398B5E66E7B50139DE354ED3533E83688DE2208E",
+    "bytes": 3814,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/stable-clippy.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/stable-clippy.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/stable-clippy.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/stable-clippy.log",
+    "sha256": "A4E4F130CDC736603C2DC600BCAC61E7324936AFFA78F7D399BC14E02FB2B566",
+    "bytes": 1114,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/stable-fmt.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/stable-fmt.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/stable-fmt.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/stable-fmt.log",
+    "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "bytes": 0,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/stable-test.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/stable-test.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/build/stable-test.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/build/stable-test.log",
+    "sha256": "0801F17FAB5DB68A7D437A3588DB05DABA78DBBF69D075F7BB687594C80A0FDC",
+    "bytes": 21367,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/logs/cold-reopen.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/logs/cold-reopen.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/logs/cold-reopen.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/logs/cold-reopen.log",
+    "sha256": "DEBE3AD97D6CEED5AAA0023532F1F59AFF6EB8B41409FFDBE3DE6010E0C02EAC",
+    "bytes": 6340,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/logs/compatibility.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/logs/compatibility.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/logs/compatibility.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/logs/compatibility.log",
+    "sha256": "C1328E2313F2A244C4AB4D5D627C01A610B826EDB375DDFD9610EE0BA14F7180",
+    "bytes": 1085,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/logs/migration.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/logs/migration.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/logs/migration.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/logs/migration.log",
+    "sha256": "E64DA6761621C34EBC26F55E9B87502AE9841291F2F6F2149C8B8BB74FD4F126",
+    "bytes": 1048,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/logs/pt13-fi10.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/logs/pt13-fi10.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/logs/pt13-fi10.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/logs/pt13-fi10.log",
+    "sha256": "FE00356531CA997378912241D0071FB04033725D56847B6065E998B1A62EA02D",
+    "bytes": 3517,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/logs/recovery.exit",
+    "source_path": "GitHub Actions Run 33253638226/linux/logs/recovery.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/logs/recovery.log",
+    "source_path": "GitHub Actions Run 33253638226/linux/logs/recovery.log",
+    "sha256": "40423A626D9D396B9BF586EEA238B7ABAA3F6D96FDA4D872A2E6FF05A0AA3E00",
+    "bytes": 899,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/platform/cargo-msrv-178.txt",
+    "source_path": "GitHub Actions Run 33253638226/linux/platform/cargo-msrv-178.txt",
+    "sha256": "8E31F128F5AC4BF7918A69597E247F7A37A31B12A2A48C4C9D6644E6F1B7ADF2",
+    "bytes": 36,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/platform/cargo-stable.txt",
+    "source_path": "GitHub Actions Run 33253638226/linux/platform/cargo-stable.txt",
+    "sha256": "FB3F25AEFD6D5441842D285F5A9B125B3F0F0B0BF2013D9A32677F9E99C6C854",
+    "bytes": 36,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/platform/platform-metadata.json",
+    "source_path": "GitHub Actions Run 33253638226/linux/platform/platform-metadata.json",
+    "sha256": "4A3FDD90723548C10C01684F32E9F4C26BD1FF4AF375828D2E04C918B42261C1",
+    "bytes": 2893,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence platform metadata"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/platform/platform.txt",
+    "source_path": "GitHub Actions Run 33253638226/linux/platform/platform.txt",
+    "sha256": "C5697AB5D195B268BE5CB7739A42DDCE755ABD552D8EDBCE70CD90D9D428F395",
+    "bytes": 322,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/platform/rust-msrv-178.txt",
+    "source_path": "GitHub Actions Run 33253638226/linux/platform/rust-msrv-178.txt",
+    "sha256": "961BEF2EA7B535176F06CBEB621D9C2FF62D3E34FC887A2DD7F59E453118DFEE",
+    "bytes": 196,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/linux/platform/rust-stable.txt",
+    "source_path": "GitHub Actions Run 33253638226/linux/platform/rust-stable.txt",
+    "sha256": "3975D062E234A9F3921955BF6AE5B90F5819DF94FA825D057F76B34A35ED0F4D",
+    "bytes": 196,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "GitHub-hosted Ubuntu 24.04 x86_64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/artifact-manifest.json",
+    "source_path": "GitHub Actions Run 33253638226/macos/artifact-manifest.json",
+    "sha256": "252C0C0D3CD224F15C1EB1F4884E07992E725B204F47DEA79ED23189A554F1ED",
+    "bytes": 2868,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence artifact manifest"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/commands.tsv",
+    "source_path": "GitHub Actions Run 33253638226/macos/commands.tsv",
+    "sha256": "FF17E3FA4301468EEFA2EAF344CF675980A4E4280461E671DD1745EAD8C31E05",
+    "bytes": 796,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence command manifest"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/SHA256SUMS",
+    "source_path": "GitHub Actions Run 33253638226/macos/SHA256SUMS",
+    "sha256": "60809AE7098FCE4DA6CC70E3E6795D9BEE92C8FF3E55861F8625B01F9D86027F",
+    "bytes": 3335,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence nested checksum manifest"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/msrv-178-check.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/msrv-178-check.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/msrv-178-check.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/msrv-178-check.log",
+    "sha256": "537EA0BB599D24485A247A37D79BA3D03BC64A47AF7F904742F414DFDC006D01",
+    "bytes": 3815,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/msrv-178-clippy.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/msrv-178-clippy.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/msrv-178-clippy.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/msrv-178-clippy.log",
+    "sha256": "38EBCF46740449B343DB59A848DD0C5157C8B1DD970C57BE42EF3CA325C86FA7",
+    "bytes": 1269,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/msrv-178-fmt.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/msrv-178-fmt.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/msrv-178-fmt.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/msrv-178-fmt.log",
+    "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "bytes": 0,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/msrv-178-test.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/msrv-178-test.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/msrv-178-test.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/msrv-178-test.log",
+    "sha256": "6D62781D19AC24955B0D1FCE720F7C003C53A04D7DBB94B5F30CC86420D5AD66",
+    "bytes": 20783,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/stable-check.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/stable-check.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/stable-check.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/stable-check.log",
+    "sha256": "80581E45121BD7A34959F86CF08118BC5F29791D74B29E15D6C77E4F8775E359",
+    "bytes": 3815,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/stable-clippy.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/stable-clippy.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/stable-clippy.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/stable-clippy.log",
+    "sha256": "454488AF33CB0172A76261EF4CFBA2E839997A1EBF27730258BDA74EF7156995",
+    "bytes": 1269,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/stable-fmt.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/stable-fmt.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/stable-fmt.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/stable-fmt.log",
+    "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "bytes": 0,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/stable-test.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/stable-test.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/build/stable-test.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/build/stable-test.log",
+    "sha256": "3BA5530F6A2F974DADFA2375A0606B6CAD9B2029F7BC0F35DC9973C55A1DA640",
+    "bytes": 20737,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/logs/cold-reopen.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/logs/cold-reopen.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/logs/cold-reopen.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/logs/cold-reopen.log",
+    "sha256": "963BCE79DD3C68D84542D1F49BF97651AA6912DA4578ABDED9DBF23AC41D84E0",
+    "bytes": 6341,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/logs/compatibility.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/logs/compatibility.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/logs/compatibility.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/logs/compatibility.log",
+    "sha256": "B9A75FA924C1D391C0D74B08C6CF67798113FFE431F2C6727D73762DC884237D",
+    "bytes": 1086,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/logs/migration.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/logs/migration.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/logs/migration.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/logs/migration.log",
+    "sha256": "CC5CC1CBD9B9E42FEE749971C79CFFB8E0F75299152EFC9938963DB4CBEEAD2A",
+    "bytes": 1049,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/logs/pt13-fi10.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/logs/pt13-fi10.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/logs/pt13-fi10.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/logs/pt13-fi10.log",
+    "sha256": "62C8E9415224D28ABA555258C441485E520658355130E63234952D004AF96F1C",
+    "bytes": 3510,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/logs/recovery.exit",
+    "source_path": "GitHub Actions Run 33253638226/macos/logs/recovery.exit",
+    "sha256": "9A271F2A916B0B6EE6CECB2426F0B3206EF074578BE55D9BC94F6F3FE3AB86AA",
+    "bytes": 2,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/logs/recovery.log",
+    "source_path": "GitHub Actions Run 33253638226/macos/logs/recovery.log",
+    "sha256": "32F3376BD58FF47F1E215EF2B29E626A4B013DE83599F814A982E273654851FA",
+    "bytes": 900,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/platform/cargo-msrv-178.txt",
+    "source_path": "GitHub Actions Run 33253638226/macos/platform/cargo-msrv-178.txt",
+    "sha256": "8E31F128F5AC4BF7918A69597E247F7A37A31B12A2A48C4C9D6644E6F1B7ADF2",
+    "bytes": 36,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/platform/cargo-stable.txt",
+    "source_path": "GitHub Actions Run 33253638226/macos/platform/cargo-stable.txt",
+    "sha256": "FB3F25AEFD6D5441842D285F5A9B125B3F0F0B0BF2013D9A32677F9E99C6C854",
+    "bytes": 36,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/platform/platform-metadata.json",
+    "source_path": "GitHub Actions Run 33253638226/macos/platform/platform-metadata.json",
+    "sha256": "4663998E5E059FFAD56B1F01C114E7F848B78A2E27F87562DAF4C17D40B23034",
+    "bytes": 2878,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence platform metadata"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/platform/platform.txt",
+    "source_path": "GitHub Actions Run 33253638226/macos/platform/platform.txt",
+    "sha256": "8D2B1A85AF81209989202FE5336AEFDCD18E0C3EA0126FEBBF7EFCD921676313",
+    "bytes": 315,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/platform/rust-msrv-178.txt",
+    "source_path": "GitHub Actions Run 33253638226/macos/platform/rust-msrv-178.txt",
+    "sha256": "82D8397CD56AAD388A9D28EBB989EC5B0EE06922EA37B790ACB33BC7C81E286E",
+    "bytes": 192,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
+  },
+  {
+    "bundle_path": "platform/github-actions-run-33253638226/macos/platform/rust-stable.txt",
+    "source_path": "GitHub Actions Run 33253638226/macos/platform/rust-stable.txt",
+    "sha256": "BD38EB565E393486255B35FF1F74E9DC7CA87425F1FEBB798B9DD042159A833A",
+    "bytes": 192,
+    "timestamp": "2026-08-29T00:00:00Z",
+    "environment": "macOS GitHub-hosted runner macOS 14 arm64; workflow run 33253638226",
+    "command": "GitHub Actions M1 release evidence retained command output"
   }
 ]
