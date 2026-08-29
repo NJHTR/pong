@@ -15,8 +15,9 @@ x86_64/NTFS, Linux x86_64/ext4, and a GitHub-hosted macOS runner whose
 filesystem remains `unknown`. The release bundle at
 `artifacts/m1-release-evidence/` contains executable platform, fault, property,
 projection, and measurement evidence within its stated boundaries. Keep
-FI-03, Linux FI-13, old-reader compatibility, property policy, ADR-0015, and
-ADR-0016 as explicit proposals/pending decisions. Do not start M2 or add
+FI-03, old-reader compatibility, and the source ADR files remain explicit
+scope boundaries; the corresponding Owner decisions are recorded separately.
+Do not start M2 or add
 Runtime, SDK, CLI, server, or framework-adapter work.
 
 The minimal native-platform workflow is now defined at
@@ -59,10 +60,9 @@ push the release tag. Review [`M1_RELEASE_SCOPE_DECISION.md`](../development/M1_
 [`M1_PERFORMANCE_SCOPE_DECISION.md`](../development/M1_PERFORMANCE_SCOPE_DECISION.md),
 [`M1_PROJECTION_ACCEPTANCE.md`](../development/M1_PROJECTION_ACCEPTANCE.md),
 and [`M1_OWNER_ACTION_LIST.md`](../development/M1_OWNER_ACTION_LIST.md).
-No native/property suite is to be rerun in this scope-decision pass. The Owner
-must either supply the missing external evidence or record bounded exclusions,
-then accept/reject ADR-0015 and ADR-0016, freeze the final evidence snapshot,
-and complete the sign-off. Do not create a tag or enter M2 from this task.
+Final-CI Run `33253638226` and the reconciled artifact bundle are complete.
+The Owner's only remaining action is the normal controlled release/tag process;
+do not create a tag or enter M2 from this task.
 
 Run `33142438624` at commit `e96131d9bb6d3799055401841d0cb710e4f497ff` is
 retained as the fourth native failure record. Both complete artifacts show
@@ -115,9 +115,9 @@ complete artifacts are retained and native evidence rows are executable
 performance budget, and release-owner decisions.
 
 **Definition of Done:** Every M1 MUST-PASS row has platform-specific executable
-evidence or an explicitly accepted ADR disposition. The evidence report says
-`PASS` only after the release owner accepts the matrix, old reader, fault, and
-budget artifacts. Until then the authoritative status remains `NOT PASSED`.
+evidence or an explicitly accepted ADR disposition. For the accepted bounded
+scope, the technical gate and final CI are complete; the release tag remains a
+separate owner-controlled action.
 
 ## Session rule
 
