@@ -20,8 +20,8 @@ No item here creates a release tag, commit, or release approval.
 | [ ] ADR-0016 decision recorded | `ACCEPTED; SOURCE ADR REMAINS PROPOSED` | Implementation, tests, and focused Run #5 evidence present | `M1_PROJECTION_ACCEPTANCE_DECISION.md`, `ADR-0016-projection-contract.md` |
 | [ ] Evidence bundle complete | `PASS (scope-bounded)` | Required platform, fault, property, performance, compatibility, and traceability records are retained for the draft scope | `artifacts/m1-release-evidence/`, `M1_FINAL_CANDIDATE_READINESS.md` |
 | [ ] SHA256SUMS consistent | `PASS` | 453 top-level checksum entries verified; artifact consistency integration test passed 2/2 | `artifacts/m1-release-evidence/SHA256SUMS`, `tests/artifact_consistency.rs` |
-| [x] Traceability points to candidate source | `PASS (CI pending)` | Traceability identifies frozen source candidate `58e9e875...`, predecessor evidence baseline `6cb62fb...`, Run #5, Owner acceptance, and no stale active candidate reference | `artifacts/m1-release-evidence/traceability/release-traceability.json` |
-| [ ] Final CI for candidate | `PENDING` | Run `33145714975` is predecessor evidence at `6cb62fb...`; no workflow has yet run against `58e9e875...` | `.github/workflows/m1-release-evidence.yml` |
+| [x] Traceability points to candidate source | `PASS (CI pending)` | Initial evidence binding commit `b20fc903...` identifies frozen source candidate `58e9e875...`, predecessor evidence baseline `6cb62fb...`, Windows local native evidence, Linux VMware native evidence, macOS GitHub-hosted qualification, and no stale active candidate reference | `artifacts/m1-release-evidence/traceability/release-traceability.json` |
+| [ ] Final CI for candidate | `PENDING` | Only GitHub-hosted Linux/macOS jobs are required; Run `33145714975` is predecessor evidence at `6cb62fb...`; no workflow has yet run against `58e9e875...` | `.github/workflows/m1-release-evidence.yml` |
 | [x] Working tree ready for final freeze | `FROZEN` | `git status --short` was clean after commit `58e9e875...` | `git status --short`, `M1_FINAL_CANDIDATE_READINESS.md` |
 | [x] Owner sign-off recorded | `ACCEPTED` | NJHTR, 2026-08-29, decision `ACCEPTED`, textual owner declaration | `M1_RELEASE_OWNER_SIGNOFF.md` |
 
@@ -40,7 +40,11 @@ M1_RELEASE_GATE = BLOCKED / NOT_PASSED
 | --- | --- |
 | HEAD | `58e9e875cd5a781a94f921ec215e231cffdfafe6` |
 | Branch | `dev` |
-| Workflow | `33145714975` |
+| Initial evidence binding | `b20fc903eb7395f5d3f2a48a7f0184bcc3b02713` |
+| Workflow | `33145714975` (predecessor evidence only) |
+| Windows evidence | Local native Windows x86_64 / NTFS; no GitHub job required |
+| Linux evidence | VMware Debian 13 Linux-native x86_64 / ext4 |
+| macOS evidence | GitHub-hosted qualification; filesystem `unknown` |
 | Release tag | none |
 | Working tree | `CLEAN` after freeze commit |
 | ADR-0015 | `Proposed`; Owner accepted informational baseline |
@@ -48,11 +52,9 @@ M1_RELEASE_GATE = BLOCKED / NOT_PASSED
 
 ## Final Freeze Preconditions
 
-1. Repository owner freezes a clean candidate containing the accepted decision
-   records and reconciles evidence
-   references/checksums against that exact commit.
-3. Existing quality gates and artifact consistency are rerun against the
-   frozen commit.
+1. Dispatch the existing workflow for frozen source commit `58e9e875...` after
+   it is available remotely; only Linux/macOS GitHub-hosted jobs are required.
+2. Rebind the resulting final-CI evidence and rerun artifact consistency.
 
 Until those preconditions are met, this checklist must remain `NOT_READY` and
 the M1 release gate must remain `BLOCKED / NOT_PASSED`.
@@ -78,9 +80,9 @@ ADR_0016 = ACCEPTED
 RELEASE_OWNER_SIGNOFF = ACCEPTED
 ```
 
-The accepted decisions do not create a clean candidate. The working tree is
-still dirty, no final candidate commit or release tag exists, and the release
-state therefore remains:
+The accepted decisions and freeze commits create a clean source candidate;
+final GitHub-hosted Linux/macOS CI and a release tag are still pending, and the
+release state therefore remains:
 
 ```text
 TECHNICAL_GATE = PASS (scope-bounded)

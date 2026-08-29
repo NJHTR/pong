@@ -10,16 +10,19 @@ evidence bundle, not a final-CI release artifact.
 
 The bounded M1 technical gate is `PASS`, and Release Owner `NJHTR` accepted
 the governance decisions on 2026-08-29 by textual owner declaration. Source
-candidate freeze is complete at `58e9e875...`; final CI has not yet run against
-that commit, so release readiness remains blocked. No release tag exists.
+candidate freeze is complete at `58e9e875...`; evidence binding is recorded at
+`b20fc903...`. Final GitHub-hosted Linux/macOS CI has not yet run against that
+commit, so release readiness remains blocked. Windows is covered by retained
+local native evidence and has no final GitHub job requirement. No release tag
+exists.
 
 ## Evidence disposition
 
 | Area | Status | Release status | Reason |
 | --- | --- | --- | --- |
 | Technical gate | PASS | BLOCKED | Scope-bounded build, test, clippy, platform, fault, property, projection, and evidence checks pass. Final CI is pending for the frozen source candidate. |
-| Windows x86_64 / NTFS | PASS | BLOCKED | Required M1 platform; retained native evidence is accepted. |
-| Linux x86_64 / ext4 | PASS | BLOCKED | Required M1 platform; Debian 13 Linux-native evidence is retained. |
+| Windows x86_64 / NTFS | PASS | BLOCKED | Required M1 platform; retained Windows local native evidence is accepted; no GitHub job is required. |
+| Linux x86_64 / ext4 | PASS | BLOCKED | Required M1 platform; VMware Debian 13 Linux-native evidence is retained. |
 | macOS qualification | PASS | BLOCKED | macOS GitHub-hosted runner only; filesystem is `unknown`, with no physical-Mac or APFS claim. |
 | FI-03 | DEFERRED TO M2+ | BLOCKED | Owner-approved scope deferment; this is not a test pass. |
 | FI-07 / FI-14 | PASS (bounded) | BLOCKED | Only the retained Linux `tmpfs` resource model is claimed. |
@@ -29,7 +32,7 @@ that commit, so release readiness remains blocked. No release tag exists.
 | Performance | PASS measurement | BLOCKED | Accepted as informational baseline, not capacity certification; source ADR-0015 remains `Proposed`. |
 | Projection contract | ACCEPTED | BLOCKED | Owner accepted ADR-0016 as the M1 contract; source ADR remains `Proposed`. |
 | Release owner | ACCEPTED | BLOCKED | NJHTR, 2026-08-29, textual owner declaration. |
-| Candidate freeze | FROZEN | BLOCKED | Source commit `58e9e875...` is cleanly committed; final CI and tag remain pending. |
+| Candidate freeze | FROZEN | BLOCKED | Source commit `58e9e875...` is cleanly committed; final GitHub-hosted Linux/macOS CI and tag remain pending. |
 
 ## Artifact use
 

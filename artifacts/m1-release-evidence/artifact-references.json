@@ -283,18 +283,18 @@
     "source_path": "generated normalized release matrix",
     "sha256": "55B17DAD25334D4C3CE1BD75D7C314DA1DC2D22F26B95095DBFE8A9957308E98",
     "bytes": 46590,
-    "timestamp": "2026-08-29T12:10:00.000Z",
+    "timestamp": "2026-08-29T12:10:00Z",
     "environment": "M1 final candidate freeze bookkeeping",
     "command": "Rebound after candidate source commit 58e9e875"
   },
   {
     "bundle_path": "m1-release-summary.md",
     "source_path": "generated release summary",
-    "sha256": "6F3E50166B90075F5FC8910BDFB2BDF774DE552453D09137C560FD842EFA38F5",
-    "bytes": 3025,
-    "timestamp": "2026-08-29T12:10:00.000Z",
-    "environment": "M1 final candidate freeze bookkeeping",
-    "command": "Rebound after candidate source commit 58e9e875"
+    "sha256": "2D53F3FA483AA64A0A8430EB4E5DEFD4D501ED03DB269982433D16324502AA81",
+    "bytes": 3266,
+    "timestamp": "2026-08-29T13:19:15Z",
+    "environment": "M1 final candidate evidence model reconciliation",
+    "command": "Rebound after platform evidence model correction; source candidate 58e9e875"
   },
   {
     "bundle_path": "performance/linux-overlay-run-1.json",
@@ -470,20 +470,20 @@
   {
     "bundle_path": "traceability/release-traceability.json",
     "source_path": "generated M1 release evidence artifact",
-    "sha256": "D26B9F5CA55EB37127A9DD1294E926FC1B13B4D1F8CB3A26806BC3001FC95D36",
-    "bytes": 3479,
-    "timestamp": "2026-08-29T12:10:00.000Z",
-    "environment": "M1 final candidate freeze bookkeeping",
-    "command": "Rebound after candidate source commit 58e9e875"
+    "sha256": "10D221CCC9F1D40A6F4D78D96F6C59DFDB6B3FAC0DA9CEFF66AD6A5BCFADC5E9",
+    "bytes": 5921,
+    "timestamp": "2026-08-29T13:19:15Z",
+    "environment": "M1 final candidate evidence model reconciliation",
+    "command": "Rebound after platform evidence model correction; source candidate 58e9e875"
   },
   {
     "bundle_path": "traceability/release-traceability.log",
     "source_path": "generated M1 release evidence artifact",
-    "sha256": "B9E2E42E670C4EFF2E046F83970C55ABF1C9BAB6AA3FB9D7268B2534F2FF35AD",
-    "bytes": 936,
-    "timestamp": "2026-08-29T12:10:00.000Z",
-    "environment": "M1 final candidate freeze bookkeeping",
-    "command": "Rebound after candidate source commit 58e9e875"
+    "sha256": "8C55CC07B0946B0524F91D99D3B6B74E4E699CC306E82DDB3A209DECE188393A",
+    "bytes": 1467,
+    "timestamp": "2026-08-29T13:19:15Z",
+    "environment": "M1 final candidate evidence model reconciliation",
+    "command": "Rebound after platform evidence model correction; source candidate 58e9e875"
   },
   {
     "bundle_path": "platform/github-actions-run-33074865773/download-metadata.json",

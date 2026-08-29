@@ -7,8 +7,8 @@
 **Readiness:** `NOT_READY (FINAL_CI_PENDING)`
 
 This is a candidate-freeze preparation snapshot, not a release tag. The Owner
-has accepted the scope and governance decisions, but the candidate is not yet
-cleanly frozen.
+has accepted the scope and governance decisions, and the source candidate is
+frozen. Final GitHub-hosted Linux/macOS CI remains pending.
 
 ## Technical Gate
 
@@ -100,10 +100,11 @@ decision.
 | --- | --- | --- |
 | HEAD | `58e9e875cd5a781a94f921ec215e231cffdfafe6` | Frozen source candidate; final CI pending |
 | Branch | `dev` | Current branch |
+| Initial evidence binding | `b20fc903eb7395f5d3f2a48a7f0184bcc3b02713` | Traceability/checksum baseline commit |
 | Native workflow | `33145714975` | Predecessor evidence baseline at `6cb62fb...`; not final candidate CI |
-| Linux evidence | Debian 13 Linux-native VM / ext4 | Retained |
+| Windows evidence | Windows x86_64 / NTFS local native | Retained; no GitHub job required |
+| Linux evidence | VMware Debian 13 Linux-native VM / ext4 | Retained at predecessor evidence commit `6cb62fb...` |
 | macOS evidence | GitHub-hosted runner / filesystem `unknown` | Retained qualification |
-| Windows evidence | Stable/MSRV / NTFS | Retained |
 | Artifact hashes | Existing bundle consistency pass | Recheck after final freeze |
 | ADR-0015 | `Proposed` | Owner accepted informational baseline; source ADR unchanged |
 | ADR-0016 | `Proposed` | Owner accepted M1 contract; source ADR unchanged |
@@ -119,8 +120,9 @@ READINESS = NOT_READY (FINAL_CI_PENDING)
 ```
 
 The technical evidence and governance decision are accepted, and the source
-candidate is frozen. The release cannot be called ready until the final CI
-workflow runs against `58e9e875...` and its evidence is rebound and verified.
+candidate is frozen. The release cannot be called ready until the final
+GitHub-hosted Linux/macOS workflow runs against `58e9e875...` and its evidence
+is rebound and verified. Windows is not a final GitHub CI requirement.
 
 ## Final Release Sequence
 

@@ -1,15 +1,18 @@
 M1 release traceability, 2026-08-29
 Branch: dev
-HEAD: 58e9e875cd5a781a94f921ec215e231cffdfafe6
+Candidate source HEAD: 58e9e875cd5a781a94f921ec215e231cffdfafe6
+Initial evidence binding commit: b20fc903eb7395f5d3f2a48a7f0184bcc3b02713
 Remote: https://github.com/NJHTR/pong.git
 Tags: none
-Working tree: CLEAN after freeze commit 58e9e875cd5a781a94f921ec215e231cffdfafe6
+Working tree: clean after candidate freeze and evidence binding commits
 Release candidate commit: 58e9e875cd5a781a94f921ec215e231cffdfafe6
 Evidence baseline commit: 6cb62fb455e92ab731a4bb5233856d10c1f1ce93
 Release candidate tag: none
 Release owner approval: ACCEPTED by NJHTR on 2026-08-29
 Signature type: textual owner declaration
 Evidence snapshot commit: 6cb62fb455e92ab731a4bb5233856d10c1f1ce93
-Native evidence workflow: 33145714975 (Linux ext4 and macOS arm64; macOS filesystem metadata unknown)
-Final CI: PENDING for candidate commit 58e9e875cd5a781a94f921ec215e231cffdfafe6; Run 33145714975 remains predecessor evidence only.
-Result: BLOCKED; candidate source is frozen and governance is accepted, but final candidate CI has not been dispatched and no release tag exists.
+Windows evidence: local native Windows x86_64 / NTFS retained at predecessor evidence commit 6cb62fb455e92ab731a4bb5233856d10c1f1ce93; no Windows GitHub job is required.
+Linux evidence: VMware Debian 13 Linux-native x86_64 / ext4 retained at predecessor evidence commit 6cb62fb455e92ab731a4bb5233856d10c1f1ce93.
+macOS evidence: GitHub-hosted macOS 14 arm64 qualification, filesystem unknown, Run 33145714975 at predecessor evidence commit 6cb62fb455e92ab731a4bb5233856d10c1f1ce93.
+Final CI: PENDING for candidate commit 58e9e875cd5a781a94f921ec215e231cffdfafe6; only GitHub-hosted Linux/macOS execution is required. Run 33145714975 remains predecessor evidence only.
+Result: BLOCKED; candidate source is frozen and governance is accepted, but final GitHub-hosted Linux/macOS CI has not been dispatched and no release tag exists.

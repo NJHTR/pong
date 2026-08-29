@@ -23,8 +23,8 @@ signature, or capacity certification.
 | Coding Blocker | `NONE` | No production-code defect was found during final acceptance. |
 | Testing Blocker | `NONE` | The complete local preflight and artifact-consistency test passed. |
 | Evidence Blocker | `NONE` for the accepted scope | Evidence is scope-bounded; deferred or excluded claims are not represented as passes. |
-| Traceability | `PASS (CI pending)` | Frozen source candidate is `58e9e875...`; Run #5 at `6cb62fb...` is explicitly predecessor evidence. |
-| Candidate Readiness | `NOT_READY (FINAL_CI_PENDING)` | Source candidate is cleanly committed, but no final workflow run has been dispatched for `58e9e875...`. |
+| Traceability | `PASS (CI pending)` | Initial evidence binding commit is `b20fc903...`; frozen source candidate is `58e9e875...`; Run #5 at `6cb62fb...` is explicitly predecessor evidence. |
+| Candidate Readiness | `NOT_READY (FINAL_CI_PENDING)` | Source candidate is cleanly committed, but no final GitHub-hosted Linux/macOS workflow run has been dispatched for `58e9e875...`. Windows uses retained local native evidence and has no final GitHub job requirement. |
 | Release Tag | `NOT_CREATED` | Tagging and pushing were explicitly excluded from this execution. |
 
 ```text
@@ -59,9 +59,9 @@ M1_RELEASE_GATE = BLOCKED / NOT_PASSED
 
 | Evidence | Identity | Result |
 | --- | --- | --- |
-| Windows | Windows x86_64 / NTFS, stable and Rust 1.78 records | `PASS` |
-| Linux native VM | Debian 13 / Linux 6.12 / ext4 | `PASS` |
-| GitHub Linux | Run `33145714975`, Ubuntu 24.04 / ext4 | `PASS` |
+| Windows local native | Windows x86_64 / NTFS, stable and Rust 1.78 retained records | `PASS` |
+| Linux native VM | VMware Debian 13 / Linux 6.12 / ext4 | `PASS` |
+| GitHub Linux | Run `33145714975`, Ubuntu 24.04 / ext4, predecessor qualification | `PASS` qualification |
 | GitHub macOS | Run `33145714975`, macOS 14 arm64, filesystem `unknown` | `PASS` qualification |
 | Fault evidence | Retained FI matrix and native resource/permission records | `PASS` for accepted scope |
 | Property evidence | Canonical 10,000-case corpus and platform qualification | `PASS` for accepted scope |
@@ -95,14 +95,12 @@ candidate:
 
 1. Make candidate commit `58e9e875cd5a781a94f921ec215e231cffdfafe6`
    available to GitHub without rewriting history, then dispatch the existing
-   M1 release-evidence workflow for that exact commit. Do not reuse Run #5 as
-   final candidate CI.
-2. The existing workflow currently has Linux and macOS jobs only. The required
-   final Windows row must be provided by an approved final-candidate Windows
-   execution path before release readiness can be declared.
-3. Rebind final traceability and checksums to the new workflow artifacts, then
+   M1 release-evidence workflow for that exact commit. Only its Linux and
+   macOS GitHub-hosted jobs are required; Windows is covered by retained local
+   native evidence. Do not reuse Run #5 as final candidate CI.
+2. Rebind final traceability and checksums to the new workflow artifacts, then
    rerun the complete local preflight on the clean committed candidate.
-4. After the candidate remains clean and green, create and push the release
+3. After the candidate remains clean and green, create and push the release
    tag through the normal release process.
 
 Until steps 1-3 are complete, `READY_FOR_RELEASE` would be inaccurate. M1 is

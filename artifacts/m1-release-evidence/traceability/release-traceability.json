@@ -10,7 +10,8 @@
   "evidence_snapshot": {
     "captured_before_commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
     "post_commit_head": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
-    "post_commit_verification": "m1: freeze release candidate committed; local preflight and artifact-consistency verification completed; final candidate CI rerun is pending"
+    "initial_evidence_binding_commit": "b20fc903eb7395f5d3f2a48a7f0184bcc3b02713",
+    "post_commit_verification": "m1: final candidate source frozen and evidence binding committed; local preflight and artifact-consistency verification completed; final GitHub-hosted Linux/macOS CI is pending"
   },
   "release_candidate": {
     "status": "BLOCKED",
@@ -46,6 +47,60 @@
     ],
     "qualification": "macOS GitHub-hosted runner / filesystem unknown"
   },
+  "platform_evidence": {
+    "windows_local_native": {
+      "platform": "Windows x86_64 / NTFS",
+      "source_commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+      "evidence_class": "NATIVE",
+      "scope": "required local platform; no GitHub Actions job required",
+      "artifacts": [
+        "build/windows-stable-fmt.log",
+        "build/windows-stable-check.log",
+        "build/windows-stable-test.log",
+        "build/windows-stable-clippy.log",
+        "build/windows-msrv-178-fmt.log",
+        "build/windows-msrv-178-check.log",
+        "build/windows-msrv-178-test.log",
+        "build/windows-msrv-178-clippy.log",
+        "fault/windows-fi13-acl-closure-20260828.json",
+        "properties/windows-property-corpus-10000-20260828.json"
+      ],
+      "status": "PASS"
+    },
+    "linux_vmware_native": {
+      "platform": "Linux x86_64 / ext4",
+      "environment": "VMware Debian GNU/Linux 13 (trixie)",
+      "source_commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+      "evidence_class": "NATIVE",
+      "scope": "required local platform",
+      "artifacts": [
+        "platform/linux-native-vm-6cb62fb-20260828/environment.json",
+        "platform/linux-native-vm-6cb62fb-20260828/test.log",
+        "fault/linux-fi13-posix-closure-20260829.json",
+        "properties/linux-native-vm-property-corpus-10000-20260828.json"
+      ],
+      "status": "PASS"
+    },
+    "macos_github_hosted": {
+      "platform": "macOS GitHub-hosted runner",
+      "environment": "macOS 14 arm64; filesystem unknown",
+      "workflow_run_id": "33145714975",
+      "source_commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+      "evidence_class": "GITHUB_HOSTED",
+      "scope": "qualification only",
+      "status": "PASS_QUALIFICATION"
+    }
+  },
+  "final_ci": {
+    "status": "PENDING",
+    "candidate_commit": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
+    "required_github_hosted_platforms": [
+      "Linux",
+      "macOS"
+    ],
+    "windows_requirement": "NONE; Windows uses retained local native evidence",
+    "workflow": ".github/workflows/m1-release-evidence.yml"
+  },
   "artifacts": {
     "bundle": "artifacts/m1-release-evidence/",
     "references": "artifacts/m1-release-evidence/artifact-references.json",
@@ -73,5 +128,5 @@
     "git tag --list",
     "git ls-remote --tags origin"
   ],
-  "reason": "The retained native evidence run 33145714975 is bound to predecessor evidence baseline 6cb62fb. Owner NJHTR accepted the bounded M1 governance decisions on 2026-08-29, and source commit 58e9e875cd5a781a94f921ec215e231cffdfafe6 freezes the reviewed M1 content. Final CI for that new commit has not been dispatched, and no release tag exists; release readiness therefore remains blocked pending final CI."
+  "reason": "Windows local native and VMware Debian 13 Linux-native evidence are retained at predecessor evidence baseline 6cb62fb; macOS qualification is retained from GitHub-hosted Run 33145714975 at the same baseline. Owner NJHTR accepted the bounded M1 governance decisions on 2026-08-29, source commit 58e9e875cd5a781a94f921ec215e231cffdfafe6 freezes the reviewed M1 content, and b20fc903eb7395f5d3f2a48a7f0184bcc3b02713 binds its traceability. Final GitHub-hosted Linux/macOS CI for the frozen source has not been dispatched; Windows requires no GitHub Actions job. No release tag exists, so release readiness remains blocked pending final CI."
 }
