@@ -12,7 +12,10 @@
   "release_owner": "NJHTR",
   "governance_decision": "ACCEPTED",
   "owner_date": "2026-08-29",
-  "candidate_freeze": "PENDING",
+  "candidate_freeze": "FROZEN",
+  "candidate_source_commit": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
+  "evidence_baseline_commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "final_ci": "PENDING",
   "entry_semantics": "Entries retain their evidence-time release disposition. The owner decision overlay below is authoritative for governance; the release remains NOT_PASSED until a clean candidate is frozen and verified.",
   "decision_overlay": {
     "old_reader": "ACCEPTED EXCEPTION / OUT OF SCOPE",

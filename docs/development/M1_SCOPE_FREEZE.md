@@ -15,8 +15,8 @@
 > **Final acceptance overlay (2026-08-29):** Release Owner `NJHTR` formally
 > accepted this bounded scope by textual declaration. The draft/pending labels
 > below are retained proposal history. Current state is
-> `OWNER_DECISION = ACCEPTED`, `M1_SCOPE_FREEZE = ACCEPTED`,
-> `CANDIDATE_FREEZE = PENDING`, and
+> `OWNER_DECISION = ACCEPTED`, `M1_SCOPE_FREEZE = FROZEN` at source commit
+> `58e9e875...`, `FINAL_CI = PENDING`, and
 > `M1_RELEASE_GATE = BLOCKED / NOT_PASSED`.
 
 This is a proposed scope freeze for Release Owner review. It bounds the M1

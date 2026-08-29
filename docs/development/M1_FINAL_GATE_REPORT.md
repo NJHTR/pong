@@ -4,9 +4,10 @@
 **Release Owner:** NJHTR  
 **Owner decision:** `ACCEPTED`  
 **Signature type:** Textual owner declaration  
+**Candidate source commit:** `58e9e875cd5a781a94f921ec215e231cffdfafe6`
 **Evidence baseline commit:** `6cb62fb455e92ab731a4bb5233856d10c1f1ce93`  
 **Native evidence workflow:** `33145714975`  
-**Final candidate commit:** not frozen  
+**Final candidate commit:** `58e9e875cd5a781a94f921ec215e231cffdfafe6`
 **Release tag:** not created
 
 This report records the final acceptance execution requested by the Release
@@ -22,8 +23,8 @@ signature, or capacity certification.
 | Coding Blocker | `NONE` | No production-code defect was found during final acceptance. |
 | Testing Blocker | `NONE` | The complete local preflight and artifact-consistency test passed. |
 | Evidence Blocker | `NONE` for the accepted scope | Evidence is scope-bounded; deferred or excluded claims are not represented as passes. |
-| Traceability | `BLOCKED` for final candidate | Evidence is bound to baseline commit `6cb62fb...` and workflow `33145714975`, but accepted decision records remain uncommitted. |
-| Candidate Readiness | `NOT_READY` | The working tree is dirty and no clean committed final candidate has been verified. |
+| Traceability | `PASS (CI pending)` | Frozen source candidate is `58e9e875...`; Run #5 at `6cb62fb...` is explicitly predecessor evidence. |
+| Candidate Readiness | `NOT_READY (FINAL_CI_PENDING)` | Source candidate is cleanly committed, but no final workflow run has been dispatched for `58e9e875...`. |
 | Release Tag | `NOT_CREATED` | Tagging and pushing were explicitly excluded from this execution. |
 
 ```text
@@ -32,8 +33,9 @@ GOVERNANCE_GATE = ACCEPTED
 CODING_BLOCKER = NONE
 TESTING_BLOCKER = NONE
 EVIDENCE_BLOCKER = NONE_FOR_ACCEPTED_SCOPE
-CANDIDATE_FREEZE = PENDING
-RELEASE_READINESS = NOT_READY
+CANDIDATE_FREEZE = FROZEN
+FINAL_CI = PENDING
+RELEASE_READINESS = NOT_READY (FINAL_CI_PENDING)
 M1_RELEASE_GATE = BLOCKED / NOT_PASSED
 ```
 
@@ -88,15 +90,21 @@ returned exit code `0`. The artifact consistency suite passed `2/2` tests.
 
 ## Remaining Release Blocker
 
-The only remaining blocker before a release tag is candidate freeze:
+The only remaining blocker before a release tag is final CI for the frozen
+candidate:
 
-1. Commit the reviewed M1 code, tests, documents, evidence, manifests, and
-   Owner decision records as one candidate snapshot.
-2. Rebind traceability and checksums to that exact commit.
-3. Rerun the complete release preflight on the clean committed candidate.
+1. Make candidate commit `58e9e875cd5a781a94f921ec215e231cffdfafe6`
+   available to GitHub without rewriting history, then dispatch the existing
+   M1 release-evidence workflow for that exact commit. Do not reuse Run #5 as
+   final candidate CI.
+2. The existing workflow currently has Linux and macOS jobs only. The required
+   final Windows row must be provided by an approved final-candidate Windows
+   execution path before release readiness can be declared.
+3. Rebind final traceability and checksums to the new workflow artifacts, then
+   rerun the complete local preflight on the clean committed candidate.
 4. After the candidate remains clean and green, create and push the release
    tag through the normal release process.
 
-Until steps 1-3 are complete, `READY_FOR_TAG` would be inaccurate. M1 is
-technically and governance accepted, but final release candidate freeze and
-verification remain.
+Until steps 1-3 are complete, `READY_FOR_RELEASE` would be inaccurate. M1 is
+technically and governance accepted, and the source candidate is frozen, but
+final candidate CI remains pending.

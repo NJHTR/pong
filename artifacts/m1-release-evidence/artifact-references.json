@@ -281,20 +281,20 @@
   {
     "bundle_path": "m1-release-matrix.json",
     "source_path": "generated normalized release matrix",
-    "sha256": "802476EBC732EC982395A23D09DD2DD0B404A5D8655D2F40C01DC0C5250568A5",
-    "bytes": 46419,
-    "timestamp": "2026-08-29T11:55:06.7985462Z",
-    "environment": "Current Windows workspace; Owner decision overlay updated",
-    "command": "Updated after Release Owner acceptance on 2026-08-29"
+    "sha256": "55B17DAD25334D4C3CE1BD75D7C314DA1DC2D22F26B95095DBFE8A9957308E98",
+    "bytes": 46590,
+    "timestamp": "2026-08-29T12:10:00.000Z",
+    "environment": "M1 final candidate freeze bookkeeping",
+    "command": "Rebound after candidate source commit 58e9e875"
   },
   {
     "bundle_path": "m1-release-summary.md",
     "source_path": "generated release summary",
-    "sha256": "FFF62DE12AAEE1AAD2AED2D85466DCD6D27264FDD530C1C708A78D104AADC887",
-    "bytes": 2947,
-    "timestamp": "2026-08-29T11:55:06.7985462Z",
-    "environment": "Current Windows workspace; Owner decision overlay updated",
-    "command": "Updated after Release Owner acceptance on 2026-08-29"
+    "sha256": "6F3E50166B90075F5FC8910BDFB2BDF774DE552453D09137C560FD842EFA38F5",
+    "bytes": 3025,
+    "timestamp": "2026-08-29T12:10:00.000Z",
+    "environment": "M1 final candidate freeze bookkeeping",
+    "command": "Rebound after candidate source commit 58e9e875"
   },
   {
     "bundle_path": "performance/linux-overlay-run-1.json",
@@ -470,20 +470,20 @@
   {
     "bundle_path": "traceability/release-traceability.json",
     "source_path": "generated M1 release evidence artifact",
-    "sha256": "BE7367AB03DCBC3359A186899C6CF2F7676DF9FFCE694C1001C6B0E89762A848",
-    "bytes": 1964,
-    "timestamp": "2026-08-29T11:55:06.7985462Z",
-    "environment": "Current Windows workspace; Owner decision overlay updated",
-    "command": "Updated after Release Owner acceptance on 2026-08-29"
+    "sha256": "D26B9F5CA55EB37127A9DD1294E926FC1B13B4D1F8CB3A26806BC3001FC95D36",
+    "bytes": 3479,
+    "timestamp": "2026-08-29T12:10:00.000Z",
+    "environment": "M1 final candidate freeze bookkeeping",
+    "command": "Rebound after candidate source commit 58e9e875"
   },
   {
     "bundle_path": "traceability/release-traceability.log",
     "source_path": "generated M1 release evidence artifact",
-    "sha256": "E6136DE1F733D3B33B387794A2AFE40970711C3C496791797EF565E088910960",
-    "bytes": 761,
-    "timestamp": "2026-08-29T11:55:06.7985462Z",
-    "environment": "Current Windows workspace; Owner decision overlay updated",
-    "command": "Updated after Release Owner acceptance on 2026-08-29"
+    "sha256": "B9E2E42E670C4EFF2E046F83970C55ABF1C9BAB6AA3FB9D7268B2534F2FF35AD",
+    "bytes": 936,
+    "timestamp": "2026-08-29T12:10:00.000Z",
+    "environment": "M1 final candidate freeze bookkeeping",
+    "command": "Rebound after candidate source commit 58e9e875"
   },
   {
     "bundle_path": "platform/github-actions-run-33074865773/download-metadata.json",

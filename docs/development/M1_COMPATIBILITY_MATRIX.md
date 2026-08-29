@@ -8,7 +8,8 @@
 > Reader is `ACCEPTED EXCEPTION / OUT OF SCOPE` for unreleased/internal pre-M1
 > formats. The pending/unassigned entries below are retained historical audit
 > context and are superseded for governance by `M1_OWNER_DECISION_RECORD.md`
-> and `M1_RELEASE_OWNER_SIGNOFF.md`. Candidate freeze is still pending, so
+> and `M1_RELEASE_OWNER_SIGNOFF.md`. Candidate source commit
+> `58e9e875...` is frozen, but final CI is pending, so
 > `M1_RELEASE_GATE = BLOCKED / NOT_PASSED`.
 
 The current close-out bundle is indexed at

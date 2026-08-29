@@ -9,7 +9,7 @@ The supplied scope decision is recorded separately as:
 
 ```text
 OWNER_DECISION = ACCEPTED
-FINAL_CANDIDATE_FREEZE = PENDING
+  FINAL_CANDIDATE_FREEZE = FROZEN (source commit 58e9e875cd5a781a94f921ec215e231cffdfafe6)
 ```
 
 This acceptance closes the named governance decisions and authorizes final
@@ -19,7 +19,7 @@ release tag.
 | Field | Value |
 |---|---|
 | Release | Pong M1 |
-| Candidate Commit | `6cb62fb455e92ab731a4bb5233856d10c1f1ce93` evidence baseline; final committed candidate pending |
+| Candidate Commit | `58e9e875cd5a781a94f921ec215e231cffdfafe6` (frozen source candidate); Run #5 evidence baseline predecessor `6cb62fb...` |
 | Workflow | `33145714975` |
 | Supported Scope | Windows x86_64/NTFS and Linux x86_64/ext4 required; macOS GitHub-hosted qualification only, filesystem `unknown` |
 | Known Limitations | No external provider execution/reconciliation claim; Linux `tmpfs` is the only qualified resource-exhaustion model; performance is informational, not capacity-certified; no physical-Mac or APFS claim |
@@ -35,18 +35,18 @@ release tag.
 | Date | 2026-08-29 |
 | Signature | NJHTR |
 | Signature Type | Textual owner declaration |
-| Candidate Freeze | `PENDING` |
+| Candidate Freeze | `FROZEN` (source commit `58e9e875cd5a781a94f921ec215e231cffdfafe6`) |
 
 ## Technical Review Inputs (Not Approval)
 
-The current evidence snapshot identifies candidate commit
-`6cb62fb455e92ab731a4bb5233856d10c1f1ce93` and native evidence workflow
-`33145714975`. The Owner has accepted the scope and decisions, but these are
-not yet a frozen release candidate because the accepted decision documents are
-uncommitted.
+The current evidence snapshot identifies frozen source candidate commit
+`58e9e875cd5a781a94f921ec215e231cffdfafe6`; native workflow `33145714975`
+remains predecessor evidence bound to `6cb62fb...`. The Owner has accepted the
+scope and decisions. Final CI for the frozen source candidate is still pending.
 
-The current working tree is `DIRTY` and no release tag exists. Codex must not
-describe this snapshot as a clean release candidate.
+The current working tree was clean immediately after the freeze commit and no
+release tag exists. Codex must not describe the candidate as release-ready
+until final CI is run against `58e9e875...`.
 
 ## Required Review Inputs
 

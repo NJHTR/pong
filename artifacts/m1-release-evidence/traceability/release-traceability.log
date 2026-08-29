@@ -1,14 +1,15 @@
 M1 release traceability, 2026-08-29
 Branch: dev
-HEAD: 6cb62fb455e92ab731a4bb5233856d10c1f1ce93
+HEAD: 58e9e875cd5a781a94f921ec215e231cffdfafe6
 Remote: https://github.com/NJHTR/pong.git
 Tags: none
-Working tree: DIRTY (uncommitted evidence/documentation changes)
-Release candidate commit: none (final candidate freeze pending)
+Working tree: CLEAN after freeze commit 58e9e875cd5a781a94f921ec215e231cffdfafe6
+Release candidate commit: 58e9e875cd5a781a94f921ec215e231cffdfafe6
 Evidence baseline commit: 6cb62fb455e92ab731a4bb5233856d10c1f1ce93
 Release candidate tag: none
 Release owner approval: ACCEPTED by NJHTR on 2026-08-29
 Signature type: textual owner declaration
 Evidence snapshot commit: 6cb62fb455e92ab731a4bb5233856d10c1f1ce93
 Native evidence workflow: 33145714975 (Linux ext4 and macOS arm64; macOS filesystem metadata unknown)
-Result: BLOCKED; governance is accepted, but the working tree is not a frozen release snapshot and no release tag exists.
+Final CI: PENDING for candidate commit 58e9e875cd5a781a94f921ec215e231cffdfafe6; Run 33145714975 remains predecessor evidence only.
+Result: BLOCKED; candidate source is frozen and governance is accepted, but final candidate CI has not been dispatched and no release tag exists.

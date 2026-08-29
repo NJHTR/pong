@@ -4,30 +4,32 @@
   "repository_root": "D:/pong",
   "remote": "https://github.com/NJHTR/pong.git",
   "branch": "dev",
-  "head": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+  "head": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
   "tags": [],
-  "working_tree": "DIRTY",
+  "working_tree": "CLEAN_AFTER_FREEZE_COMMIT",
   "evidence_snapshot": {
     "captured_before_commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
-    "post_commit_head": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
-    "post_commit_verification": "local audit and artifact-consistency verification completed; working tree contains uncommitted evidence/documentation changes"
+    "post_commit_head": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
+    "post_commit_verification": "m1: freeze release candidate committed; local preflight and artifact-consistency verification completed; final candidate CI rerun is pending"
   },
   "release_candidate": {
     "status": "BLOCKED",
     "version": null,
-    "commit": null,
+    "commit": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
     "evidence_baseline_commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
+    "source_commit": "58e9e875cd5a781a94f921ec215e231cffdfafe6",
     "tag": null,
     "owner_approval": "ACCEPTED",
     "owner": "NJHTR",
     "owner_date": "2026-08-29",
     "signature_type": "Textual owner declaration",
-    "candidate_freeze": "PENDING"
+    "candidate_freeze": "FROZEN"
   },
   "native_evidence_workflow": {
     "run_id": "33145714975",
     "commit": "6cb62fb455e92ab731a4bb5233856d10c1f1ce93",
     "status": "SUCCESS",
+    "qualification_for": "evidence baseline only; not final candidate CI",
     "linux": "GitHub-hosted Ubuntu 24.04 x86_64 / ext4",
     "macos": "macOS GitHub-hosted runner / filesystem unknown"
   },
@@ -37,6 +39,32 @@
     "adr_0015": "ACCEPTED AS INFORMATIONAL BASELINE",
     "adr_0016": "ACCEPTED"
   },
+  "platforms": {
+    "required": [
+      "Windows x86_64 / NTFS",
+      "Linux x86_64 / ext4"
+    ],
+    "qualification": "macOS GitHub-hosted runner / filesystem unknown"
+  },
+  "artifacts": {
+    "bundle": "artifacts/m1-release-evidence/",
+    "references": "artifacts/m1-release-evidence/artifact-references.json",
+    "checksums": "artifacts/m1-release-evidence/SHA256SUMS",
+    "predecessor_native_run": "artifacts/m1-release-evidence/platform/github-actions-run-33145714975/",
+    "fault_matrix": "artifacts/m1-fault-matrix.json",
+    "property_evidence": "artifacts/m1-release-evidence/properties/"
+  },
+  "scope": {
+    "fault": "FI-03 deferred to M2+; FI-07/FI-14 limited to retained Linux tmpfs resource model; FI-13 Windows NTFS and Linux ext4",
+    "property": "canonical 10000 cases per generated property plus accepted-platform qualification",
+    "performance": "informational baseline; not capacity-certified",
+    "projection": "ADR-0016 accepted as M1 Projection Contract"
+  },
+  "exceptions": [
+    "No backwards compatibility guarantee for unreleased/internal pre-M1 repository formats",
+    "No physical-Mac or APFS claim",
+    "No M1 external provider side-effect reconciliation claim"
+  ],
   "commands": [
     "git status --short --branch",
     "git diff --stat",
@@ -45,5 +73,5 @@
     "git tag --list",
     "git ls-remote --tags origin"
   ],
-  "reason": "The retained native evidence run 33145714975 and evidence baseline are 6cb62fb. Owner NJHTR accepted the bounded M1 governance decisions on 2026-08-29. The accepted decision records remain uncommitted, the working tree is dirty, and no release tag exists; therefore no frozen release-candidate commit exists yet."
+  "reason": "The retained native evidence run 33145714975 is bound to predecessor evidence baseline 6cb62fb. Owner NJHTR accepted the bounded M1 governance decisions on 2026-08-29, and source commit 58e9e875cd5a781a94f921ec215e231cffdfafe6 freezes the reviewed M1 content. Final CI for that new commit has not been dispatched, and no release tag exists; release readiness therefore remains blocked pending final CI."
 }

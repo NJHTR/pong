@@ -4,7 +4,7 @@
 **Owner Decision:** `ACCEPTED`  
 **Owner:** `NJHTR`  
 **Date:** `2026-08-29`  
-**Readiness:** `NOT_READY`
+**Readiness:** `NOT_READY (FINAL_CI_PENDING)`
 
 This is a candidate-freeze preparation snapshot, not a release tag. The Owner
 has accepted the scope and governance decisions, but the candidate is not yet
@@ -61,7 +61,8 @@ The Release Owner accepts:
 5. FI-13 Windows NTFS and Linux ext4 permission rows.
 6. Linux `tmpfs` as the only formally verified M1 resource model.
 
-Formal Owner acceptance is `ACCEPTED`; candidate freeze remains `PENDING`.
+Formal Owner acceptance is `ACCEPTED`; source candidate freeze is `FROZEN` at
+`58e9e875cd5a781a94f921ec215e231cffdfafe6`.
 
 ## Deferred Scope
 
@@ -97,16 +98,16 @@ decision.
 
 | Item | Current value | Status |
 | --- | --- | --- |
-| HEAD | `6cb62fb455e92ab731a4bb5233856d10c1f1ce93` | Review input, not frozen candidate |
+| HEAD | `58e9e875cd5a781a94f921ec215e231cffdfafe6` | Frozen source candidate; final CI pending |
 | Branch | `dev` | Current branch |
-| Native workflow | `33145714975` | Review input |
+| Native workflow | `33145714975` | Predecessor evidence baseline at `6cb62fb...`; not final candidate CI |
 | Linux evidence | Debian 13 Linux-native VM / ext4 | Retained |
 | macOS evidence | GitHub-hosted runner / filesystem `unknown` | Retained qualification |
 | Windows evidence | Stable/MSRV / NTFS | Retained |
 | Artifact hashes | Existing bundle consistency pass | Recheck after final freeze |
 | ADR-0015 | `Proposed` | Owner accepted informational baseline; source ADR unchanged |
 | ADR-0016 | `Proposed` | Owner accepted M1 contract; source ADR unchanged |
-| Working tree | `DIRTY` | Not ready |
+| Working tree | `CLEAN` after freeze commit | Final CI still pending |
 | Release tag | none | Do not create in this phase |
 | Sign-off | `ACCEPTED` | NJHTR textual owner declaration recorded |
 
@@ -114,12 +115,12 @@ decision.
 
 ```text
 M1_RELEASE_GATE = BLOCKED / NOT_PASSED
-READINESS = NOT_READY
+READINESS = NOT_READY (FINAL_CI_PENDING)
 ```
 
-The technical evidence and governance decision are accepted, but the release
-cannot be called a frozen final candidate until the exact clean evidence
-snapshot exists in a commit and is verified.
+The technical evidence and governance decision are accepted, and the source
+candidate is frozen. The release cannot be called ready until the final CI
+workflow runs against `58e9e875...` and its evidence is rebound and verified.
 
 ## Final Release Sequence
 

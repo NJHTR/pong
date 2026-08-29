@@ -24,13 +24,16 @@ RELEASE_OWNER_SIGNOFF = ACCEPTED
 ```
 
 The retained technical evidence is `PASS` only for the named scope. The
-working tree is still dirty, the accepted records are not in a clean committed
-candidate, and no release tag exists. Therefore the current release state is:
+accepted records are frozen in source commit
+`58e9e875cd5a781a94f921ec215e231cffdfafe6`, and the working tree was clean
+after that commit. No release tag exists and final candidate CI is pending.
+Therefore the current release state is:
 
 ```text
 TECHNICAL_GATE = PASS (scope-bounded)
 GOVERNANCE_GATE = ACCEPTED
-CANDIDATE_FREEZE = PENDING
+CANDIDATE_FREEZE = FROZEN
+FINAL_CI = PENDING
 M1_RELEASE_GATE = BLOCKED / NOT_PASSED
 ```
 

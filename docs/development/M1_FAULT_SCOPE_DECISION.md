@@ -11,7 +11,8 @@
 > **Final acceptance overlay (2026-08-29):** Owner `NJHTR` accepted FI-03 as
 > `DEFERRED TO M2+`, FI-07/FI-14 only for the retained Linux `tmpfs` resource
 > model, and FI-13 for Windows NTFS plus Linux ext4. The pending statements
-> below are historical proposal context. Candidate freeze remains pending.
+> below are historical proposal context. Candidate source commit `58e9e875...`
+> is frozen; final CI remains pending.
 
 This document proposes the M1 fault scope without changing the existing fault
 matrix or claiming unexecuted evidence. A proposed disposition becomes
