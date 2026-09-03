@@ -1,0 +1,99 @@
+{
+  "evidence_id": "m2-slice-009-workspace-lifecycle-operation-windows-native-2026-09-02",
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "scope": "M2-SLICE-009 lifecycle operation identity integration",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "timestamp": "2026-09-02T21:47:22+08:00",
+  "platform": {
+    "os": "Windows 11",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "runner": "local Windows native development"
+  },
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "target": "x86_64-pc-windows-msvc",
+    "declared_msrv": "1.78"
+  },
+  "source": {
+    "base_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "current_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE"
+  },
+  "durable_operation_path": {
+    "entrypoint": "WorkspaceManager::transition_lifecycle_operation",
+    "operation_identity": "caller-supplied operation_id",
+    "request_idempotency": "(project_id, agent_id, request_id) plus canonical envelope digest",
+    "binding": [
+      "workspace identity",
+      "expected lifecycle status",
+      "expected workspace revision",
+      "lease owner and epoch",
+      "lifecycle action"
+    ],
+    "atomic_persistence": [
+      "operation intent",
+      "workspace lifecycle status and revision CAS",
+      "completed operation result",
+      "operation journal phase",
+      "operation lifecycle events"
+    ],
+    "transaction": "existing SQLite transaction and failpoints; no schema changes",
+    "read_semantics": "Open, status, and diff remain read-only and allocate no operation",
+    "event_semantics": "reuses existing operation event taxonomy; no lifecycle event type added"
+  },
+  "coverage": {
+    "integration_test_file": "tests/workspace_lifecycle_operation.rs",
+    "integration_cases": 8,
+    "integration_passed": 8,
+    "integration_failed": 0,
+    "scenarios": [
+      "operation identity creation and workspace/action binding",
+      "successful durable lifecycle mutation",
+      "exact retry returns the completed durable result",
+      "changed operation semantics fail closed as idempotency-key reuse",
+      "stale revision and stale lease rejection",
+      "provider failure leaves core state unchanged",
+      "pre-commit persistence rollback and retry",
+      "post-commit interruption, cold reopen, and deterministic retry",
+      "read-only Open/status/diff do not create operations or events",
+      "no duplicate operation, revision increment, or lifecycle transition",
+      "existing operation event taxonomy is preserved",
+      "raw v0.1 SQLite fixture remains readable without lifecycle writeback"
+    ],
+    "focused_contract_cases": 15,
+    "focused_contract_passed": 15,
+    "focused_contract_failed": 0,
+    "full_regression_passed": 243,
+    "full_regression_failed": 0,
+    "full_regression_ignored": 2,
+    "ignored_tests": [
+      "FI-13 host ACL evidence requires PONG_HOST_FAULT_ROOT",
+      "performance measurement-only probe requires explicit --ignored"
+    ]
+  },
+  "commands": [
+    { "command": "cargo fmt --all -- --check", "exit_code": 0 },
+    { "command": "cargo check --locked", "exit_code": 0 },
+    { "command": "cargo test --locked --test workspace_lifecycle_contract", "exit_code": 0, "passed": 15, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --locked --test workspace_lifecycle_integration", "exit_code": 0, "passed": 8, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --locked --test workspace_lifecycle_operation", "exit_code": 0, "passed": 8, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --all --locked", "exit_code": 0, "passed": 243, "failed": 0, "ignored": 2 },
+    { "command": "cargo clippy --all-targets --all-features --locked -- -D warnings", "exit_code": 0 },
+    { "command": "git diff --check", "exit_code": 0 }
+  ],
+  "artifacts": {
+    "log": "artifacts/m2-development/m2-slice-009-workspace-lifecycle-operation-windows-native-2026-09-02.log",
+    "evidence_json": "artifacts/m2-development/m2-slice-009-workspace-lifecycle-operation-windows-native-2026-09-02.json",
+    "m1_release_artifacts_modified": false
+  },
+  "notes": [
+    "This is local Windows native development evidence only; it is not M2 release qualification.",
+    "The working tree is intentionally uncommitted, so this record is bound to the base/current HEAD and must be re-bound after a candidate commit.",
+    "Operation intent, lifecycle mutation, terminal result, journal phase, and operation events are persisted through the existing ledger path.",
+    "Pre-commit faults retain the complete pre-state; post-commit faults retain the complete durable post-state and exact retry is safe.",
+    "No second operation ledger, SQLite schema change, M1 contract change, ADR change, provider implementation, release tag, or push was made."
+  ]
+}

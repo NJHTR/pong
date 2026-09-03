@@ -24,6 +24,7 @@ const MIGRATION_ID_KEY: &str = "migration_id";
 pub const OPERATION_SCHEMA_VERSION: &str = "0.1";
 pub const EVENT_ENVELOPE_SCHEMA_VERSION: &str = "0.1";
 pub const PROJECTION_SCHEMA_VERSION: &str = "0.1";
+pub const SNAPSHOT_SCHEMA_VERSION: &str = "0.1";
 
 /// Deterministic failure boundaries used by the durable-primitive harness.
 ///
@@ -44,6 +45,13 @@ pub enum MetadataFailpoint {
     AfterRecoveryCommit,
     BeforeSqliteCommit,
     AfterSqliteCommit,
+    BeforeSnapshotMetadataInsert,
+    AfterSnapshotMetadataInsert,
+    BeforeSnapshotHeadUpdate,
+    AfterSnapshotHeadUpdate,
+    AfterSnapshotPublicationCommit,
+    BeforeOperationFinishCommit,
+    AfterOperationFinishCommit,
 }
 
 /// Projection-specific interruption boundaries used by the FI-10 harness.
@@ -129,6 +137,13 @@ impl MetadataFailpoint {
             Self::AfterRecoveryCommit => "after_recovery_commit",
             Self::BeforeSqliteCommit => "before_sqlite_commit",
             Self::AfterSqliteCommit => "after_sqlite_commit",
+            Self::BeforeSnapshotMetadataInsert => "before_snapshot_metadata_insert",
+            Self::AfterSnapshotMetadataInsert => "after_snapshot_metadata_insert",
+            Self::BeforeSnapshotHeadUpdate => "before_snapshot_head_update",
+            Self::AfterSnapshotHeadUpdate => "after_snapshot_head_update",
+            Self::AfterSnapshotPublicationCommit => "after_snapshot_publication_commit",
+            Self::BeforeOperationFinishCommit => "before_operation_finish_commit",
+            Self::AfterOperationFinishCommit => "after_operation_finish_commit",
         }
     }
 }
@@ -367,6 +382,16 @@ pub struct WorkspaceUpdate<'a> {
     pub now_ms: i64,
 }
 
+pub(crate) struct WorkspaceLifecycleOperationInput<'a> {
+    pub operation: OperationEnvelope,
+    pub lease: &'a LeaseToken,
+    pub expected_revision: i64,
+    pub expected_status: &'a str,
+    pub next_status: &'a str,
+    pub updated_at: &'a str,
+    pub now_ms: i64,
+}
+
 /// A write lease is identified by workspace, owner, and monotonically
 /// increasing epoch. Callers must present the complete token for mutations.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -393,6 +418,50 @@ pub struct EnvironmentRecord {
     pub fingerprint: String,
     pub facts_json: String,
     pub created_at: String,
+}
+
+/// Durable metadata explaining one immutable workspace tree publication.
+/// `root_digest` is the CAS tree identity; `snapshot_id` is its typed domain
+/// identity and must not be confused with a workspace revision, operation, or
+/// event identifier.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SnapshotRecord {
+    pub snapshot_id: String,
+    pub root_digest: String,
+    pub workspace_id: String,
+    pub project_id: String,
+    pub environment_id: Option<String>,
+    pub manifest_version: u32,
+    pub redaction_profile_id: String,
+    pub redaction_profile_version: String,
+    pub file_count: usize,
+    pub total_bytes: u64,
+    pub created_at: String,
+    pub operation_id: String,
+    pub event_id: String,
+    pub generation_id: String,
+    pub migration_id: String,
+}
+
+/// Inputs for one atomic snapshot metadata/head publication.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SnapshotPublication {
+    pub snapshot_id: String,
+    pub root_digest: String,
+    pub workspace_id: String,
+    pub project_id: String,
+    pub environment_id: Option<String>,
+    pub manifest_version: u32,
+    pub file_count: usize,
+    pub total_bytes: u64,
+    pub created_at: String,
+    pub operation_id: String,
+    pub event_id: String,
+    pub causation_id: Option<String>,
+    pub correlation_id: Option<String>,
+    pub expected_revision: i64,
+    pub lease: LeaseToken,
+    pub now_ms: i64,
 }
 
 /// A typed, content-addressed input or output reference carried by an
@@ -613,6 +682,23 @@ const PROJECTION_COLUMNS: &[&str] = &[
 ];
 const PROJECTION_EVENT_COLUMNS: &[&str] =
     &["projection_id", "event_id", "payload_digest", "applied_at"];
+const SNAPSHOT_COLUMNS: &[&str] = &[
+    "snapshot_id",
+    "root_digest",
+    "workspace_id",
+    "project_id",
+    "environment_id",
+    "manifest_version",
+    "redaction_profile_id",
+    "redaction_profile_version",
+    "file_count",
+    "total_bytes",
+    "created_at",
+    "operation_id",
+    "event_id",
+    "generation_id",
+    "migration_id",
+];
 
 fn inject_before_commit(
     failpoints: &mut MetadataFailpoints,
@@ -630,6 +716,16 @@ fn inject_after_commit(
 ) -> Result<(), PongError> {
     if let Some(point) = failpoints.take_if(specific, MetadataFailpoint::AfterSqliteCommit) {
         return Err(PongError::FaultInjected(point.label().into()));
+    }
+    Ok(())
+}
+
+fn inject_snapshot_failpoint(
+    failpoints: &mut MetadataFailpoints,
+    point: MetadataFailpoint,
+) -> Result<(), PongError> {
+    if let Some(fired) = failpoints.take_if(point, point) {
+        return Err(PongError::FaultInjected(fired.label().into()));
     }
     Ok(())
 }
@@ -673,6 +769,361 @@ impl fmt::Debug for MetadataStore {
 }
 
 impl MetadataStore {
+    /// Atomically bind one lifecycle mutation to the existing operation
+    /// ledger.  This is an internal integration seam for the workspace
+    /// manager: operation intent, workspace CAS update, terminal outcome, and
+    /// operation events share one SQLite transaction and no new schema.
+    pub(crate) fn apply_workspace_lifecycle_operation(
+        &mut self,
+        input: WorkspaceLifecycleOperationInput<'_>,
+    ) -> Result<(WorkspaceRecord, OperationRecord), PongError> {
+        let WorkspaceLifecycleOperationInput {
+            operation,
+            lease,
+            expected_revision,
+            expected_status,
+            next_status,
+            updated_at,
+            now_ms,
+        } = input;
+        let operation = redact_operation_envelope(&self.redactor, operation);
+        validate_operation_envelope(&operation)?;
+        validate_non_empty(expected_status, "expected workspace status")?;
+        validate_non_empty(next_status, "next workspace status")?;
+        validate_workspace_status(expected_status)?;
+        validate_workspace_status(next_status)?;
+        validate_non_empty(updated_at, "workspace updated_at")?;
+        if expected_revision < 0 {
+            return Err(PongError::InvalidInput(
+                "workspace revision must not be negative".into(),
+            ));
+        }
+        let workspace_id = operation.workspace_id.as_deref().ok_or_else(|| {
+            PongError::InvalidInput("lifecycle operation requires workspace".into())
+        })?;
+        if workspace_id != lease.workspace_id {
+            return Err(PongError::Conflict(
+                "lease belongs to another workspace".into(),
+            ));
+        }
+        let envelope_digest = operation_envelope_digest(&operation)?;
+        let input_refs_json = canonical_json(&operation.input_refs)?;
+        let output_refs_json = canonical_json(&operation.output_refs)?;
+        let resource_json = optional_canonical_json(operation.resource.as_ref())?;
+        let before_state_json = optional_canonical_json(operation.before_state.as_ref())?;
+        let after_state_json = optional_canonical_json(operation.after_state.as_ref())?;
+        let policy_json = optional_canonical_json(operation.policy_decision.as_ref())?;
+        let envelope_json = canonical_json(&operation)?;
+        let profile = self.redactor.profile();
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+
+        let existing_by_request: Option<OperationRecord> = transaction
+            .query_row(
+                &format!(
+                    "{OPERATION_SELECT} WHERE project_id = ?1 AND agent_id = ?2 AND request_id = ?3"
+                ),
+                params![
+                    operation.project_id,
+                    operation.agent_id,
+                    operation.request_id
+                ],
+                operation_from_row,
+            )
+            .optional()?;
+        if let Some(existing) = existing_by_request {
+            if existing.envelope_digest == envelope_digest
+                && existing.operation_id == operation.operation_id
+                && existing.workspace_id.as_deref() == Some(workspace_id)
+                && existing.lifecycle_status == "completed"
+            {
+                let result = existing.result.clone().ok_or_else(|| {
+                    PongError::Integrity("completed lifecycle operation has no result".into())
+                })?;
+                if result.get("workspace_id").and_then(Value::as_str) != Some(workspace_id) {
+                    return Err(PongError::Integrity(
+                        "completed lifecycle operation result is inconsistent".into(),
+                    ));
+                }
+                let workspace = transaction
+                    .query_row(
+                        "SELECT workspace_id, project_id, driver, locator, branch_ref, head,
+                                environment_id, status, revision, created_at, updated_at
+                         FROM workspaces WHERE workspace_id = ?1",
+                        [workspace_id],
+                        workspace_from_row,
+                    )
+                    .optional()?
+                    .ok_or_else(|| {
+                        PongError::Integrity(
+                            "completed lifecycle operation workspace is missing".into(),
+                        )
+                    })?;
+                transaction.commit()?;
+                return Ok((workspace, existing));
+            }
+            if existing.envelope_digest != envelope_digest {
+                return Err(PongError::IdempotencyKeyReuse(operation.request_id));
+            }
+            return Err(PongError::RecoveryRequired(
+                "lifecycle operation request is not in a completed retryable state".into(),
+            ));
+        }
+
+        let existing_by_id: Option<OperationRecord> = transaction
+            .query_row(
+                &format!("{OPERATION_SELECT} WHERE operation_id = ?1"),
+                [&operation.operation_id],
+                operation_from_row,
+            )
+            .optional()?;
+        if existing_by_id.is_some() {
+            return Err(PongError::Conflict(
+                "operation identity is already used by another request".into(),
+            ));
+        }
+        validate_operation_bindings(
+            &transaction,
+            &operation.project_id,
+            operation.workspace_id.as_deref(),
+            operation.environment_id.as_deref(),
+            operation.parent_operation_id.as_deref(),
+        )?;
+
+        let workspace: WorkspaceRecord = transaction
+            .query_row(
+                "SELECT workspace_id, project_id, driver, locator, branch_ref, head,
+                        environment_id, status, revision, created_at, updated_at
+                 FROM workspaces WHERE workspace_id = ?1",
+                [workspace_id],
+                workspace_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("workspace does not exist".into()))?;
+        if workspace.project_id != operation.project_id
+            || workspace.status != expected_status
+            || workspace.revision != expected_revision
+        {
+            return Err(PongError::Conflict(
+                "workspace lifecycle revision or state is stale".into(),
+            ));
+        }
+        validate_workspace_ready_state(
+            next_status,
+            workspace.head.as_deref(),
+            workspace.environment_id.as_deref(),
+        )?;
+        let lease_valid: Option<i64> = transaction
+            .query_row(
+                "SELECT epoch FROM workspace_leases
+                 WHERE workspace_id = ?1 AND agent_id = ?2 AND epoch = ?3
+                   AND expires_at_ms > ?4",
+                params![workspace_id, lease.agent_id, lease.epoch, now_ms],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if lease_valid.is_none() {
+            return Err(PongError::Conflict(
+                "workspace lease is stale or expired".into(),
+            ));
+        }
+
+        transaction.execute(
+            "INSERT INTO operation_journal
+             (project_id, actor_id, request_id, operation_id, phase, payload_json, created_at)
+             VALUES (?1, ?2, ?3, ?4, 'intent_durable', ?5, ?6)",
+            params![
+                operation.project_id,
+                operation.agent_id,
+                operation.request_id,
+                operation.operation_id,
+                envelope_json,
+                operation.started_at,
+            ],
+        )?;
+        transaction.execute(
+            "INSERT INTO operations
+             (operation_id, project_id, request_id, agent_id, session_id,
+              workspace_id, environment_id, parent_operation_id, schema_version,
+              started_at, finished_at, tool, action, input_refs_json,
+              output_refs_json, resource_json, before_state_json, after_state_json,
+              result_json, error_json, reversibility, replayability, side_effect,
+              policy_json, lifecycle_status, recording_status, redaction_profile_id,
+              redaction_profile_version, envelope_digest, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, NULL,
+                     ?11, ?12, ?13, ?14, ?15, ?16, ?17, NULL, NULL,
+                     ?18, ?19, ?20, ?21, 'started', 'durable', ?22, ?23, ?24, ?25)",
+            params![
+                operation.operation_id,
+                operation.project_id,
+                operation.request_id,
+                operation.agent_id,
+                operation.session_id,
+                operation.workspace_id,
+                operation.environment_id,
+                operation.parent_operation_id,
+                operation.schema_version,
+                operation.started_at,
+                operation.tool,
+                operation.action,
+                input_refs_json,
+                output_refs_json,
+                resource_json,
+                before_state_json,
+                after_state_json,
+                operation.reversibility,
+                operation.replayability,
+                operation.side_effect,
+                policy_json,
+                profile.id,
+                profile.version,
+                envelope_digest,
+                operation.started_at,
+            ],
+        )?;
+        let started_payload = json!({
+            "operation_id": operation.operation_id,
+            "lifecycle_status": "started",
+            "recording_status": "durable",
+            "envelope_digest": envelope_digest,
+        });
+        let started_sequence =
+            next_operation_event_sequence(&transaction, &operation.operation_id)?;
+        append_operation_event(
+            &transaction,
+            &operation.operation_id,
+            &operation.project_id,
+            &operation.agent_id,
+            &operation.request_id,
+            &operation.schema_version,
+            &operation.started_at,
+            started_sequence,
+            &started_payload,
+        )?;
+
+        let new_revision = if expected_status == next_status {
+            expected_revision
+        } else {
+            let changed = transaction.execute(
+                "UPDATE workspaces SET status = ?2, revision = revision + 1, updated_at = ?3
+                 WHERE workspace_id = ?1 AND project_id = ?4 AND status = ?5 AND revision = ?6",
+                params![
+                    workspace_id,
+                    next_status,
+                    updated_at,
+                    operation.project_id,
+                    expected_status,
+                    expected_revision,
+                ],
+            )?;
+            if changed != 1 {
+                return Err(PongError::Conflict(
+                    "workspace lifecycle revision is stale".into(),
+                ));
+            }
+            expected_revision
+                .checked_add(1)
+                .ok_or_else(|| PongError::ResourceExhausted("workspace revision overflow".into()))?
+        };
+        let result = json!({
+            "workspace_id": workspace_id,
+            "action": operation
+                .resource
+                .as_ref()
+                .and_then(|resource| resource.get("action"))
+                .and_then(Value::as_str)
+                .unwrap_or("lifecycle"),
+            "status": next_status,
+            "revision": new_revision,
+        });
+        let outcome = OperationOutcome {
+            status: "completed".into(),
+            finished_at: updated_at.into(),
+            output_refs: None,
+            after_state: Some(json!({"status": next_status, "revision": new_revision})),
+            result: Some(result.clone()),
+            error: None,
+        };
+        let outcome_value = serde_json::to_value(&outcome).map_err(|error| {
+            PongError::Serialization(format!("cannot encode operation outcome: {error}"))
+        })?;
+        let outcome_digest = operation_value_digest(&outcome_value)?;
+        let journal_payload = json!({
+            "operation_id": operation.operation_id,
+            "lifecycle_status": "completed",
+            "outcome_digest": outcome_digest,
+            "outcome": outcome,
+        });
+        let journal_payload_json = canonical_json_value(&journal_payload)?;
+        transaction.execute(
+            "UPDATE operations SET after_state_json = ?2, finished_at = ?3,
+                    result_json = ?4, lifecycle_status = 'completed', updated_at = ?3
+             WHERE operation_id = ?1 AND lifecycle_status = 'started'",
+            params![
+                operation.operation_id,
+                canonical_json_value(&json!({"status": next_status, "revision": new_revision}))?,
+                updated_at,
+                canonical_json_value(&result)?,
+            ],
+        )?;
+        let journal_changed = transaction.execute(
+            "UPDATE operation_journal SET phase = 'outcome_durable', payload_json = ?4
+             WHERE project_id = ?1 AND actor_id = ?2 AND request_id = ?3",
+            params![
+                operation.project_id,
+                operation.agent_id,
+                operation.request_id,
+                journal_payload_json,
+            ],
+        )?;
+        if journal_changed != 1 {
+            return Err(PongError::Integrity(
+                "lifecycle operation journal row disappeared during finish".into(),
+            ));
+        }
+        let completed_payload = json!({
+            "operation_id": operation.operation_id,
+            "lifecycle_status": "completed",
+            "recording_status": "durable",
+            "outcome_digest": outcome_digest,
+        });
+        let completed_sequence =
+            next_operation_event_sequence(&transaction, &operation.operation_id)?;
+        append_operation_event(
+            &transaction,
+            &operation.operation_id,
+            &operation.project_id,
+            &operation.agent_id,
+            &operation.request_id,
+            &operation.schema_version,
+            updated_at,
+            completed_sequence,
+            &completed_payload,
+        )?;
+        inject_before_commit(
+            &mut self.failpoints,
+            MetadataFailpoint::BeforeOperationFinishCommit,
+        )?;
+        inject_before_commit(&mut self.failpoints, MetadataFailpoint::BeforeSqliteCommit)?;
+        transaction.commit()?;
+        inject_after_commit(
+            &mut self.failpoints,
+            MetadataFailpoint::AfterOperationFinishCommit,
+        )?;
+        inject_after_commit(&mut self.failpoints, MetadataFailpoint::AfterSqliteCommit)?;
+
+        let workspace = self.workspace(workspace_id)?.ok_or_else(|| {
+            PongError::Integrity("workspace disappeared after lifecycle update".into())
+        })?;
+        let operation = self
+            .operation_record(&operation.operation_id)?
+            .ok_or_else(|| {
+                PongError::Integrity("operation disappeared after lifecycle update".into())
+            })?;
+        Ok((workspace, operation))
+    }
+
     pub fn open(path: impl AsRef<Path>) -> Result<Self, PongError> {
         Self::open_with_redactor(path, Redactor::default())
     }
@@ -992,6 +1443,7 @@ impl MetadataStore {
             PROJECTION_EVENT_COLUMNS,
             true,
         )?;
+        validate_additive_table_schema(&self.connection, "snapshots", SNAPSHOT_COLUMNS, true)?;
         self.connection.execute_batch(
             "CREATE TABLE IF NOT EXISTS repository_meta (
                 key TEXT PRIMARY KEY NOT NULL,
@@ -1149,6 +1601,25 @@ impl MetadataStore {
                 facts_json TEXT NOT NULL,
                 created_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS snapshots (
+                snapshot_id TEXT PRIMARY KEY NOT NULL,
+                root_digest TEXT NOT NULL UNIQUE,
+                workspace_id TEXT NOT NULL,
+                project_id TEXT NOT NULL,
+                environment_id TEXT,
+                manifest_version INTEGER NOT NULL,
+                redaction_profile_id TEXT NOT NULL,
+                redaction_profile_version TEXT NOT NULL,
+                file_count INTEGER NOT NULL,
+                total_bytes INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                operation_id TEXT NOT NULL,
+                event_id TEXT NOT NULL UNIQUE,
+                generation_id TEXT NOT NULL,
+                migration_id TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS snapshots_workspace_created
+                ON snapshots(workspace_id, created_at, snapshot_id);
             INSERT OR IGNORE INTO repository_meta(key, value)
                 VALUES ('repository_format', '0.1');",
         )?;
@@ -1167,6 +1638,7 @@ impl MetadataStore {
             PROJECTION_EVENT_COLUMNS,
             false,
         )?;
+        validate_additive_table_schema(&self.connection, "snapshots", SNAPSHOT_COLUMNS, false)?;
         let format: String = self.connection.query_row(
             "SELECT value FROM repository_meta WHERE key = 'repository_format'",
             [],
@@ -1843,6 +2315,275 @@ impl MetadataStore {
         inject_after_commit(&mut self.failpoints, MetadataFailpoint::AfterSqliteCommit)?;
         self.workspace(&workspace_id)?
             .ok_or_else(|| PongError::Integrity("workspace disappeared after update".into()))
+    }
+
+    /// Publish snapshot metadata, the snapshot-created event, and the
+    /// workspace head/revision in one SQLite transaction. CAS objects must be
+    /// published and verified by the caller before entering this boundary.
+    pub fn publish_snapshot(
+        &mut self,
+        publication: SnapshotPublication,
+    ) -> Result<SnapshotRecord, PongError> {
+        validate_snapshot_publication(&publication)?;
+        let (generation_id, migration_id) = self.projection_identity()?;
+        let profile = self.redactor.profile();
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let workspace: WorkspaceRecord = transaction
+            .query_row(
+                "SELECT workspace_id, project_id, driver, locator, branch_ref, head,
+                        environment_id, status, revision, created_at, updated_at
+                 FROM workspaces WHERE workspace_id = ?1",
+                [&publication.workspace_id],
+                workspace_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("workspace does not exist".into()))?;
+        if workspace.project_id != publication.project_id {
+            return Err(PongError::Conflict(
+                "snapshot workspace belongs to another project".into(),
+            ));
+        }
+        if publication.lease.workspace_id != publication.workspace_id {
+            return Err(PongError::Conflict(
+                "snapshot lease belongs to another workspace".into(),
+            ));
+        }
+        let lease_ok: Option<i64> = transaction
+            .query_row(
+                "SELECT expires_at_ms FROM workspace_leases
+                 WHERE workspace_id = ?1 AND agent_id = ?2 AND epoch = ?3",
+                params![
+                    publication.workspace_id,
+                    publication.lease.agent_id,
+                    publication.lease.epoch
+                ],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if lease_ok.is_none() || lease_ok <= Some(publication.now_ms) {
+            return Err(PongError::Conflict(
+                "workspace lease is stale or expired".into(),
+            ));
+        }
+        if workspace.revision != publication.expected_revision {
+            return Err(PongError::Conflict("workspace revision is stale".into()));
+        }
+        if publication.environment_id != workspace.environment_id {
+            return Err(PongError::Conflict(
+                "snapshot environment does not match workspace".into(),
+            ));
+        }
+        if publication.environment_id.is_none() {
+            return Err(PongError::Conflict(
+                "snapshot publication requires a workspace environment".into(),
+            ));
+        }
+        if let Some(environment_id) = publication.environment_id.as_deref() {
+            let environment_project: Option<String> = transaction
+                .query_row(
+                    "SELECT project_id FROM environments WHERE environment_id = ?1",
+                    [environment_id],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            if environment_project.as_deref() != Some(publication.project_id.as_str()) {
+                return Err(PongError::Conflict(
+                    "snapshot environment is missing or belongs to another project".into(),
+                ));
+            }
+        }
+        // A post-commit fault can leave the caller without its result even
+        // though the complete publication is durable.  An exact retry must
+        // converge on that durable row; any disagreement is treated as an
+        // integrity/conflict condition rather than rewriting immutable facts.
+        if let Some(existing) = transaction
+            .query_row(
+                "SELECT snapshot_id, root_digest, workspace_id, project_id, environment_id,
+                        manifest_version, redaction_profile_id, redaction_profile_version,
+                        file_count, total_bytes, created_at, operation_id, event_id,
+                        generation_id, migration_id
+                 FROM snapshots WHERE snapshot_id = ?1",
+                [&publication.snapshot_id],
+                snapshot_from_row,
+            )
+            .optional()?
+        {
+            let profile = self.redactor.profile();
+            let consistent = existing.root_digest == publication.root_digest
+                && existing.workspace_id == publication.workspace_id
+                && existing.project_id == publication.project_id
+                && existing.environment_id == publication.environment_id
+                && existing.manifest_version == publication.manifest_version
+                && existing.redaction_profile_id == profile.id
+                && existing.redaction_profile_version == profile.version
+                && existing.file_count == publication.file_count
+                && existing.total_bytes == publication.total_bytes
+                && existing.created_at == publication.created_at
+                && existing.operation_id == publication.operation_id
+                && existing.event_id == publication.event_id
+                && existing.generation_id == generation_id
+                && existing.migration_id == migration_id
+                && workspace.head.as_deref() == Some(existing.root_digest.as_str());
+            if !consistent {
+                return Err(PongError::Integrity(
+                    "snapshot identity was reused with inconsistent publication state".into(),
+                ));
+            }
+            let event_shape: Option<(String, String, String, String)> = transaction
+                .query_row(
+                    "SELECT event_type, project_id, operation_id, workspace_id
+                     FROM event_envelopes WHERE event_id = ?1",
+                    [&existing.event_id],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+                )
+                .optional()?;
+            if event_shape.as_ref()
+                != Some(&(
+                    "snapshot.created".into(),
+                    existing.project_id.clone(),
+                    existing.operation_id.clone(),
+                    existing.workspace_id.clone(),
+                ))
+            {
+                return Err(PongError::Integrity(
+                    "snapshot metadata exists without its publication event".into(),
+                ));
+            }
+            transaction.commit()?;
+            return Ok(existing);
+        }
+        inject_snapshot_failpoint(
+            &mut self.failpoints,
+            MetadataFailpoint::BeforeSnapshotMetadataInsert,
+        )?;
+        let inserted = transaction.execute(
+            "INSERT OR IGNORE INTO snapshots
+             (snapshot_id, root_digest, workspace_id, project_id, environment_id,
+              manifest_version, redaction_profile_id, redaction_profile_version,
+              file_count, total_bytes, created_at, operation_id, event_id,
+              generation_id, migration_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+            params![
+                publication.snapshot_id,
+                publication.root_digest,
+                publication.workspace_id,
+                publication.project_id,
+                publication.environment_id,
+                publication.manifest_version,
+                profile.id,
+                profile.version,
+                publication.file_count as i64,
+                publication.total_bytes as i64,
+                publication.created_at,
+                publication.operation_id,
+                publication.event_id,
+                generation_id,
+                migration_id,
+            ],
+        )?;
+        if inserted != 1 {
+            return Err(PongError::Conflict(
+                "snapshot identity already exists".into(),
+            ));
+        }
+        inject_snapshot_failpoint(
+            &mut self.failpoints,
+            MetadataFailpoint::AfterSnapshotMetadataInsert,
+        )?;
+        let payload = json!({
+            "type": "snapshot.created",
+            "snapshot_id": publication.snapshot_id,
+            "root_digest": publication.root_digest,
+            "workspace_id": publication.workspace_id,
+            "file_count": publication.file_count,
+            "total_bytes": publication.total_bytes,
+        });
+        append_event_envelope_tx(
+            &transaction,
+            NewEventEnvelope {
+                event_id: publication.event_id.clone(),
+                project_id: publication.project_id.clone(),
+                stream_id: format!("workspace:{}", publication.workspace_id),
+                event_type: "snapshot.created".into(),
+                schema_version: EVENT_ENVELOPE_SCHEMA_VERSION.into(),
+                occurred_at: publication.created_at.clone(),
+                recorded_at: publication.created_at.clone(),
+                actor_id: Some(publication.lease.agent_id.clone()),
+                workspace_id: Some(publication.workspace_id.clone()),
+                task_id: None,
+                operation_id: Some(publication.operation_id.clone()),
+                causation_id: publication.causation_id.clone(),
+                correlation_id: publication
+                    .correlation_id
+                    .clone()
+                    .or_else(|| Some(publication.operation_id.clone())),
+                parent_event_ids: publication.causation_id.iter().cloned().collect(),
+                capture_confidence: Some("observed".into()),
+                redaction_status: "redacted".into(),
+                generation_id: Some(generation_id.clone()),
+                migration_id: Some(migration_id.clone()),
+                payload,
+            },
+        )?;
+        inject_snapshot_failpoint(
+            &mut self.failpoints,
+            MetadataFailpoint::BeforeSnapshotHeadUpdate,
+        )?;
+        let changed = transaction.execute(
+            "UPDATE workspaces SET head = ?2, status = 'ready', revision = revision + 1,
+                    updated_at = ?3
+             WHERE workspace_id = ?1 AND revision = ?4",
+            params![
+                publication.workspace_id,
+                publication.root_digest,
+                publication.created_at,
+                publication.expected_revision
+            ],
+        )?;
+        if changed != 1 {
+            return Err(PongError::Conflict("workspace revision is stale".into()));
+        }
+        inject_snapshot_failpoint(
+            &mut self.failpoints,
+            MetadataFailpoint::AfterSnapshotHeadUpdate,
+        )?;
+        inject_before_commit(&mut self.failpoints, MetadataFailpoint::BeforeSqliteCommit)?;
+        transaction.commit()?;
+        inject_snapshot_failpoint(
+            &mut self.failpoints,
+            MetadataFailpoint::AfterSnapshotPublicationCommit,
+        )?;
+        inject_after_commit(&mut self.failpoints, MetadataFailpoint::AfterSqliteCommit)?;
+        self.snapshot_record(&publication.snapshot_id)?
+            .ok_or_else(|| PongError::Integrity("snapshot disappeared after publication".into()))
+    }
+
+    pub fn snapshot_record(&self, snapshot_id: &str) -> Result<Option<SnapshotRecord>, PongError> {
+        self.connection
+            .query_row(
+                "SELECT snapshot_id, root_digest, workspace_id, project_id, environment_id,
+                        manifest_version, redaction_profile_id, redaction_profile_version,
+                        file_count, total_bytes, created_at, operation_id, event_id,
+                        generation_id, migration_id
+                 FROM snapshots WHERE snapshot_id = ?1",
+                [snapshot_id],
+                snapshot_from_row,
+            )
+            .optional()
+            .map_err(PongError::from)
+    }
+
+    pub fn snapshot_id_for_root(&self, root_digest: &str) -> Result<Option<String>, PongError> {
+        self.connection
+            .query_row(
+                "SELECT snapshot_id FROM snapshots WHERE root_digest = ?1",
+                [root_digest],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(PongError::from)
     }
 
     pub fn record_environment(
@@ -2671,6 +3412,36 @@ impl MetadataStore {
         operation_id: &str,
         outcome: OperationOutcome,
     ) -> Result<OperationRecord, PongError> {
+        self.finish_operation_internal(operation_id, outcome, None)
+    }
+
+    /// Persist a terminal operation outcome together with one domain event in
+    /// the same SQLite transaction. This is used when the event is the durable
+    /// explanation for the operation result (for example, a restore).
+    pub fn finish_operation_with_event(
+        &mut self,
+        operation_id: &str,
+        outcome: OperationOutcome,
+        event: NewEventEnvelope,
+    ) -> Result<OperationRecord, PongError> {
+        let event = redact_event_envelope(&self.redactor, event);
+        validate_event_envelope(&event)?;
+        let expected_identity = self.projection_identity()?;
+        validate_identity_assertion(
+            event.generation_id.as_deref(),
+            event.migration_id.as_deref(),
+            &expected_identity,
+            "operation completion event",
+        )?;
+        self.finish_operation_internal(operation_id, outcome, Some(event))
+    }
+
+    fn finish_operation_internal(
+        &mut self,
+        operation_id: &str,
+        outcome: OperationOutcome,
+        completion_event: Option<NewEventEnvelope>,
+    ) -> Result<OperationRecord, PongError> {
         let operation_id = self.redactor.redact_text(operation_id);
         validate_non_empty(&operation_id, "operation id")?;
         let outcome = redact_operation_outcome(&self.redactor, outcome);
@@ -2714,6 +3485,9 @@ impl MetadataStore {
                 && current.result.as_ref() == outcome.result.as_ref()
                 && current.error.as_ref() == outcome.error.as_ref()
             {
+                if let Some(event) = completion_event {
+                    append_event_envelope_tx(&transaction, event)?;
+                }
                 transaction.commit()?;
                 return Ok(current);
             }
@@ -2795,8 +3569,19 @@ impl MetadataStore {
             sequence,
             &payload,
         )?;
+        if let Some(event) = completion_event {
+            append_event_envelope_tx(&transaction, event)?;
+        }
+        inject_before_commit(
+            &mut self.failpoints,
+            MetadataFailpoint::BeforeOperationFinishCommit,
+        )?;
         inject_before_commit(&mut self.failpoints, MetadataFailpoint::BeforeSqliteCommit)?;
         transaction.commit()?;
+        inject_after_commit(
+            &mut self.failpoints,
+            MetadataFailpoint::AfterOperationFinishCommit,
+        )?;
         inject_after_commit(&mut self.failpoints, MetadataFailpoint::AfterSqliteCommit)?;
         self.operation_record(&operation_id)?
             .ok_or_else(|| PongError::Integrity("operation disappeared after finish".into()))
@@ -2900,6 +3685,47 @@ impl MetadataStore {
             )
             .optional()
             .map_err(PongError::from)
+    }
+
+    /// Return the most recently updated operation attached to one workspace.
+    /// Ordering includes the immutable operation ID so equal timestamps are
+    /// deterministic and do not depend on SQLite row order.
+    pub fn latest_operation_for_workspace(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Option<OperationRecord>, PongError> {
+        let workspace_id = self.redactor.redact_text(workspace_id);
+        self.connection
+            .query_row(
+                &format!(
+                    "{OPERATION_SELECT} WHERE workspace_id = ?1
+                     ORDER BY updated_at DESC, operation_id DESC LIMIT 1"
+                ),
+                [&workspace_id],
+                operation_from_row,
+            )
+            .optional()
+            .map_err(PongError::from)
+    }
+
+    /// Return whether any workspace operation still requires reconciliation.
+    /// `started` and terminal `unknown` are deliberately both visible to a
+    /// read-only status caller; status must never imply healthy execution
+    /// while either state remains durable.
+    pub fn has_unresolved_operation_for_workspace(
+        &self,
+        workspace_id: &str,
+    ) -> Result<bool, PongError> {
+        let workspace_id = self.redactor.redact_text(workspace_id);
+        let unresolved: i64 = self.connection.query_row(
+            "SELECT EXISTS(
+                 SELECT 1 FROM operations
+                 WHERE workspace_id = ?1 AND lifecycle_status IN ('started', 'unknown')
+             )",
+            [&workspace_id],
+            |row| row.get(0),
+        )?;
+        Ok(unresolved != 0)
     }
 
     pub fn record_intent(
@@ -4090,6 +4916,38 @@ fn workspace_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<WorkspaceReco
     })
 }
 
+fn snapshot_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<SnapshotRecord> {
+    Ok(SnapshotRecord {
+        snapshot_id: row.get(0)?,
+        root_digest: row.get(1)?,
+        workspace_id: row.get(2)?,
+        project_id: row.get(3)?,
+        environment_id: row.get(4)?,
+        manifest_version: row.get(5)?,
+        redaction_profile_id: row.get(6)?,
+        redaction_profile_version: row.get(7)?,
+        file_count: row.get::<_, i64>(8)?.try_into().map_err(|_| {
+            rusqlite::Error::FromSqlConversionFailure(
+                8,
+                Type::Integer,
+                "snapshot file_count is negative".into(),
+            )
+        })?,
+        total_bytes: row.get::<_, i64>(9)?.try_into().map_err(|_| {
+            rusqlite::Error::FromSqlConversionFailure(
+                9,
+                Type::Integer,
+                "snapshot total_bytes is negative".into(),
+            )
+        })?,
+        created_at: row.get(10)?,
+        operation_id: row.get(11)?,
+        event_id: row.get(12)?,
+        generation_id: row.get(13)?,
+        migration_id: row.get(14)?,
+    })
+}
+
 fn lease_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<LeaseRecord> {
     Ok(LeaseRecord {
         workspace_id: row.get(0)?,
@@ -4113,6 +4971,41 @@ fn environment_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Environment
 fn validate_non_empty(value: &str, label: &str) -> Result<(), PongError> {
     if value.trim().is_empty() || value.as_bytes().contains(&0) {
         return Err(PongError::InvalidInput(format!("{label} is invalid")));
+    }
+    Ok(())
+}
+
+fn validate_snapshot_publication(publication: &SnapshotPublication) -> Result<(), PongError> {
+    validate_non_empty(&publication.snapshot_id, "snapshot id")?;
+    validate_non_empty(&publication.root_digest, "snapshot root digest")?;
+    validate_non_empty(&publication.workspace_id, "snapshot workspace id")?;
+    validate_non_empty(&publication.project_id, "snapshot project id")?;
+    validate_non_empty(&publication.created_at, "snapshot created_at")?;
+    validate_non_empty(&publication.operation_id, "snapshot operation id")?;
+    validate_non_empty(&publication.event_id, "snapshot event id")?;
+    if !publication.snapshot_id.starts_with("snp-") {
+        return Err(PongError::InvalidInput(
+            "snapshot id must use the snp- prefix".into(),
+        ));
+    }
+    if !publication.root_digest.starts_with("sha256:") {
+        return Err(PongError::InvalidInput(
+            "snapshot root digest must use the sha256: prefix".into(),
+        ));
+    }
+    if publication.manifest_version == 0 {
+        return Err(PongError::InvalidInput(
+            "snapshot manifest version must be positive".into(),
+        ));
+    }
+    if publication.file_count > i64::MAX as usize || publication.total_bytes > i64::MAX as u64 {
+        return Err(PongError::ResourceExhausted(
+            "snapshot metadata counters exceed SQLite range".into(),
+        ));
+    }
+    validate_non_empty(&publication.lease.agent_id, "snapshot lease agent id")?;
+    if publication.lease.expires_at_ms <= publication.now_ms {
+        return Err(PongError::Conflict("snapshot lease is expired".into()));
     }
     Ok(())
 }

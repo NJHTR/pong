@@ -8,13 +8,18 @@
 
 use crate::atomic_replace::{rename_new_with_retry, sync_directory};
 use crate::canonical::canonical_bytes;
-use crate::cas::{Cas, Digest};
+use crate::cas::{digest_for, Cas, Digest};
 use crate::error::PongError;
-use crate::metadata::{LeaseToken, WorkspaceRecord, WorkspaceUpdate};
+use crate::metadata::{
+    LeaseRecord, LeaseToken, NewEventEnvelope, OperationEnvelope, OperationError, OperationOutcome,
+    OperationRef, SnapshotPublication, WorkspaceLifecycleOperationInput, WorkspaceRecord,
+    WorkspaceUpdate,
+};
 use crate::redaction::Redactor;
 use crate::repository::Repository;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashSet;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Component, Path, PathBuf};
@@ -123,6 +128,293 @@ pub struct SnapshotOptions {
     pub max_file_bytes: u64,
 }
 
+/// Inputs for one durable snapshot restore request. The request and operation
+/// identities are caller-owned so retries can reuse the same durable intent.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RestoreOptions {
+    pub operation_id: String,
+    pub request_id: String,
+    pub agent_id: String,
+    pub now: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceLifecycleOperationOptions {
+    pub operation_id: String,
+    pub request_id: String,
+    pub now_ms: i64,
+    pub updated_at: String,
+}
+
+/// Durable result of a restore attempt. `status` is one of `completed` or
+/// `unknown`; failed restores are returned as errors while their terminal
+/// operation record remains queryable in metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RestoreResult {
+    pub operation_id: String,
+    pub snapshot_id: String,
+    pub destination: String,
+    pub status: String,
+}
+
+/// Read-only summary of the durable lease row. An expired or released row is
+/// retained as an inactive epoch tombstone so status never treats a stale
+/// token as current.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkspaceLeaseStatus {
+    pub epoch: Option<i64>,
+    pub agent_id: Option<String>,
+    pub expires_at_ms: Option<i64>,
+    pub active: bool,
+}
+
+/// Read-only summary of the workspace's environment binding. Facts are kept
+/// in metadata and are intentionally not copied into this view.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkspaceEnvironmentStatus {
+    pub environment_id: Option<String>,
+    pub status: String,
+}
+
+/// Read-only summary of the latest durable operation attached to a workspace.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkspaceOperationSummary {
+    pub operation_id: String,
+    pub action: String,
+    pub lifecycle_status: String,
+    pub recording_status: String,
+    pub updated_at: String,
+}
+
+/// Stable internal status view for one point-in-time local workspace query.
+/// Authoritative metadata is separated from derived filesystem/recovery state;
+/// the query never acquires or mutates a lease or workspace revision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkspaceStatus {
+    pub workspace_id: String,
+    pub project_id: String,
+    pub driver: String,
+    pub revision: i64,
+    pub status: String,
+    pub head_digest: Option<String>,
+    pub head_snapshot_id: Option<String>,
+    pub lease: WorkspaceLeaseStatus,
+    pub environment: WorkspaceEnvironmentStatus,
+    pub filesystem_accessible: bool,
+    pub changed: Option<bool>,
+    pub change_state: String,
+    pub healthy: bool,
+    pub execution_ready: bool,
+    pub recovery_required: bool,
+    pub latest_operation: Option<WorkspaceOperationSummary>,
+}
+
+/// The durable lifecycle vocabulary currently supported by the M2 workspace
+/// metadata model.  These values intentionally mirror the existing SQLite
+/// status strings; adding a new state requires a separate M2 ADR and schema
+/// compatibility review.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum WorkspaceLifecycleState {
+    Created,
+    Preparing,
+    Ready,
+    Active,
+    Paused,
+    Reconciling,
+    Archived,
+}
+
+impl WorkspaceLifecycleState {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Created => "created",
+            Self::Preparing => "preparing",
+            Self::Ready => "ready",
+            Self::Active => "active",
+            Self::Paused => "paused",
+            Self::Reconciling => "reconciling",
+            Self::Archived => "archived",
+        }
+    }
+
+    pub fn parse(value: &str) -> Result<Self, PongError> {
+        match value {
+            "created" => Ok(Self::Created),
+            "preparing" => Ok(Self::Preparing),
+            "ready" => Ok(Self::Ready),
+            "active" => Ok(Self::Active),
+            "paused" => Ok(Self::Paused),
+            "reconciling" => Ok(Self::Reconciling),
+            "archived" => Ok(Self::Archived),
+            _ => Err(PongError::InvalidInput(
+                "workspace lifecycle state is unsupported".into(),
+            )),
+        }
+    }
+}
+
+/// Provider-neutral lifecycle actions. `Open` is a handle acquisition and is
+/// therefore idempotent without changing the durable status. `Close` archives
+/// the logical workspace; physical materialization cleanup remains provider
+/// responsibility and is deliberately not implied by this action.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum WorkspaceLifecycleAction {
+    Open,
+    Close,
+    BeginCapture,
+    CompleteCapture,
+    Activate,
+    Pause,
+    Resume,
+    BeginRecovery,
+    CompleteRecovery,
+}
+
+/// The only capabilities negotiated by the M2 contract.  Versioning,
+/// branching, merging, and commit semantics are intentionally absent.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceCapabilities {
+    pub snapshot: bool,
+    pub restore: bool,
+    pub diff: bool,
+    pub status: bool,
+}
+
+impl WorkspaceCapabilities {
+    pub const fn local() -> Self {
+        Self {
+            snapshot: true,
+            restore: true,
+            diff: true,
+            status: true,
+        }
+    }
+
+    pub const fn supports(self, capability: WorkspaceCapability) -> bool {
+        match capability {
+            WorkspaceCapability::Snapshot => self.snapshot,
+            WorkspaceCapability::Restore => self.restore,
+            WorkspaceCapability::Diff => self.diff,
+            WorkspaceCapability::Status => self.status,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WorkspaceCapability {
+    Snapshot,
+    Restore,
+    Diff,
+    Status,
+}
+
+/// Logical identity and durable facts passed across the provider boundary.
+/// No filesystem path, provider metadata, or platform-specific handle is
+/// included in this context.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceIdentity {
+    pub workspace_id: String,
+    pub project_id: String,
+    pub provider: String,
+}
+
+/// Read-only context a provider may receive for one lifecycle action.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceProviderContext {
+    pub identity: WorkspaceIdentity,
+    pub state: WorkspaceLifecycleState,
+    pub revision: i64,
+    pub capabilities: WorkspaceCapabilities,
+}
+
+/// Validate one lifecycle transition without touching a provider or durable
+/// storage.  Persistence and provider side effects are orchestrated by the
+/// caller around this pure decision so failure cannot fabricate success.
+pub fn transition_workspace_lifecycle(
+    current: WorkspaceLifecycleState,
+    action: WorkspaceLifecycleAction,
+) -> Result<WorkspaceLifecycleState, PongError> {
+    use WorkspaceLifecycleAction as Action;
+    use WorkspaceLifecycleState as State;
+
+    let next = match (current, action) {
+        (State::Archived, Action::Close) => State::Archived,
+        (State::Archived, _) => {
+            return Err(PongError::Conflict(
+                "archived workspace cannot perform this lifecycle action".into(),
+            ))
+        }
+        (State::Reconciling, Action::BeginRecovery) => State::Reconciling,
+        (State::Reconciling, Action::CompleteRecovery) => State::Ready,
+        (State::Reconciling, _) => {
+            return Err(PongError::RecoveryRequired(
+                "workspace requires reconciliation before this lifecycle action".into(),
+            ))
+        }
+        (
+            State::Created | State::Preparing | State::Ready | State::Active | State::Paused,
+            Action::Open,
+        ) => current,
+        (
+            State::Created | State::Preparing | State::Ready | State::Active | State::Paused,
+            Action::Close,
+        ) => State::Archived,
+        (State::Created, Action::BeginCapture) => State::Preparing,
+        (State::Preparing, Action::BeginCapture) => State::Preparing,
+        (State::Preparing, Action::CompleteCapture) => State::Ready,
+        (State::Ready, Action::CompleteCapture) => State::Ready,
+        (State::Ready | State::Paused, Action::Activate) => State::Active,
+        (State::Active, Action::Activate) => State::Active,
+        (State::Active, Action::Pause) => State::Paused,
+        (State::Paused, Action::Pause) => State::Paused,
+        (State::Paused, Action::Resume) => State::Active,
+        (State::Active, Action::Resume) => State::Active,
+        (
+            State::Created | State::Preparing | State::Ready | State::Active | State::Paused,
+            Action::BeginRecovery,
+        ) => State::Reconciling,
+        (State::Ready | State::Active, Action::CompleteRecovery) => current,
+        _ => {
+            return Err(PongError::Conflict(format!(
+                "invalid workspace lifecycle transition: {} + {:?}",
+                current.as_str(),
+                action
+            )))
+        }
+    };
+    Ok(next)
+}
+
+pub fn require_workspace_capability(
+    capabilities: WorkspaceCapabilities,
+    capability: WorkspaceCapability,
+) -> Result<(), PongError> {
+    if capabilities.supports(capability) {
+        Ok(())
+    } else {
+        Err(PongError::Unsupported(format!(
+            "workspace capability {:?} is not supported",
+            capability
+        )))
+    }
+}
+
+fn lifecycle_operation_action(action: WorkspaceLifecycleAction) -> &'static str {
+    match action {
+        WorkspaceLifecycleAction::Open => "workspace.lifecycle.open",
+        WorkspaceLifecycleAction::Close => "workspace.lifecycle.close",
+        WorkspaceLifecycleAction::BeginCapture => "workspace.lifecycle.begin_capture",
+        WorkspaceLifecycleAction::CompleteCapture => "workspace.lifecycle.complete_capture",
+        WorkspaceLifecycleAction::Activate => "workspace.lifecycle.activate",
+        WorkspaceLifecycleAction::Pause => "workspace.lifecycle.pause",
+        WorkspaceLifecycleAction::Resume => "workspace.lifecycle.resume",
+        WorkspaceLifecycleAction::BeginRecovery => "workspace.lifecycle.begin_recovery",
+        WorkspaceLifecycleAction::CompleteRecovery => "workspace.lifecycle.complete_recovery",
+    }
+}
+
 impl Default for SnapshotOptions {
     fn default() -> Self {
         Self {
@@ -152,11 +444,66 @@ pub struct TreeManifest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Snapshot {
+    pub snapshot_id: String,
     pub digest: Digest,
     pub workspace_id: String,
     pub project_id: String,
     pub file_count: usize,
     pub total_bytes: u64,
+}
+
+/// The factual change kinds emitted by the internal snapshot diff boundary.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SnapshotChangeType {
+    Added,
+    Removed,
+    Modified,
+    TypeChanged,
+}
+
+/// One deterministic path-level change between two verified manifests.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct SnapshotDiffEntry {
+    pub path: String,
+    pub change_type: SnapshotChangeType,
+    pub old_digest: Option<String>,
+    pub new_digest: Option<String>,
+    pub old_size: Option<u64>,
+    pub new_size: Option<u64>,
+    pub old_type: Option<String>,
+    pub new_type: Option<String>,
+}
+
+/// Deterministic, read-only comparison of two snapshot states.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct SnapshotDiff {
+    pub old_snapshot_id: String,
+    pub new_snapshot_id: String,
+    pub entries: Vec<SnapshotDiffEntry>,
+}
+
+/// Read-only result for comparing the current local tree with a workspace's
+/// selected reference snapshot. `diff` reuses the snapshot-to-snapshot schema;
+/// `current_tree_id` is an ephemeral canonical manifest identity and is not a
+/// durable snapshot or workspace revision.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceDiffResult {
+    pub workspace_id: String,
+    pub project_id: String,
+    pub reference_snapshot_id: String,
+    /// The durable workspace revision observed before the filesystem scan.
+    /// This is an optimistic-concurrency/lifecycle revision, not a
+    /// filesystem observation counter.
+    pub observation_revision: i64,
+    /// The immutable environment binding observed with the workspace row.
+    pub environment_id: Option<String>,
+    /// Successful results are stable with respect to the durable workspace
+    /// identity checked before and after the scan. File-level mutations are
+    /// still governed by the existing point-in-time scanner checks.
+    pub observation_stability: String,
+    pub current_tree_id: String,
+    pub diff: SnapshotDiff,
 }
 
 #[derive(Debug, Clone)]
@@ -389,6 +736,7 @@ impl LocalWorkspace {
                 })
             })?;
         Ok(Snapshot {
+            snapshot_id: format!("snp-{}", digest),
             digest,
             workspace_id: self.workspace_id.clone(),
             project_id: self.project_id.clone(),
@@ -417,6 +765,65 @@ impl LocalWorkspace {
             &self.redactor,
         )?;
         Ok(manifest)
+    }
+
+    /// Compare two verified snapshot manifests without reading their file
+    /// blobs. The existing manifest validator supplies identity, canonical
+    /// path, redaction, and digest-shape checks before the linear merge.
+    pub fn diff_snapshots(
+        &self,
+        cas: &Cas,
+        old_digest: Digest,
+        new_digest: Digest,
+    ) -> Result<SnapshotDiff, PongError> {
+        let old_manifest = self.read_manifest(cas, old_digest)?;
+        let new_manifest = self.read_manifest(cas, new_digest)?;
+        let entries = diff_manifests(&old_manifest, &new_manifest);
+        Ok(SnapshotDiff {
+            old_snapshot_id: format!("snp-{old_digest}"),
+            new_snapshot_id: format!("snp-{new_digest}"),
+            entries,
+        })
+    }
+
+    /// Compare the current local tree with a verified reference manifest.
+    /// Current entries are generated in memory through the same path and file
+    /// safety checks used by workspace status; no CAS object is published.
+    pub fn diff_against_snapshot(
+        &self,
+        cas: &Cas,
+        reference_digest: Digest,
+    ) -> Result<SnapshotDiff, PongError> {
+        let reference = self.read_manifest(cas, reference_digest)?;
+        let current = self.current_tree_manifest()?;
+        let current_digest = manifest_digest(&current)?;
+        let diff = diff_manifests(&reference, &current);
+        let current_tree_id = format!("workspace-current-{current_digest}");
+        Ok(SnapshotDiff {
+            old_snapshot_id: format!("snp-{reference_digest}"),
+            new_snapshot_id: current_tree_id,
+            entries: diff,
+        })
+    }
+
+    fn current_tree_manifest(&self) -> Result<TreeManifest, PongError> {
+        let mut entries = Vec::new();
+        collect_status_entries(
+            &self.root,
+            Path::new(""),
+            &self.redactor,
+            SnapshotOptions::default(),
+            &mut entries,
+        )?;
+        entries.sort_by(|left, right| left.path.as_bytes().cmp(right.path.as_bytes()));
+        Ok(TreeManifest {
+            manifest_version: TREE_MANIFEST_VERSION,
+            workspace_id: self.workspace_id.clone(),
+            project_id: self.project_id.clone(),
+            entries,
+            redaction_profile_id: self.redactor.profile_id().into(),
+            redaction_profile_version: self.redactor.version().into(),
+        })
     }
 
     /// Materialize a verified snapshot into a new directory. The destination
@@ -489,6 +896,146 @@ impl LocalWorkspace {
         }
         sync_directory(parent)?;
         Ok(destination)
+    }
+
+    /// Verify a previously published materialization against the immutable
+    /// manifest and CAS blobs. This is used to reconcile a retry after the
+    /// filesystem publication succeeded but durable operation recording was
+    /// interrupted.
+    pub fn verify_materialized(
+        &self,
+        cas: &Cas,
+        digest: Digest,
+        destination: impl AsRef<Path>,
+    ) -> Result<(), PongError> {
+        let manifest = self.read_manifest(cas, digest)?;
+        let destination = destination.as_ref();
+        ensure_no_reparse_ancestors(destination)?;
+        let metadata = fs::symlink_metadata(destination).map_err(|error| {
+            if error.kind() == std::io::ErrorKind::NotFound {
+                PongError::NotFound("materialized destination does not exist".into())
+            } else {
+                PongError::from(error)
+            }
+        })?;
+        if !metadata.is_dir() || is_reparse_point(&metadata) {
+            return Err(PongError::Integrity(
+                "materialized destination is not a safe directory".into(),
+            ));
+        }
+
+        let mut expected = HashSet::new();
+        for entry in &manifest.entries {
+            let relative = safe_relative_path(&entry.path)?;
+            expected.insert(entry.path.clone());
+            let target = destination.join(&relative);
+            let metadata = fs::symlink_metadata(&target).map_err(|error| {
+                if error.kind() == std::io::ErrorKind::NotFound {
+                    PongError::Integrity(format!(
+                        "materialized destination is missing {}",
+                        entry.path
+                    ))
+                } else {
+                    PongError::from(error)
+                }
+            })?;
+            if is_reparse_point(&metadata) {
+                return Err(PongError::Integrity(
+                    "materialized destination contains a symlink or reparse point".into(),
+                ));
+            }
+            match entry.kind.as_str() {
+                "directory" => {
+                    if !metadata.is_dir() {
+                        return Err(PongError::Integrity(format!(
+                            "materialized directory {} is not a directory",
+                            entry.path
+                        )));
+                    }
+                }
+                "file" => {
+                    if !metadata.is_file() {
+                        return Err(PongError::Integrity(format!(
+                            "materialized file {} is not a regular file",
+                            entry.path
+                        )));
+                    }
+                    let digest_text = entry.digest.as_deref().ok_or_else(|| {
+                        PongError::Integrity("snapshot file is missing its digest".into())
+                    })?;
+                    let blob_digest = Digest::from_hex(
+                        digest_text.strip_prefix("sha256:").unwrap_or(digest_text),
+                    )?;
+                    let bytes = fs::read(&target).map_err(PongError::from_protected_io)?;
+                    if bytes.len() as u64 != entry.size
+                        || digest_for(BLOB_DOMAIN, &bytes) != blob_digest
+                    {
+                        return Err(PongError::Integrity(format!(
+                            "materialized file {} failed size or digest verification",
+                            entry.path
+                        )));
+                    }
+                    let cas_bytes = cas.get(BLOB_DOMAIN, blob_digest)?;
+                    if cas_bytes != bytes {
+                        return Err(PongError::Integrity(format!(
+                            "materialized file {} differs from its CAS blob",
+                            entry.path
+                        )));
+                    }
+                }
+                _ => {
+                    return Err(PongError::Unsupported(
+                        "snapshot entry kind is unsupported".into(),
+                    ))
+                }
+            }
+        }
+
+        let mut actual = Vec::new();
+        collect_materialized_paths(destination, Path::new(""), &mut actual)?;
+        for path in actual {
+            if !expected.contains(&path) {
+                return Err(PongError::Integrity(format!(
+                    "materialized destination contains unexpected entry {path}"
+                )));
+            }
+        }
+        Ok(())
+    }
+
+    /// Compare the current local tree to a verified immutable manifest without
+    /// publishing any new CAS objects. This is intentionally a point-in-time
+    /// read for status; mutations remain guarded by the workspace lease APIs.
+    fn matches_manifest(
+        &self,
+        cas: &Cas,
+        manifest_digest: Digest,
+        manifest: &TreeManifest,
+    ) -> Result<bool, PongError> {
+        verify_manifest_blobs(cas, manifest)?;
+        let mut current = Vec::new();
+        collect_status_entries(
+            &self.root,
+            Path::new(""),
+            &self.redactor,
+            SnapshotOptions::default(),
+            &mut current,
+        )?;
+        current.sort_by(|left, right| left.path.as_bytes().cmp(right.path.as_bytes()));
+        let expected_digest = digest_for(
+            TREE_DOMAIN,
+            &canonical_bytes(&serde_json::to_value(manifest).map_err(|error| {
+                PongError::Serialization(format!(
+                    "cannot encode workspace tree manifest for status: {error}"
+                ))
+            })?)?,
+        );
+        if expected_digest != manifest_digest {
+            return Err(PongError::Integrity(
+                "workspace tree manifest digest does not match its canonical bytes".into(),
+            ));
+        }
+        Ok(current == manifest.entries)
     }
 
     fn materialize_into(
@@ -811,6 +1358,243 @@ impl<'a> WorkspaceManager<'a> {
             .release_workspace_lease(token, now_ms)
     }
 
+    /// Apply one provider-neutral lifecycle action through the existing
+    /// lease- and revision-guarded workspace update transaction.
+    ///
+    /// `Open` is read-like and never advances durable revision. For mutating
+    /// actions, a state that already equals the deterministic action result is
+    /// recognized as an exact retry and returned without a second revision
+    /// increment. No operation or event is synthesized here; callers that
+    /// already have an operation contract continue to use the existing ledger.
+    pub fn transition_lifecycle(
+        &mut self,
+        workspace_id: &str,
+        lease: &LeaseToken,
+        expected_revision: i64,
+        action: WorkspaceLifecycleAction,
+        now_ms: i64,
+        updated_at: &str,
+    ) -> Result<WorkspaceRecord, PongError> {
+        let record = self
+            .repository
+            .metadata()
+            .workspace(workspace_id)?
+            .ok_or_else(|| PongError::NotFound("workspace does not exist".into()))?;
+        if expected_revision < 0 {
+            return Err(PongError::InvalidInput(
+                "workspace revision must not be negative".into(),
+            ));
+        }
+        if expected_revision > record.revision {
+            return Err(PongError::Conflict("workspace revision is stale".into()));
+        }
+        let current = WorkspaceLifecycleState::parse(&record.status)?;
+        let next = transition_workspace_lifecycle(current, action)?;
+
+        if action == WorkspaceLifecycleAction::Open {
+            if expected_revision != record.revision {
+                return Err(PongError::Conflict("workspace revision is stale".into()));
+            }
+            return Ok(record);
+        }
+
+        self.validate_transition_lease(workspace_id, lease, now_ms)?;
+
+        // A transition that already reached its deterministic target is a
+        // completed retry. Accept the same revision or exactly the preceding
+        // caller revision, but reject older stale callers.
+        if current == next {
+            let same_revision_retry = expected_revision == record.revision;
+            let completed_transition_retry = expected_revision.checked_add(1)
+                == Some(record.revision)
+                && matches!(
+                    (action, current),
+                    (
+                        WorkspaceLifecycleAction::CompleteCapture,
+                        WorkspaceLifecycleState::Ready
+                    ) | (
+                        WorkspaceLifecycleAction::Activate,
+                        WorkspaceLifecycleState::Active
+                    ) | (
+                        WorkspaceLifecycleAction::Pause,
+                        WorkspaceLifecycleState::Paused
+                    ) | (
+                        WorkspaceLifecycleAction::Resume,
+                        WorkspaceLifecycleState::Active
+                    ) | (
+                        WorkspaceLifecycleAction::CompleteRecovery,
+                        WorkspaceLifecycleState::Ready
+                    ) | (
+                        WorkspaceLifecycleAction::Close,
+                        WorkspaceLifecycleState::Archived
+                    )
+                );
+            if same_revision_retry || completed_transition_retry {
+                return Ok(record);
+            }
+        }
+        if expected_revision != record.revision {
+            return Err(PongError::Conflict("workspace revision is stale".into()));
+        }
+
+        self.repository
+            .metadata_mut()
+            .update_workspace(WorkspaceUpdate {
+                workspace_id,
+                expected_revision,
+                lease,
+                branch_ref: record.branch_ref.as_deref(),
+                head: record.head.as_deref(),
+                environment_id: record.environment_id.as_deref(),
+                status: next.as_str(),
+                updated_at,
+                now_ms,
+            })
+    }
+
+    /// Execute a mutating lifecycle action with one durable operation
+    /// identity. Operation intent, workspace state, terminal result, and the
+    /// operation event stream are committed atomically by the metadata store.
+    /// Read-like `Open` is deliberately excluded from this API.
+    pub fn transition_lifecycle_operation(
+        &mut self,
+        workspace_id: &str,
+        lease: &LeaseToken,
+        expected_revision: i64,
+        action: WorkspaceLifecycleAction,
+        options: WorkspaceLifecycleOperationOptions,
+    ) -> Result<(WorkspaceRecord, crate::metadata::OperationRecord), PongError> {
+        if action == WorkspaceLifecycleAction::Open {
+            return Err(PongError::InvalidInput(
+                "read-like workspace open cannot create an operation".into(),
+            ));
+        }
+        let record = self
+            .repository
+            .metadata()
+            .workspace(workspace_id)?
+            .ok_or_else(|| PongError::NotFound("workspace does not exist".into()))?;
+        if let Some(existing) = self.repository.metadata().operation_record_for_request(
+            &record.project_id,
+            &lease.agent_id,
+            &options.request_id,
+        )? {
+            if existing.operation_id != options.operation_id.as_str() {
+                return Err(PongError::IdempotencyKeyReuse(options.request_id.clone()));
+            }
+            if existing.action != lifecycle_operation_action(action) {
+                return Err(PongError::IdempotencyKeyReuse(options.request_id.clone()));
+            }
+            let recorded_revision = existing
+                .resource
+                .as_ref()
+                .and_then(|resource| resource.get("expected_revision"))
+                .and_then(Value::as_i64);
+            if recorded_revision != Some(expected_revision) {
+                return Err(PongError::IdempotencyKeyReuse(options.request_id.clone()));
+            }
+            match existing.lifecycle_status.as_str() {
+                "completed" => {
+                    let result = existing.result.as_ref().ok_or_else(|| {
+                        PongError::Integrity("completed lifecycle operation has no result".into())
+                    })?;
+                    if result.get("workspace_id").and_then(Value::as_str) != Some(workspace_id)
+                        || result.get("action").and_then(Value::as_str)
+                            != Some(lifecycle_operation_action(action))
+                    {
+                        return Err(PongError::Integrity(
+                            "completed lifecycle operation result is inconsistent".into(),
+                        ));
+                    }
+                    return Ok((record, existing));
+                }
+                "started" => {
+                    return Err(PongError::RecoveryRequired(
+                        "lifecycle operation is still pending recovery".into(),
+                    ));
+                }
+                _ => {
+                    return Err(PongError::Conflict(
+                        "lifecycle operation already has a terminal non-success outcome".into(),
+                    ));
+                }
+            }
+        }
+        let current = WorkspaceLifecycleState::parse(&record.status)?;
+        let next = transition_workspace_lifecycle(current, action)?;
+        let action_name = lifecycle_operation_action(action);
+        let operation = OperationEnvelope {
+            operation_id: options.operation_id,
+            project_id: record.project_id.clone(),
+            request_id: options.request_id,
+            agent_id: lease.agent_id.clone(),
+            session_id: format!("workspace:{workspace_id}"),
+            workspace_id: Some(workspace_id.into()),
+            environment_id: record.environment_id.clone(),
+            parent_operation_id: None,
+            schema_version: crate::metadata::OPERATION_SCHEMA_VERSION.into(),
+            started_at: options.updated_at.clone(),
+            tool: "workspace".into(),
+            action: action_name.into(),
+            input_refs: Vec::new(),
+            output_refs: Vec::new(),
+            resource: Some(serde_json::json!({
+                "workspace_id": workspace_id,
+                "action": action_name,
+                "expected_revision": expected_revision,
+                "expected_status": current.as_str(),
+                "next_status": next.as_str(),
+            })),
+            before_state: Some(serde_json::json!({
+                "status": current.as_str(),
+                "revision": expected_revision,
+            })),
+            after_state: None,
+            reversibility: "REVERSIBLE".into(),
+            replayability: "REPLAYABLE".into(),
+            side_effect: "WORKSPACE".into(),
+            policy_decision: None,
+        };
+        self.repository
+            .metadata_mut()
+            .apply_workspace_lifecycle_operation(WorkspaceLifecycleOperationInput {
+                operation,
+                lease,
+                expected_revision,
+                expected_status: current.as_str(),
+                next_status: next.as_str(),
+                updated_at: &options.updated_at,
+                now_ms: options.now_ms,
+            })
+    }
+
+    fn validate_transition_lease(
+        &self,
+        workspace_id: &str,
+        lease: &LeaseToken,
+        now_ms: i64,
+    ) -> Result<(), PongError> {
+        if lease.workspace_id != workspace_id {
+            return Err(PongError::Conflict(
+                "lease belongs to another workspace".into(),
+            ));
+        }
+        let lease_record = self
+            .repository
+            .metadata()
+            .workspace_lease(workspace_id)?
+            .ok_or_else(|| PongError::Conflict("workspace lease is missing".into()))?;
+        if lease_record.agent_id.as_deref() != Some(lease.agent_id.as_str())
+            || lease_record.epoch != lease.epoch
+            || lease_record.expires_at_ms <= now_ms
+        {
+            return Err(PongError::Conflict(
+                "workspace lease is stale or expired".into(),
+            ));
+        }
+        Ok(())
+    }
+
     pub fn snapshot_local(
         &mut self,
         workspace_id: &str,
@@ -829,6 +1613,19 @@ impl<'a> WorkspaceManager<'a> {
                 "workspace is not bound to the local driver".into(),
             ));
         }
+        let lease_record = self
+            .repository
+            .metadata()
+            .workspace_lease(workspace_id)?
+            .ok_or_else(|| PongError::Conflict("workspace lease is missing".into()))?;
+        if lease_record.agent_id.as_deref() != Some(lease.agent_id.as_str())
+            || lease_record.epoch != lease.epoch
+            || lease_record.expires_at_ms <= now_ms
+        {
+            return Err(PongError::Conflict(
+                "workspace lease is stale or expired".into(),
+            ));
+        }
         let workspace_path = PathBuf::from(&record.locator);
         let resolved_locator = local_locator(self.repository.root(), &workspace_path)?;
         if resolved_locator != record.locator {
@@ -845,24 +1642,973 @@ impl<'a> WorkspaceManager<'a> {
         )?;
         let snapshot = workspace.snapshot(self.repository.cas(), options)?;
         let head = format!("sha256:{}", snapshot.digest);
-        self.repository
+        if let Some(existing) = self
+            .repository
+            .metadata()
+            .snapshot_record(&snapshot.snapshot_id)?
+        {
+            let profile = self.redactor.profile();
+            let metadata_matches = existing.root_digest == head
+                && existing.workspace_id == record.workspace_id
+                && existing.project_id == record.project_id
+                && existing.environment_id == record.environment_id
+                && existing.manifest_version == TREE_MANIFEST_VERSION
+                && existing.redaction_profile_id == profile.id
+                && existing.redaction_profile_version == profile.version
+                && existing.file_count == snapshot.file_count
+                && existing.total_bytes == snapshot.total_bytes
+                && record.head.as_deref() == Some(existing.root_digest.as_str());
+            if !metadata_matches {
+                return Err(PongError::Integrity(
+                    "existing snapshot does not match the current workspace publication".into(),
+                ));
+            }
+            let event = self
+                .repository
+                .metadata()
+                .list_event_envelopes(&record.project_id, 0)?
+                .into_iter()
+                .find(|event| event.event_id == existing.event_id)
+                .ok_or_else(|| {
+                    PongError::Integrity(
+                        "existing snapshot metadata has no publication event".into(),
+                    )
+                })?;
+            if event.event_type != "snapshot.created"
+                || event.operation_id.as_deref() != Some(existing.operation_id.as_str())
+                || event.workspace_id.as_deref() != Some(existing.workspace_id.as_str())
+            {
+                return Err(PongError::Integrity(
+                    "existing snapshot publication event is inconsistent".into(),
+                ));
+            }
+            let operation = self
+                .repository
+                .metadata()
+                .operation_record(&existing.operation_id)?
+                .ok_or_else(|| {
+                    PongError::Integrity(
+                        "existing snapshot metadata has no publication operation".into(),
+                    )
+                })?;
+            if operation.project_id != existing.project_id
+                || operation.workspace_id.as_deref() != Some(existing.workspace_id.as_str())
+                || operation.environment_id != existing.environment_id
+                || operation.action != "snapshot.create"
+            {
+                return Err(PongError::Integrity(
+                    "existing snapshot publication operation is inconsistent".into(),
+                ));
+            }
+            match operation.lifecycle_status.as_str() {
+                "completed" => return Ok(snapshot),
+                "started" => {
+                    self.repository.metadata_mut().finish_operation(
+                        &existing.operation_id,
+                        OperationOutcome {
+                            status: "completed".into(),
+                            finished_at: now.into(),
+                            output_refs: Some(vec![OperationRef {
+                                kind: "snapshot".into(),
+                                reference: existing.snapshot_id,
+                                media_type: Some("application/vnd.pong.snapshot".into()),
+                            }]),
+                            after_state: Some(serde_json::json!({"head": head})),
+                            result: Some(serde_json::json!({"snapshot_id": snapshot.snapshot_id})),
+                            error: None,
+                        },
+                    )?;
+                    return Ok(snapshot);
+                }
+                _ => {
+                    return Err(PongError::Integrity(
+                        "existing snapshot operation is not a successful publication".into(),
+                    ));
+                }
+            }
+        }
+        let operation_id = format!("operation:{workspace_id}:{}", snapshot.digest);
+        let operation = OperationEnvelope {
+            operation_id: operation_id.clone(),
+            project_id: record.project_id.clone(),
+            request_id: operation_id.clone(),
+            agent_id: lease.agent_id.clone(),
+            session_id: format!("workspace:{workspace_id}"),
+            workspace_id: Some(workspace_id.to_owned()),
+            environment_id: record.environment_id.clone(),
+            parent_operation_id: None,
+            schema_version: crate::metadata::OPERATION_SCHEMA_VERSION.into(),
+            started_at: now.into(),
+            tool: "workspace".into(),
+            action: "snapshot.create".into(),
+            input_refs: vec![OperationRef {
+                kind: "tree".into(),
+                reference: head.clone(),
+                media_type: Some("application/vnd.pong.tree+json".into()),
+            }],
+            output_refs: Vec::new(),
+            resource: Some(serde_json::json!({"workspace_id": workspace_id})),
+            before_state: record
+                .head
+                .clone()
+                .map(|value| serde_json::json!({"head": value})),
+            after_state: None,
+            reversibility: "REVERSIBLE".into(),
+            replayability: "REPLAYABLE".into(),
+            side_effect: "WORKSPACE".into(),
+            policy_decision: None,
+        };
+        self.repository.metadata_mut().start_operation(operation)?;
+        let event_id = format!("snapshot:{snapshot_id}", snapshot_id = snapshot.snapshot_id);
+        let publication = SnapshotPublication {
+            snapshot_id: snapshot.snapshot_id.clone(),
+            root_digest: head.clone(),
+            workspace_id: workspace_id.to_owned(),
+            project_id: record.project_id.clone(),
+            environment_id: record.environment_id.clone(),
+            manifest_version: 1,
+            file_count: snapshot.file_count,
+            total_bytes: snapshot.total_bytes,
+            created_at: now.into(),
+            operation_id: operation_id.clone(),
+            event_id,
+            causation_id: Some(format!("operation:{operation_id}:1")),
+            correlation_id: Some(operation_id.clone()),
+            expected_revision: record.revision,
+            lease: lease.clone(),
+            now_ms,
+        };
+        let metadata = self
+            .repository
             .metadata_mut()
-            .update_workspace(WorkspaceUpdate {
-                workspace_id,
-                expected_revision: record.revision,
-                lease,
-                branch_ref: record.branch_ref.as_deref(),
-                head: Some(&head),
-                environment_id: record.environment_id.as_deref(),
-                status: "ready",
-                updated_at: now,
-                now_ms,
-            })?;
+            .publish_snapshot(publication)?;
+        self.repository.metadata_mut().finish_operation(
+            &operation_id,
+            OperationOutcome {
+                status: "completed".into(),
+                finished_at: now.into(),
+                output_refs: Some(vec![OperationRef {
+                    kind: "snapshot".into(),
+                    reference: metadata.snapshot_id.clone(),
+                    media_type: Some("application/vnd.pong.snapshot".into()),
+                }]),
+                after_state: Some(serde_json::json!({"head": head})),
+                result: Some(serde_json::json!({"snapshot_id": metadata.snapshot_id})),
+                error: None,
+            },
+        )?;
         Ok(snapshot)
+    }
+
+    /// Restore one verified snapshot to a new destination and durably record
+    /// the operation outcome together with its domain event.
+    pub fn restore_local(
+        &mut self,
+        workspace_id: &str,
+        snapshot_id: &str,
+        destination: impl AsRef<Path>,
+        options: RestoreOptions,
+    ) -> Result<RestoreResult, PongError> {
+        let record = self
+            .repository
+            .metadata()
+            .workspace(workspace_id)?
+            .ok_or_else(|| PongError::NotFound("workspace does not exist".into()))?;
+        if record.driver != "local" {
+            return Err(PongError::Unsupported(
+                "workspace is not bound to the local driver".into(),
+            ));
+        }
+        let snapshot = self
+            .repository
+            .metadata()
+            .snapshot_record(snapshot_id)?
+            .ok_or_else(|| PongError::NotFound("snapshot does not exist".into()))?;
+        if snapshot.workspace_id != record.workspace_id || snapshot.project_id != record.project_id
+        {
+            return Err(PongError::Conflict(
+                "snapshot is not bound to the requested workspace".into(),
+            ));
+        }
+        let root_digest = snapshot
+            .root_digest
+            .strip_prefix("sha256:")
+            .ok_or_else(|| PongError::Integrity("snapshot root digest is not prefixed".into()))?;
+        let digest = Digest::from_hex(root_digest)?;
+        if snapshot.snapshot_id != format!("snp-{digest}") {
+            return Err(PongError::Integrity(
+                "snapshot identity does not match its root digest".into(),
+            ));
+        }
+        let destination = destination.as_ref().to_path_buf();
+        let destination_locator = local_locator(self.repository.root(), &destination)?;
+        let destination = PathBuf::from(&destination_locator);
+        let destination_string = destination_locator.clone();
+        let workspace = LocalWorkspace::open_with_failpoint_state(
+            &record.workspace_id,
+            &record.project_id,
+            PathBuf::from(&record.locator),
+            self.redactor.clone(),
+            Arc::clone(&self.failpoints),
+        )?;
+        // Reading the manifest before starting the operation rejects missing,
+        // wrong-domain, and wrong-identity CAS objects without any durable
+        // restore intent being created.
+        let manifest = workspace.read_manifest(self.repository.cas(), digest)?;
+        let manifest_file_count = manifest
+            .entries
+            .iter()
+            .filter(|entry| entry.kind == "file")
+            .count();
+        let manifest_total_bytes = manifest
+            .entries
+            .iter()
+            .filter(|entry| entry.kind == "file")
+            .try_fold(0u64, |total, entry| total.checked_add(entry.size))
+            .ok_or_else(|| {
+                PongError::ResourceExhausted("snapshot total size exceeds supported range".into())
+            })?;
+        if snapshot.manifest_version != 1
+            || snapshot.file_count != manifest_file_count
+            || snapshot.total_bytes != manifest_total_bytes
+        {
+            return Err(PongError::Integrity(
+                "snapshot metadata does not match its manifest".into(),
+            ));
+        }
+        let current_identity = self.repository.metadata().generation_identity()?;
+        let expected_identity =
+            current_identity.unwrap_or_else(|| ("legacy-v0.1".into(), "legacy".into()));
+        if snapshot.generation_id != expected_identity.0
+            || snapshot.migration_id != expected_identity.1
+        {
+            return Err(PongError::Integrity(
+                "snapshot generation identity is incompatible with the opened repository".into(),
+            ));
+        }
+
+        let prior_operation = self.repository.metadata().operation_record_for_request(
+            &record.project_id,
+            &options.agent_id,
+            &options.request_id,
+        )?;
+
+        let operation = OperationEnvelope {
+            operation_id: options.operation_id.clone(),
+            project_id: record.project_id.clone(),
+            request_id: options.request_id.clone(),
+            agent_id: options.agent_id.clone(),
+            session_id: format!("workspace:{workspace_id}"),
+            workspace_id: Some(workspace_id.to_owned()),
+            environment_id: record.environment_id.clone(),
+            parent_operation_id: None,
+            schema_version: crate::metadata::OPERATION_SCHEMA_VERSION.into(),
+            started_at: prior_operation
+                .as_ref()
+                .map(|operation| operation.started_at.clone())
+                .unwrap_or_else(|| options.now.clone()),
+            tool: "workspace".into(),
+            action: "snapshot.restore".into(),
+            input_refs: vec![OperationRef {
+                kind: "snapshot".into(),
+                reference: snapshot.snapshot_id.clone(),
+                media_type: Some("application/vnd.pong.snapshot".into()),
+            }],
+            output_refs: Vec::new(),
+            resource: Some(serde_json::json!({
+                "workspace_id": workspace_id,
+                "destination": destination_string,
+            })),
+            before_state: None,
+            after_state: None,
+            reversibility: "REVERSIBLE".into(),
+            replayability: "REPLAYABLE".into(),
+            side_effect: "WORKSPACE".into(),
+            policy_decision: None,
+        };
+        let existing = self.repository.metadata_mut().start_operation(operation)?;
+        if existing.action != "snapshot.restore"
+            || existing.workspace_id.as_deref() != Some(workspace_id)
+            || existing.project_id != record.project_id
+        {
+            return Err(PongError::Integrity(
+                "restore operation identity is inconsistent".into(),
+            ));
+        }
+
+        if existing.lifecycle_status == "completed" || existing.lifecycle_status == "unknown" {
+            let status = existing.lifecycle_status.clone();
+            let result = existing
+                .result
+                .clone()
+                .or_else(|| {
+                    existing
+                        .error
+                        .as_ref()
+                        .and_then(|error| error.details.clone())
+                })
+                .ok_or_else(|| {
+                    PongError::Integrity("terminal restore operation has no result".into())
+                })?;
+            let result_snapshot = result
+                .get("snapshot_id")
+                .and_then(Value::as_str)
+                .ok_or_else(|| PongError::Integrity("restore result has no snapshot id".into()))?;
+            let result_destination = result
+                .get("destination")
+                .and_then(Value::as_str)
+                .ok_or_else(|| PongError::Integrity("restore result has no destination".into()))?;
+            if result_snapshot != snapshot.snapshot_id || result_destination != destination_string {
+                return Err(PongError::Integrity(
+                    "restore operation result does not match the request".into(),
+                ));
+            }
+            workspace.verify_materialized(self.repository.cas(), digest, &destination)?;
+            return Ok(RestoreResult {
+                operation_id: existing.operation_id,
+                snapshot_id: snapshot.snapshot_id,
+                destination: destination_string,
+                status,
+            });
+        }
+        if existing.lifecycle_status == "failed" {
+            return Err(PongError::Conflict(
+                "restore operation previously failed".into(),
+            ));
+        }
+        if existing.lifecycle_status != "started" {
+            return Err(PongError::Integrity(
+                "restore operation has an unsupported lifecycle state".into(),
+            ));
+        }
+
+        if prior_operation.is_none() && destination.exists() {
+            let conflict = PongError::Conflict("materialization destination already exists".into());
+            let _ = self.finish_restore_failed(&snapshot, &options, &destination_string, &conflict);
+            return Err(conflict);
+        }
+
+        if destination.exists() {
+            workspace.verify_materialized(self.repository.cas(), digest, &destination)?;
+            return self.finish_restore_completed(
+                &workspace,
+                &snapshot,
+                &options,
+                &destination_string,
+                &digest,
+            );
+        }
+
+        let materialized = workspace.materialize(self.repository.cas(), digest, &destination);
+        match materialized {
+            Ok(_) => self.finish_restore_completed(
+                &workspace,
+                &snapshot,
+                &options,
+                &destination_string,
+                &digest,
+            ),
+            Err(error) => {
+                let published = destination.exists();
+                let valid_published = published
+                    && workspace
+                        .verify_materialized(self.repository.cas(), digest, &destination)
+                        .is_ok();
+                if valid_published {
+                    let _ = self.finish_restore_unknown(
+                        &snapshot,
+                        &options,
+                        &destination_string,
+                        &error,
+                    );
+                } else {
+                    let _ = self.finish_restore_failed(
+                        &snapshot,
+                        &options,
+                        &destination_string,
+                        &error,
+                    );
+                }
+                Err(error)
+            }
+        }
+    }
+
+    fn finish_restore_completed(
+        &mut self,
+        workspace: &LocalWorkspace,
+        snapshot: &crate::metadata::SnapshotRecord,
+        options: &RestoreOptions,
+        destination: &str,
+        digest: &Digest,
+    ) -> Result<RestoreResult, PongError> {
+        workspace.verify_materialized(self.repository.cas(), *digest, destination)?;
+        let result = serde_json::json!({
+            "snapshot_id": snapshot.snapshot_id,
+            "destination": destination,
+            "status": "completed",
+        });
+        let event = self.restore_event(
+            snapshot,
+            options,
+            destination,
+            "snapshot.restore.completed",
+            result.clone(),
+        );
+        self.repository.metadata_mut().finish_operation_with_event(
+            &options.operation_id,
+            OperationOutcome {
+                status: "completed".into(),
+                finished_at: options.now.clone(),
+                output_refs: Some(vec![OperationRef {
+                    kind: "restore".into(),
+                    reference: destination.into(),
+                    media_type: Some("application/vnd.pong.workspace+directory".into()),
+                }]),
+                after_state: Some(serde_json::json!({"destination": destination})),
+                result: Some(result),
+                error: None,
+            },
+            event,
+        )?;
+        Ok(RestoreResult {
+            operation_id: options.operation_id.clone(),
+            snapshot_id: snapshot.snapshot_id.clone(),
+            destination: destination.into(),
+            status: "completed".into(),
+        })
+    }
+
+    fn finish_restore_failed(
+        &mut self,
+        snapshot: &crate::metadata::SnapshotRecord,
+        options: &RestoreOptions,
+        destination: &str,
+        error: &PongError,
+    ) -> Result<(), PongError> {
+        let result = serde_json::json!({"snapshot_id": snapshot.snapshot_id, "destination": destination, "status": "failed"});
+        let event = self.restore_event(
+            snapshot,
+            options,
+            destination,
+            "snapshot.restore.failed",
+            result,
+        );
+        self.repository.metadata_mut().finish_operation_with_event(
+            &options.operation_id,
+            OperationOutcome {
+                status: "failed".into(),
+                finished_at: options.now.clone(),
+                output_refs: None,
+                after_state: None,
+                result: None,
+                error: Some(operation_error(error)),
+            },
+            event,
+        )?;
+        Ok(())
+    }
+
+    fn finish_restore_unknown(
+        &mut self,
+        snapshot: &crate::metadata::SnapshotRecord,
+        options: &RestoreOptions,
+        destination: &str,
+        error: &PongError,
+    ) -> Result<(), PongError> {
+        let result = serde_json::json!({"snapshot_id": snapshot.snapshot_id, "destination": destination, "status": "unknown"});
+        let event = self.restore_event(
+            snapshot,
+            options,
+            destination,
+            "snapshot.restore.unknown",
+            result.clone(),
+        );
+        self.repository.metadata_mut().finish_operation_with_event(
+            &options.operation_id,
+            OperationOutcome {
+                status: "unknown".into(),
+                finished_at: options.now.clone(),
+                output_refs: Some(vec![OperationRef {
+                    kind: "restore".into(),
+                    reference: destination.into(),
+                    media_type: Some("application/vnd.pong.workspace+directory".into()),
+                }]),
+                after_state: Some(serde_json::json!({"destination": destination})),
+                result: None,
+                error: Some(OperationError {
+                    code: "OUTCOME_UNKNOWN".into(),
+                    message: error.to_string(),
+                    retryable: false,
+                    details: Some(serde_json::json!({
+                        "snapshot_id": snapshot.snapshot_id,
+                        "destination": destination,
+                        "status": "unknown",
+                        "materialization_error": error.code()
+                    })),
+                    safe_to_expose: true,
+                }),
+            },
+            event,
+        )?;
+        Ok(())
+    }
+
+    fn restore_event(
+        &self,
+        snapshot: &crate::metadata::SnapshotRecord,
+        options: &RestoreOptions,
+        destination: &str,
+        event_type: &str,
+        payload: Value,
+    ) -> NewEventEnvelope {
+        NewEventEnvelope {
+            event_id: format!("restore:{}:{}", options.operation_id, event_type),
+            project_id: snapshot.project_id.clone(),
+            stream_id: format!("workspace:{}", snapshot.workspace_id),
+            event_type: event_type.into(),
+            schema_version: crate::metadata::EVENT_ENVELOPE_SCHEMA_VERSION.into(),
+            occurred_at: options.now.clone(),
+            recorded_at: options.now.clone(),
+            actor_id: Some(options.agent_id.clone()),
+            workspace_id: Some(snapshot.workspace_id.clone()),
+            task_id: None,
+            operation_id: Some(options.operation_id.clone()),
+            causation_id: Some(format!("operation:{}:1", options.operation_id)),
+            correlation_id: Some(options.operation_id.clone()),
+            parent_event_ids: vec![format!("operation:{}:1", options.operation_id)],
+            capture_confidence: Some("observed".into()),
+            redaction_status: "redacted".into(),
+            generation_id: Some(snapshot.generation_id.clone()),
+            migration_id: Some(snapshot.migration_id.clone()),
+            payload: serde_json::json!({"snapshot_id": snapshot.snapshot_id, "destination": destination, "result": payload}),
+        }
     }
 
     pub fn workspace(&self, workspace_id: &str) -> Result<Option<WorkspaceRecord>, PongError> {
         self.repository.metadata().workspace(workspace_id)
+    }
+
+    /// Compare a local workspace's current point-in-time tree with its
+    /// durable head snapshot. A workspace without a head is an integrity
+    /// failure; no alternate snapshot is selected implicitly.
+    pub fn diff_workspace(&self, workspace_id: &str) -> Result<WorkspaceDiffResult, PongError> {
+        let record = self
+            .repository
+            .metadata()
+            .workspace(workspace_id)?
+            .ok_or_else(|| PongError::NotFound("workspace does not exist".into()))?;
+        if record.driver != "local" {
+            return Err(PongError::Unsupported(
+                "workspace diff is not implemented for this driver".into(),
+            ));
+        }
+        if let Some(environment_id) = record.environment_id.as_deref() {
+            let environment = self.repository.metadata().environment(environment_id)?;
+            if environment.as_ref().map_or(true, |environment| {
+                environment.project_id != record.project_id
+            }) {
+                return Err(PongError::Integrity(
+                    "workspace environment binding is missing or belongs to another project".into(),
+                ));
+            }
+        }
+        let head = record.head.as_deref().ok_or_else(|| {
+            PongError::Integrity("workspace has no reference snapshot head".into())
+        })?;
+        let digest_text = head
+            .strip_prefix("sha256:")
+            .ok_or_else(|| PongError::Integrity("workspace head is not a sha256 digest".into()))?;
+        let reference_digest = Digest::from_hex(digest_text)?;
+        let snapshot_id = self
+            .repository
+            .metadata()
+            .snapshot_id_for_root(head)?
+            .ok_or_else(|| {
+                PongError::Integrity("workspace head points to a missing snapshot".into())
+            })?;
+        let snapshot = self
+            .repository
+            .metadata()
+            .snapshot_record(&snapshot_id)?
+            .ok_or_else(|| {
+                PongError::Integrity("workspace head snapshot metadata is missing".into())
+            })?;
+        let expected_snapshot_id = format!("snp-{reference_digest}");
+        if snapshot.snapshot_id != expected_snapshot_id
+            || snapshot.root_digest != head
+            || snapshot.workspace_id != record.workspace_id
+            || snapshot.project_id != record.project_id
+            || snapshot.environment_id != record.environment_id
+        {
+            return Err(PongError::Integrity(
+                "workspace head snapshot identity is inconsistent".into(),
+            ));
+        }
+        let expected_identity = self
+            .repository
+            .metadata()
+            .generation_identity()?
+            .unwrap_or_else(|| ("legacy-v0.1".into(), "legacy".into()));
+        if snapshot.generation_id != expected_identity.0
+            || snapshot.migration_id != expected_identity.1
+        {
+            return Err(PongError::Integrity(
+                "workspace head snapshot generation identity is incompatible".into(),
+            ));
+        }
+        if snapshot.manifest_version != TREE_MANIFEST_VERSION {
+            return Err(PongError::Integrity(
+                "workspace head snapshot manifest version is incompatible".into(),
+            ));
+        }
+        let operation = self
+            .repository
+            .metadata()
+            .operation_record(&snapshot.operation_id)?
+            .ok_or_else(|| {
+                PongError::Integrity("workspace head snapshot operation is missing".into())
+            })?;
+        if operation.project_id != record.project_id
+            || operation.workspace_id.as_deref() != Some(record.workspace_id.as_str())
+            || operation.action != "snapshot.create"
+        {
+            return Err(PongError::Integrity(
+                "workspace head snapshot operation is inconsistent".into(),
+            ));
+        }
+        let event = self
+            .repository
+            .metadata()
+            .list_event_envelopes(&record.project_id, 0)?
+            .into_iter()
+            .find(|event| event.event_id == snapshot.event_id)
+            .ok_or_else(|| {
+                PongError::Integrity("workspace head snapshot event is missing".into())
+            })?;
+        if event.event_type != "snapshot.created"
+            || event.operation_id.as_deref() != Some(snapshot.operation_id.as_str())
+            || event.workspace_id.as_deref() != Some(record.workspace_id.as_str())
+            || !event.payload_json.contains(&snapshot.snapshot_id)
+        {
+            return Err(PongError::Integrity(
+                "workspace head snapshot event is inconsistent".into(),
+            ));
+        }
+        let workspace_path = PathBuf::from(&record.locator);
+        let resolved_locator = local_locator(self.repository.root(), &workspace_path)?;
+        if resolved_locator != record.locator {
+            return Err(PongError::Integrity(
+                "workspace locator changed or is not canonical".into(),
+            ));
+        }
+        let workspace = LocalWorkspace::open(
+            &record.workspace_id,
+            &record.project_id,
+            workspace_path,
+            self.redactor.clone(),
+        )?;
+        let reference_manifest =
+            workspace.read_manifest(self.repository.cas(), reference_digest)?;
+        let file_count = reference_manifest
+            .entries
+            .iter()
+            .filter(|entry| entry.kind == "file")
+            .count();
+        let total_bytes = reference_manifest
+            .entries
+            .iter()
+            .filter(|entry| entry.kind == "file")
+            .try_fold(0_u64, |total, entry| total.checked_add(entry.size))
+            .ok_or_else(|| {
+                PongError::ResourceExhausted(
+                    "workspace diff snapshot size exceeds supported range".into(),
+                )
+            })?;
+        if snapshot.file_count != file_count || snapshot.total_bytes != total_bytes {
+            return Err(PongError::Integrity(
+                "workspace head snapshot counters are inconsistent".into(),
+            ));
+        }
+        let diff = workspace.diff_against_snapshot(self.repository.cas(), reference_digest)?;
+        let after = self
+            .repository
+            .metadata()
+            .workspace(workspace_id)?
+            .ok_or_else(|| PongError::NotFound("workspace disappeared during diff".into()))?;
+        if after.workspace_id != record.workspace_id
+            || after.project_id != record.project_id
+            || after.driver != record.driver
+            || after.locator != record.locator
+            || after.revision != record.revision
+            || after.head != record.head
+            || after.environment_id != record.environment_id
+        {
+            return Err(PongError::Conflict(
+                "UNSTABLE_OBSERVATION: workspace head, revision, environment, or locator changed during diff".into(),
+            ));
+        }
+        Ok(WorkspaceDiffResult {
+            workspace_id: record.workspace_id,
+            project_id: record.project_id,
+            reference_snapshot_id: snapshot.snapshot_id,
+            observation_revision: record.revision,
+            environment_id: record.environment_id,
+            observation_stability: "stable".into(),
+            current_tree_id: diff.new_snapshot_id.clone(),
+            diff,
+        })
+    }
+
+    /// Return a read-only, point-in-time status view for a local workspace.
+    /// The query validates the durable head/snapshot/environment relations and
+    /// computes filesystem change state in memory without writing CAS,
+    /// metadata, leases, revisions, or events.
+    pub fn status(&self, workspace_id: &str, now_ms: i64) -> Result<WorkspaceStatus, PongError> {
+        let record = self
+            .repository
+            .metadata()
+            .workspace(workspace_id)?
+            .ok_or_else(|| PongError::NotFound("workspace does not exist".into()))?;
+        if record.revision < 0 {
+            return Err(PongError::Integrity(
+                "workspace revision is negative".into(),
+            ));
+        }
+        if !matches!(
+            record.status.as_str(),
+            "created" | "preparing" | "ready" | "active" | "paused" | "reconciling" | "archived"
+        ) {
+            return Err(PongError::Integrity(
+                "workspace status is unsupported".into(),
+            ));
+        }
+        if matches!(record.status.as_str(), "ready" | "active" | "paused")
+            && (record.head.is_none() || record.environment_id.is_none())
+        {
+            return Err(PongError::Integrity(
+                "ready workspace is missing a head or environment".into(),
+            ));
+        }
+        if record.driver != "local" {
+            return Err(PongError::Unsupported(
+                "workspace status is not implemented for this driver".into(),
+            ));
+        }
+
+        let workspace_path = PathBuf::from(&record.locator);
+        let resolved_locator = local_locator(self.repository.root(), &workspace_path)?;
+        if resolved_locator != record.locator {
+            return Err(PongError::Integrity(
+                "workspace locator changed or is not canonical".into(),
+            ));
+        }
+        let workspace = LocalWorkspace::open(
+            &record.workspace_id,
+            &record.project_id,
+            workspace_path,
+            self.redactor.clone(),
+        )?;
+
+        let lease = self
+            .repository
+            .metadata()
+            .workspace_lease(&record.workspace_id)?
+            .map(|lease: LeaseRecord| WorkspaceLeaseStatus {
+                epoch: Some(lease.epoch),
+                agent_id: lease.agent_id.clone(),
+                expires_at_ms: Some(lease.expires_at_ms),
+                active: lease.agent_id.is_some() && lease.expires_at_ms > now_ms,
+            })
+            .unwrap_or(WorkspaceLeaseStatus {
+                epoch: None,
+                agent_id: None,
+                expires_at_ms: None,
+                active: false,
+            });
+
+        let environment = match record.environment_id.clone() {
+            Some(environment_id) => {
+                let environment_record = self
+                    .repository
+                    .metadata()
+                    .environment(&environment_id)?
+                    .ok_or_else(|| {
+                    PongError::Integrity("workspace environment binding is missing".into())
+                })?;
+                if environment_record.project_id != record.project_id {
+                    return Err(PongError::Integrity(
+                        "workspace environment belongs to another project".into(),
+                    ));
+                }
+                WorkspaceEnvironmentStatus {
+                    environment_id: Some(environment_id),
+                    status: "bound".into(),
+                }
+            }
+            None => WorkspaceEnvironmentStatus {
+                environment_id: None,
+                status: "unbound".into(),
+            },
+        };
+
+        let mut head_digest = None;
+        let mut head_snapshot_id = None;
+        let mut changed = None;
+        let mut change_state = "no_snapshot".to_owned();
+        if let Some(head) = record.head.clone() {
+            let digest_text = head.strip_prefix("sha256:").ok_or_else(|| {
+                PongError::Integrity("workspace head is not a sha256 digest".into())
+            })?;
+            let digest = Digest::from_hex(digest_text)?;
+            let snapshot_id = self
+                .repository
+                .metadata()
+                .snapshot_id_for_root(&head)?
+                .ok_or_else(|| {
+                    PongError::Integrity("workspace head points to a missing snapshot".into())
+                })?;
+            let snapshot = self
+                .repository
+                .metadata()
+                .snapshot_record(&snapshot_id)?
+                .ok_or_else(|| {
+                    PongError::Integrity("workspace head snapshot metadata is missing".into())
+                })?;
+            let expected_snapshot_id = format!("snp-{digest}");
+            if snapshot.snapshot_id != expected_snapshot_id
+                || snapshot.root_digest != head
+                || snapshot.workspace_id != record.workspace_id
+                || snapshot.project_id != record.project_id
+            {
+                return Err(PongError::Integrity(
+                    "workspace head snapshot identity is inconsistent".into(),
+                ));
+            }
+            let expected_identity = self
+                .repository
+                .metadata()
+                .generation_identity()?
+                .unwrap_or_else(|| ("legacy-v0.1".into(), "legacy".into()));
+            if snapshot.generation_id != expected_identity.0
+                || snapshot.migration_id != expected_identity.1
+            {
+                return Err(PongError::Integrity(
+                    "workspace head snapshot generation identity is incompatible".into(),
+                ));
+            }
+            if snapshot.environment_id != record.environment_id
+                || snapshot.manifest_version != TREE_MANIFEST_VERSION
+            {
+                return Err(PongError::Integrity(
+                    "workspace head snapshot metadata is inconsistent".into(),
+                ));
+            }
+            let operation = self
+                .repository
+                .metadata()
+                .operation_record(&snapshot.operation_id)?
+                .ok_or_else(|| {
+                    PongError::Integrity("workspace head snapshot operation is missing".into())
+                })?;
+            if operation.project_id != record.project_id
+                || operation.workspace_id.as_deref() != Some(record.workspace_id.as_str())
+                || operation.action != "snapshot.create"
+            {
+                return Err(PongError::Integrity(
+                    "workspace head snapshot operation is inconsistent".into(),
+                ));
+            }
+            let event = self
+                .repository
+                .metadata()
+                .list_event_envelopes(&record.project_id, 0)?
+                .into_iter()
+                .find(|event| event.event_id == snapshot.event_id)
+                .ok_or_else(|| {
+                    PongError::Integrity("workspace head snapshot event is missing".into())
+                })?;
+            if event.event_type != "snapshot.created"
+                || event.operation_id.as_deref() != Some(snapshot.operation_id.as_str())
+                || event.workspace_id.as_deref() != Some(record.workspace_id.as_str())
+                || !event.payload_json.contains(&snapshot.snapshot_id)
+            {
+                return Err(PongError::Integrity(
+                    "workspace head snapshot event is inconsistent".into(),
+                ));
+            }
+            let manifest = workspace.read_manifest(self.repository.cas(), digest)?;
+            let file_count = manifest
+                .entries
+                .iter()
+                .filter(|entry| entry.kind == "file")
+                .count();
+            let total_bytes = manifest
+                .entries
+                .iter()
+                .filter(|entry| entry.kind == "file")
+                .try_fold(0_u64, |total, entry| total.checked_add(entry.size))
+                .ok_or_else(|| {
+                    PongError::ResourceExhausted(
+                        "workspace status snapshot size exceeds supported range".into(),
+                    )
+                })?;
+            if snapshot.file_count != file_count || snapshot.total_bytes != total_bytes {
+                return Err(PongError::Integrity(
+                    "workspace head snapshot counters are inconsistent".into(),
+                ));
+            }
+            changed =
+                Some(!workspace.matches_manifest(self.repository.cas(), digest, &manifest)?);
+            change_state = if changed == Some(true) {
+                "changed"
+            } else {
+                "unchanged"
+            }
+            .into();
+            head_digest = Some(head);
+            head_snapshot_id = Some(snapshot_id);
+        }
+
+        let latest_operation = self
+            .repository
+            .metadata()
+            .latest_operation_for_workspace(&record.workspace_id)?
+            .map(|operation| WorkspaceOperationSummary {
+                operation_id: operation.operation_id,
+                action: operation.action,
+                lifecycle_status: operation.lifecycle_status,
+                recording_status: operation.recording_status,
+                updated_at: operation.updated_at,
+            });
+        let recovery_required = self
+            .repository
+            .metadata()
+            .has_unresolved_operation_for_workspace(&record.workspace_id)?;
+        let healthy = !recovery_required && record.status != "reconciling";
+        let execution_ready = matches!(record.status.as_str(), "ready" | "active")
+            && head_snapshot_id.is_some()
+            && environment.status == "bound"
+            && !recovery_required;
+
+        Ok(WorkspaceStatus {
+            workspace_id: record.workspace_id,
+            project_id: record.project_id,
+            driver: record.driver,
+            revision: record.revision,
+            status: record.status,
+            head_digest,
+            head_snapshot_id,
+            lease,
+            environment,
+            filesystem_accessible: true,
+            changed,
+            change_state,
+            healthy,
+            execution_ready,
+            recovery_required,
+            latest_operation,
+        })
     }
 }
 
@@ -942,6 +2688,229 @@ fn collect_entries(
         }
     }
     Ok(())
+}
+
+fn verify_manifest_blobs(cas: &Cas, manifest: &TreeManifest) -> Result<(), PongError> {
+    for entry in &manifest.entries {
+        if entry.kind != "file" {
+            continue;
+        }
+        let digest_text = entry
+            .digest
+            .as_deref()
+            .ok_or_else(|| PongError::Integrity("snapshot file is missing its digest".into()))?;
+        let blob_digest =
+            Digest::from_hex(digest_text.strip_prefix("sha256:").unwrap_or(digest_text))?;
+        let bytes = cas.get(BLOB_DOMAIN, blob_digest)?;
+        if bytes.len() as u64 != entry.size || digest_for(BLOB_DOMAIN, &bytes) != blob_digest {
+            return Err(PongError::Integrity(
+                "snapshot file blob does not match its manifest".into(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn collect_status_entries(
+    root: &Path,
+    relative: &Path,
+    redactor: &Redactor,
+    options: SnapshotOptions,
+    entries: &mut Vec<TreeEntry>,
+) -> Result<(), PongError> {
+    let mut children = fs::read_dir(root)
+        .map_err(PongError::from_protected_io)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(PongError::from_protected_io)?;
+    children.sort_by_key(|entry| entry.file_name());
+    for child in children {
+        let metadata = fs::symlink_metadata(child.path()).map_err(PongError::from_protected_io)?;
+        let child_relative = relative.join(child.file_name());
+        let normalized = normalize_relative_path(&child_relative)?;
+        redactor.assert_clean_bytes(normalized.as_bytes(), "workspace path")?;
+        if is_reparse_point(&metadata) {
+            return Err(PongError::Integrity(
+                "workspace contains a symlink or reparse point".into(),
+            ));
+        }
+        if metadata.is_dir() {
+            entries.push(TreeEntry {
+                path: normalized,
+                kind: "directory".into(),
+                size: 0,
+                digest: None,
+            });
+            collect_status_entries(&child.path(), &child_relative, redactor, options, entries)?;
+        } else if metadata.is_file() {
+            if entries.iter().filter(|entry| entry.kind == "file").count() >= options.max_files {
+                return Err(PongError::ResourceExhausted(
+                    "workspace status file limit exceeded".into(),
+                ));
+            }
+            let size = metadata.len();
+            if size > options.max_file_bytes {
+                return Err(PongError::ResourceExhausted(
+                    "workspace status file size limit exceeded".into(),
+                ));
+            }
+            let before_modified = metadata.modified().ok();
+            let bytes = fs::read(child.path()).map_err(PongError::from_protected_io)?;
+            let after = fs::symlink_metadata(child.path()).map_err(PongError::from_protected_io)?;
+            if bytes.len() as u64 != size
+                || after.len() != size
+                || before_modified != after.modified().ok()
+                || is_reparse_point(&after)
+            {
+                return Err(PongError::Integrity(
+                    "workspace file changed while being read".into(),
+                ));
+            }
+            redactor.assert_clean_bytes(&bytes, "workspace file")?;
+            entries.push(TreeEntry {
+                path: normalized,
+                kind: "file".into(),
+                size,
+                digest: Some(format!("sha256:{}", digest_for(BLOB_DOMAIN, &bytes))),
+            });
+        } else {
+            return Err(PongError::Integrity(
+                "workspace contains a non-regular filesystem entry".into(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn collect_materialized_paths(
+    root: &Path,
+    relative: &Path,
+    paths: &mut Vec<String>,
+) -> Result<(), PongError> {
+    let mut children = fs::read_dir(root)
+        .map_err(PongError::from_protected_io)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(PongError::from_protected_io)?;
+    children.sort_by_key(|entry| entry.file_name());
+    for child in children {
+        let metadata = fs::symlink_metadata(child.path()).map_err(PongError::from_protected_io)?;
+        if is_reparse_point(&metadata) {
+            return Err(PongError::Integrity(
+                "materialized destination contains a symlink or reparse point".into(),
+            ));
+        }
+        let child_relative = relative.join(child.file_name());
+        let normalized = normalize_relative_path(&child_relative)?;
+        paths.push(normalized);
+        if metadata.is_dir() {
+            collect_materialized_paths(&child.path(), &child_relative, paths)?;
+        } else if !metadata.is_file() {
+            return Err(PongError::Integrity(
+                "materialized destination contains a non-regular entry".into(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn operation_error(error: &PongError) -> OperationError {
+    OperationError {
+        code: error.code().into(),
+        message: error.to_string(),
+        retryable: matches!(
+            error,
+            PongError::Io(_)
+                | PongError::Sqlite(_)
+                | PongError::ResourceExhausted(_)
+                | PongError::PermissionDenied(_)
+                | PongError::PermissionDeniedWithOsError { .. }
+                | PongError::FaultInjected(_)
+        ),
+        details: Some(serde_json::json!({"error_code": error.code()})),
+        safe_to_expose: true,
+    }
+}
+
+fn diff_manifests(old: &TreeManifest, new: &TreeManifest) -> Vec<SnapshotDiffEntry> {
+    let mut entries = Vec::new();
+    let mut old_index = 0;
+    let mut new_index = 0;
+
+    while old_index < old.entries.len() || new_index < new.entries.len() {
+        let old_entry = old.entries.get(old_index);
+        let new_entry = new.entries.get(new_index);
+        let ordering = match (old_entry, new_entry) {
+            (Some(old_entry), Some(new_entry)) => {
+                old_entry.path.as_bytes().cmp(new_entry.path.as_bytes())
+            }
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => break,
+        };
+
+        let (old_entry, new_entry) = match ordering {
+            std::cmp::Ordering::Less => {
+                let old_entry = old_entry.expect("old entry exists for less ordering");
+                old_index += 1;
+                (Some(old_entry), None)
+            }
+            std::cmp::Ordering::Greater => {
+                let new_entry = new_entry.expect("new entry exists for greater ordering");
+                new_index += 1;
+                (None, Some(new_entry))
+            }
+            std::cmp::Ordering::Equal => {
+                let old_entry = old_entry.expect("old entry exists for equal ordering");
+                let new_entry = new_entry.expect("new entry exists for equal ordering");
+                old_index += 1;
+                new_index += 1;
+                (Some(old_entry), Some(new_entry))
+            }
+        };
+
+        if let Some(entry) = classify_diff_entry(old_entry, new_entry) {
+            entries.push(entry);
+        }
+    }
+    entries
+}
+
+fn manifest_digest(manifest: &TreeManifest) -> Result<Digest, PongError> {
+    let value = serde_json::to_value(manifest).map_err(|error| {
+        PongError::Serialization(format!("cannot encode workspace tree manifest: {error}"))
+    })?;
+    let bytes = canonical_bytes(&value)?;
+    Ok(digest_for(TREE_DOMAIN, &bytes))
+}
+
+fn classify_diff_entry(
+    old: Option<&TreeEntry>,
+    new: Option<&TreeEntry>,
+) -> Option<SnapshotDiffEntry> {
+    let (path, change_type) = match (old, new) {
+        (Some(old), Some(new)) if old.kind != new.kind => {
+            (old.path.clone(), SnapshotChangeType::TypeChanged)
+        }
+        (Some(old), Some(new))
+            if old.kind == "file" && (old.digest != new.digest || old.size != new.size) =>
+        {
+            (old.path.clone(), SnapshotChangeType::Modified)
+        }
+        (Some(_), Some(_)) => return None,
+        (Some(old), None) => (old.path.clone(), SnapshotChangeType::Removed),
+        (None, Some(new)) => (new.path.clone(), SnapshotChangeType::Added),
+        (None, None) => return None,
+    };
+
+    Some(SnapshotDiffEntry {
+        path,
+        change_type,
+        old_digest: old.and_then(|entry| entry.digest.clone()),
+        new_digest: new.and_then(|entry| entry.digest.clone()),
+        old_size: old.map(|entry| entry.size),
+        new_size: new.map(|entry| entry.size),
+        old_type: old.map(|entry| entry.kind.clone()),
+        new_type: new.map(|entry| entry.kind.clone()),
+    })
 }
 
 fn validate_manifest(

@@ -1,0 +1,83 @@
+{
+  "evidence_id": "m2-slice-008-workspace-lifecycle-integration-windows-native-2026-09-02",
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "scope": "M2-SLICE-008 durable workspace lifecycle transition integration",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "timestamp": "2026-09-02T19:48:41+08:00",
+  "platform": {
+    "os": "Windows 11",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "runner": "local Windows native development"
+  },
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "target": "x86_64-pc-windows-msvc",
+    "declared_msrv": "1.78"
+  },
+  "source": {
+    "base_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "current_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE"
+  },
+  "durable_path": {
+    "entrypoint": "WorkspaceManager::transition_lifecycle",
+    "persistence": "MetadataStore::update_workspace",
+    "guards": ["workspace identity", "lease epoch and expiry", "expected revision CAS"],
+    "transaction": "SQLite IMMEDIATE transaction with existing pre-commit and post-commit failpoints",
+    "revision": "mutating transitions increment exactly once; Open/status/diff are read-only",
+    "events": "no lifecycle event or operation type added"
+  },
+  "coverage": {
+    "integration_test_file": "tests/workspace_lifecycle_integration.rs",
+    "integration_cases": 8,
+    "integration_passed": 8,
+    "integration_failed": 0,
+    "contract_test_file": "tests/workspace_lifecycle_contract.rs",
+    "contract_cases": 15,
+    "contract_passed": 15,
+    "contract_failed": 0,
+    "full_regression_passed": 235,
+    "full_regression_failed": 0,
+    "full_regression_ignored": 2,
+    "ignored_tests": [
+      "FI-13 host ACL evidence requires PONG_HOST_FAULT_ROOT",
+      "performance measurement-only probe requires explicit --ignored"
+    ],
+    "scenarios": [
+      "create/open and legal transitions",
+      "invalid transition",
+      "stale revision",
+      "stale lease",
+      "exact retry/idempotency",
+      "pre-commit persistence failure",
+      "post-commit interrupted transition and cold reopen recovery",
+      "provider failure with unchanged core state",
+      "status and diff remain read-only",
+      "legacy v0.1 fixture compatibility",
+      "no lifecycle event for workspace update",
+      "monotonic revision and no phantom success"
+    ]
+  },
+  "commands": [
+    { "command": "cargo fmt --all -- --check", "exit_code": 0 },
+    { "command": "cargo check --locked", "exit_code": 0 },
+    { "command": "cargo test --locked --test workspace_lifecycle_contract", "exit_code": 0, "passed": 15, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --locked --test workspace_lifecycle_integration", "exit_code": 0, "passed": 8, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --all --locked", "exit_code": 0, "passed": 235, "failed": 0, "ignored": 2 },
+    { "command": "cargo clippy --all-targets --all-features --locked -- -D warnings", "exit_code": 0 },
+    { "command": "git diff --check", "exit_code": 0 }
+  ],
+  "artifacts": {
+    "quality_log": "artifacts/m2-development/m2-slice-008-quality-gate-2026-09-02.log",
+    "evidence_json": "artifacts/m2-development/m2-slice-008-workspace-lifecycle-integration-windows-native-2026-09-02.json",
+    "m1_release_artifacts_modified": false
+  },
+  "notes": [
+    "This is local Windows native development evidence only; it is not M2 release qualification.",
+    "The working tree is intentionally uncommitted, so this record is bound to the base/current HEAD and must be re-bound after a candidate commit.",
+    "No SQLite schema meaning, M1 contract, ADR-0016, provider implementation, or release tag was changed for this slice."
+  ]
+}

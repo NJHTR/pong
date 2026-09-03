@@ -29,6 +29,7 @@ const ADDITIVE_TABLES: &[&str] = &[
     "workspaces",
     "workspace_leases",
     "environments",
+    "snapshots",
 ];
 
 fn fixture(name: &str) -> Value {

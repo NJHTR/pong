@@ -1,0 +1,36 @@
+M2-SLICE-006 WORKSPACE DIFF RECONCILIATION DEVELOPMENT EVIDENCE
+evidence_class=LOCAL_NATIVE_DEVELOPMENT
+status=PASS_FOR_INTERNAL_SLICE
+timestamp=2026-09-01T20:18:19.3447108+08:00
+verification_completed_at=2026-09-01T20:18:19.3447108+08:00
+platform=Windows 11 10.0.26200 x86_64
+filesystem=NTFS
+volume_free_bytes=265179447296
+volume_size_bytes=511425114112
+free_memory_bytes_observed=3738828800
+total_memory_bytes_observed=16869548032
+baseline_commit=2aab0aaf4c9ddb342939da17eddb11de4dfa66c1
+current_commit=2aab0aaf4c9ddb342939da17eddb11de4dfa66c1
+branch=dev
+working_tree=UNCOMMITTED_DEVELOPMENT_TREE
+rustc=rustc 1.95.0 (59807616e 2026-04-14)
+cargo=cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+declared_msrv=1.78
+msrv_execution=NOT_EXECUTED_FOR_THIS_DEVELOPMENT_EVIDENCE
+
+PASS exit=0 command=cargo fmt --all -- --check
+PASS exit=0 tests=11 failed=0 performance_entries=1000 duration_ms=92 performance_entries=10000 duration_ms=10009 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-006-full cargo test --test workspace_diff_reconciliation --locked -- --nocapture
+PASS exit=0 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-006-full cargo check --all-targets --locked
+PASS exit=0 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-006-full cargo clippy --all-targets --all-features --locked -- -D warnings
+PASS exit=0 passed=211 ignored=2 failed=0 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-006-full cargo test --all --locked
+PASS exit=0 command=git diff --check
+
+observation=POINT_IN_TIME_OBSERVATION
+observation_revision=captured-before-scan-and-revalidated-after-scan
+observation_stability=stable-only-when-identity-locator-head-environment-revision-match
+unstable_result=CONFLICT/UNSTABLE_OBSERVATION
+scan_timestamp=omitted-for-deterministic-result
+state_mutation=none CAS/SQLite/lease/revision/operation/event
+test_harness_concurrent_revision_change=synthetic-coordination-evidence
+qualification=internal Windows local NTFS development evidence only
+m1_release_artifacts_modified=false

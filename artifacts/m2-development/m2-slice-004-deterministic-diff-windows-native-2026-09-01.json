@@ -1,0 +1,94 @@
+{
+  "evidence_id": "m2-slice-004-deterministic-diff-windows-native-2026-09-01",
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "scope": "M2-SLICE-004 deterministic snapshot-to-snapshot diff",
+  "status": "PASS_FOR_INTERNAL_SLICE",
+  "timestamp": "2026-09-01T09:04:37.2693595Z",
+  "platform": {
+    "os": "Windows 11 10.0.26200",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "filesystem_source": "Get-CimInstance Win32_LogicalDisk DeviceID D:",
+    "volume_free_bytes": 268364709888,
+    "volume_size_bytes": 511425114112
+  },
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "declared_msrv": "1.78",
+    "msrv_execution": "NOT_EXECUTED_FOR_THIS_DEVELOPMENT_EVIDENCE"
+  },
+  "source": {
+    "baseline_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "current_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "binding_note": "Evidence was executed against the uncommitted M2-SLICE-001, M2-SLICE-002, M2-SLICE-003, and M2-SLICE-004 changes on the v0.1.0 baseline; it is not release-candidate or cross-platform evidence."
+  },
+  "commands": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "duration_ms": 392,
+      "result": "PASS"
+    },
+    {
+      "command": "cargo check --locked",
+      "exit_code": 0,
+      "duration_ms": 14452,
+      "result": "PASS"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-004-full'; cargo test --locked --test deterministic_diff",
+      "exit_code": 0,
+      "duration_ms": 22111,
+      "result": "PASS (12 passed, 0 ignored)"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-004-full'; cargo test --locked --test deterministic_diff d8_performance_sanity_scales_manifest_sizes -- --nocapture",
+      "exit_code": 0,
+      "duration_ms": 22536,
+      "result": "PASS (1 passed, 0 failed, 11 filtered out)",
+      "performance_samples": {
+        "100": 28,
+        "1000": 36,
+        "10000": 194,
+        "100000": 16585
+      },
+      "performance_input_class": "SYNTHETIC_MANIFESTS"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-004-full'; cargo test --all --locked",
+      "exit_code": 0,
+      "duration_ms": 48378,
+      "result": "PASS (186 passed, 2 ignored, 0 failed)"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-004-full'; cargo clippy --all-targets --all-features --locked -- -D warnings",
+      "exit_code": 0,
+      "duration_ms": 6692,
+      "result": "PASS"
+    }
+  ],
+  "test_counts": {
+    "deterministic_diff": 12,
+    "full_regression_passed": 186,
+    "full_regression_ignored": 2,
+    "full_regression_failed": 0
+  },
+  "diff_contract": {
+    "inputs": "two verified workspace/tree/v1 manifest digests for the same workspace/project/redaction profile",
+    "change_types": ["ADDED", "REMOVED", "MODIFIED", "TYPE_CHANGED"],
+    "ordering": "existing canonical path byte ordering",
+    "complexity": "O(N + M) expected time and O(N + M) memory",
+    "blob_reads": "not required for classification",
+    "workspace_current_tree_diff": "NOT_IMPLEMENTED_IN_THIS_SLICE"
+  },
+  "notes": [
+    "The 10,000-entry focused case and the 100/1,000/10,000/100,000 synthetic manifest performance samples are included in the deterministic_diff evidence.",
+    "Performance samples are synthetic manifest inputs measured on this Windows host; they are not a cross-platform benchmark or a new capacity budget.",
+    "The two ignored full-suite tests are the existing opt-in FI-13 host-resource test and measurement-only performance probe; they are not counted as PASS evidence.",
+    "This is local Windows NTFS development evidence only. It is not M2 release evidence, M1 release evidence, or cross-platform qualification.",
+    "M1 release artifacts and artifacts/m1-release-evidence were not modified."
+  ]
+}

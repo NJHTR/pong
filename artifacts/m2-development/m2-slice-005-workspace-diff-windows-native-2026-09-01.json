@@ -1,0 +1,105 @@
+{
+  "evidence_id": "m2-slice-005-workspace-diff-windows-native-2026-09-01",
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "scope": "M2-SLICE-005 workspace current-tree-to-head snapshot diff",
+  "status": "PASS_FOR_INTERNAL_SLICE",
+  "timestamp": "2026-09-01T11:15:49.5829228Z",
+  "platform": {
+    "os": "Windows 11 10.0.26200",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "filesystem_source": "Get-CimInstance Win32_LogicalDisk DeviceID D:",
+    "volume_free_bytes": 266597416960,
+    "volume_size_bytes": 511425114112,
+    "free_memory_bytes_observed": 3010985984,
+    "total_memory_bytes_observed": 16869548032
+  },
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "declared_msrv": "1.78",
+    "msrv_execution": "NOT_EXECUTED_FOR_THIS_DEVELOPMENT_EVIDENCE"
+  },
+  "source": {
+    "baseline_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "current_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "binding_note": "Evidence was executed against the uncommitted M2-SLICE-001 through M2-SLICE-005 changes on the v0.1.0 baseline; it is not release-candidate or cross-platform evidence."
+  },
+  "commands": [
+    {
+      "command": "cargo fmt --all",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "duration_ms": 296,
+      "result": "PASS"
+    },
+    {
+      "command": "cargo check --locked",
+      "exit_code": 0,
+      "duration_ms": 160,
+      "result": "PASS"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-005-full'; cargo test --locked --test workspace_diff -- --nocapture",
+      "exit_code": 0,
+      "duration_ms": 18408,
+      "result": "PASS (15 passed, 0 ignored)",
+      "performance_samples_ms": {
+        "100": 13,
+        "1000": 85,
+        "10000": 8472
+      }
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-005-full'; cargo clippy --test workspace_diff --locked -- -D warnings",
+      "exit_code": 0,
+      "duration_ms": 243,
+      "result": "PASS"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-005-full'; cargo test --all --locked",
+      "exit_code": 0,
+      "duration_ms": 63752,
+      "result": "PASS (200 passed, 2 ignored, 0 failed)"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-005-full'; cargo clippy --all-targets --all-features --locked -- -D warnings",
+      "exit_code": 0,
+      "duration_ms": 358,
+      "result": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "result": "PASS"
+    }
+  ],
+  "test_counts": {
+    "workspace_diff": 15,
+    "full_regression_passed": 200,
+    "full_regression_ignored": 2,
+    "full_regression_failed": 0
+  },
+  "diff_contract": {
+    "reference": "durable workspace head only",
+    "current_tree_identity": "workspace-current-<manifest-digest> (ephemeral)",
+    "change_types": ["ADDED", "REMOVED", "MODIFIED", "TYPE_CHANGED"],
+    "ordering": "existing canonical path byte ordering",
+    "scan": "point-in-time; file size and modification time are checked around reads",
+    "complexity": "O(N + M) merge after bounded current-tree scan",
+    "state_mutation": "none; no CAS, SQLite, lease, revision, operation, or event mutation"
+  },
+  "notes": [
+    "The focused suite covers clean, added, removed, modified, type-changed, multiple-change, repeatability, 10,000-file, corrupt-reference, missing-head, cold-reopen, identity-corruption, and point-in-time mutation behavior.",
+    "Performance samples are current-tree scans on this Windows NTFS host and are measurement only; no new budget is introduced.",
+    "The two ignored full-suite tests are the existing opt-in FI-13 host-resource test and measurement-only performance probe; ignored tests are not counted as PASS evidence.",
+    "This is local Windows native development evidence only. It is not M2 release evidence, M1 release evidence, or cross-platform qualification.",
+    "M1 release artifacts and artifacts/m1-release-evidence were not modified."
+  ]
+}

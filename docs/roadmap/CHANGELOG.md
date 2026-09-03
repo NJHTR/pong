@@ -1,5 +1,138 @@
 # Changelog
 
+## Unreleased - M2-SLICE-009 Lifecycle Operation Identity Integration (2026-09-02)
+
+- Reused the existing durable operation ledger to bind lifecycle mutation
+  intent, workspace revision/status CAS, terminal result, journal phase, and
+  operation events in one SQLite transaction.
+- Added deterministic operation retry and changed-semantics rejection, stale
+  caller guards, pre/post-commit recovery coverage, provider failure isolation,
+  read-only operation exclusion, event taxonomy preservation, and v0.1
+  compatibility coverage.
+- Retained Windows 11 / NTFS local native development evidence under
+  `artifacts/m2-development`; this remains internal/test-gated and is not M2
+  release qualification.
+
+## Unreleased - M2-SLICE-007 Provider-Neutral Workspace Lifecycle Contract (2026-09-02)
+
+- Added an internal lifecycle state/action/capability model that reuses the
+  existing seven durable workspace states and limits capabilities to snapshot,
+  restore, diff, and status.
+- Added pure transition and capability validation plus an explicit synthetic
+  `TEST_DOUBLE` contract suite covering L1-L15, provider/core failure ordering,
+  deterministic retry, recovery, legacy SQLite readability, and event/generation
+  boundary isolation.
+- Kept provider-specific paths/metadata outside the core context. No SQLite,
+  M1, ADR-0016, provider, public API, or release-evidence changes were made.
+- Windows 11 / NTFS local native development evidence is retained under
+  `artifacts/m2-development`; this remains internal/test-gated and is not M2
+  release qualification.
+
+## Unreleased - M2-SLICE-008 Durable Workspace Lifecycle Transition Integration (2026-09-02)
+
+- Integrated the existing provider-neutral lifecycle transition validator with
+  the lease/revision-guarded `WorkspaceUpdate` transaction.
+- Added deterministic exact retry handling, monotonic revision checks, stale
+  lease/revision rejection, pre/post-commit fault coverage, cold-reopen
+  recovery, legacy fixture compatibility, and read-only status/diff assertions.
+- Kept `Open` read-like and emitted no new lifecycle operation/event because no
+  lifecycle event contract is accepted in M2; snapshot/restore linkage remains
+  unchanged.
+- Added Windows 11 / NTFS local native development evidence under
+  `artifacts/m2-development`; no M1, schema, ADR-0016, provider, or public API
+  changes were made.
+
+## Unreleased - M2-SLICE-006 Workspace Diff Reconciliation (2026-09-01)
+
+- Defined current-tree diff as a `POINT_IN_TIME_OBSERVATION` bound to the
+  durable head, workspace lifecycle revision, and immutable environment ID.
+- Added post-scan workspace revalidation; detectable head, revision,
+  environment, locator, or identity changes return the existing
+  `CONFLICT/UNSTABLE_OBSERVATION` error without publishing state.
+- Added lifecycle integration coverage for snapshot publication, restore
+  materialization, deterministic repeatability, cold reopen, environment
+  binding, read-only behavior, and a concurrent scan-time revision change.
+- Retained Windows local native / NTFS development evidence. This remains an
+  internal, test-gated slice and does not qualify M2 release platforms.
+
+## Unreleased - M2-SLICE-005 Workspace Current-Tree Diff (2026-09-01)
+
+- Added an internal `WorkspaceManager::diff_workspace` boundary that compares
+  a local workspace's current point-in-time tree with its durable head snapshot.
+- Reused canonical path validation, redaction, file-read stability checks, and
+  deterministic `SnapshotDiff` classification for added, removed, modified,
+  and file/directory type changes. Missing or inconsistent heads fail closed;
+  no CAS, SQLite, lease, revision, operation, or event state is mutated.
+- Added focused coverage for clean and changed trees, deterministic repeated
+  scans, 10,000 files, corruption and identity failures, cold reopen, and the
+  explicit concurrent-mutation limitation. Retained Windows local native / NTFS
+  development evidence; this remains internal and is not cross-platform or
+  release qualification.
+
+## Unreleased - M2-SLICE-004 Deterministic Snapshot Diff (2026-09-01)
+
+- Added proposed ADR-M2-004 and an internal `LocalWorkspace::diff_snapshots`
+  boundary for deterministic snapshot-to-snapshot comparisons.
+- Added canonical path-ordered `ADDED`, `REMOVED`, `MODIFIED`, and
+  `TYPE_CHANGED` results with old/new digest, size, and type metadata. The
+  comparison validates manifests but does not read every file blob or mutate
+  CAS/metadata.
+- Added focused coverage for empty, add/remove/modify/type-change and multiple
+  changes, repeatability, 10,000 entries, corrupt manifests, cold reopen, and
+  raw v0.1 compatibility. Added a synthetic-manifest complexity sanity check
+  at 100/1,000/10,000/100,000 entries. This remains internal Windows local
+  NTFS evidence; workspace current-tree diff is covered by M2-SLICE-005, while
+  public API and M2 release qualification remain out of scope.
+
+## Unreleased - M2-SLICE-003 Workspace Status (2026-09-01)
+
+- Added an internal read-only `WorkspaceManager::status` view for local
+  workspaces. It validates workspace/head/snapshot/CAS, generation, event,
+  environment, and locator identity before returning a stable serializable
+  status model.
+- Defined `changed` as current filesystem content versus the published head;
+  no head is reported as `change_state = "no_snapshot"` with no comparison
+  baseline. Lease activity, execution readiness, and unresolved operation state
+  are derived without mutating revision or lease rows.
+- Added status coverage for create, snapshot, changed content, lease expiry,
+  restore/operation visibility, corruption fail-closed behavior, cold reopen,
+  legacy-style no-snapshot workspaces, and JSON serialization. This remains
+  internal Windows local NTFS development evidence, not a public M2 release.
+  The independent-target regression recorded 174 passed, 2 ignored, and 0
+  failed; ignored host-resource and measurement-only tests are not counted as
+  PASS.
+
+## Unreleased - M2-SLICE-002 Durable Restore (2026-09-01)
+
+- Added an internal durable restore operation for a verified snapshot into a
+  new destination only. Restore validates snapshot/CAS/workspace/project and
+  generation identity, preserves existing destinations, and does not move the
+  source workspace head.
+- Linked restore terminal results to `snapshot.restore.completed`, `.failed`,
+  or `.unknown` Event Envelopes in the operation outcome transaction. Added
+  full materialization verification to reconcile exact retries after cold
+  reopen or terminal-metadata interruption without overwriting a directory.
+- Added focused durable restore integration coverage for success, cold reopen,
+  idempotent retry, existing-destination safety, missing blobs, synthetic
+  materialization/parent-sync faults, and pre-commit metadata interruption.
+  The bounded slice passed the Windows local NTFS development gate and complete
+  M1 regression suite. This remains internal development evidence, not public
+  API, cross-platform qualification, or M2 release evidence.
+
+## Unreleased - M2-SLICE-001 Atomic Snapshot Publication (2026-09-01)
+
+- Added the proposed internal ADR for snapshot identity and atomic publication.
+- Added additive `snapshots` metadata with typed snapshot ID, CAS root,
+  workspace/project/environment, manifest/redaction, operation/event, and
+  generation/migration identity.
+- Published snapshot metadata, `snapshot.created`, and workspace head/revision
+  in one SQLite transaction after verified CAS publication. Pre-commit faults
+  retain the old state; a post-commit outcome-unknown retry verifies and
+  converges to the complete committed state.
+- Added focused snapshot-publication tests and v0.1 additive-schema coverage.
+  The full M1 regression suite passed in an independent Windows target
+  directory. This remains an internal M2 slice, not a public API or M2 release.
+
 ## Unreleased - M1 final candidate CI closure (2026-08-29)
 
 - Retained successful GitHub Actions Run `33253638226` at binding commit

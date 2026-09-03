@@ -21,8 +21,9 @@ pub use metadata::{
     MetadataFailpoints, NewEvent, NewEventEnvelope, OperationEnvelope, OperationError,
     OperationOutcome, OperationRecord, OperationRef, ProjectionAppliedEvent, ProjectionCursor,
     ProjectionDefinition, ProjectionFailpoint, ProjectionFailpoints, ProjectionHandler,
-    ProjectionRecord, WorkspaceRecord, WorkspaceUpdate, EVENT_ENVELOPE_SCHEMA_VERSION,
-    OPERATION_SCHEMA_VERSION, PROJECTION_SCHEMA_VERSION,
+    ProjectionRecord, SnapshotPublication, SnapshotRecord, WorkspaceRecord, WorkspaceUpdate,
+    EVENT_ENVELOPE_SCHEMA_VERSION, OPERATION_SCHEMA_VERSION, PROJECTION_SCHEMA_VERSION,
+    SNAPSHOT_SCHEMA_VERSION,
 };
 pub use repository::{
     MigrationFailpoint, MigrationFailpoints, MigrationOutcome, MigrationSpec, Repository,
@@ -31,6 +32,11 @@ pub use repository::{
     REPOSITORY_MARKER_VERSION, REPOSITORY_SCHEMA_VERSION, REPOSITORY_SELECTOR_VERSION,
 };
 pub use workspace::{
-    LocalWorkspace, Snapshot, SnapshotOptions, TreeEntry, TreeManifest, WorkspaceFailPoint,
-    WorkspaceFailpoints, WorkspaceFaultAction, WorkspaceManager,
+    require_workspace_capability, transition_workspace_lifecycle, LocalWorkspace, RestoreOptions,
+    RestoreResult, Snapshot, SnapshotChangeType, SnapshotDiff, SnapshotDiffEntry, SnapshotOptions,
+    TreeEntry, TreeManifest, WorkspaceCapabilities, WorkspaceCapability, WorkspaceDiffResult,
+    WorkspaceEnvironmentStatus, WorkspaceFailPoint, WorkspaceFailpoints, WorkspaceFaultAction,
+    WorkspaceIdentity, WorkspaceLeaseStatus, WorkspaceLifecycleAction,
+    WorkspaceLifecycleOperationOptions, WorkspaceLifecycleState, WorkspaceManager,
+    WorkspaceOperationSummary, WorkspaceProviderContext, WorkspaceStatus,
 };

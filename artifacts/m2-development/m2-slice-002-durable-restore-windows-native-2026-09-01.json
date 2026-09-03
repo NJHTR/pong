@@ -1,0 +1,102 @@
+{
+  "evidence_id": "m2-slice-002-durable-restore-windows-native-2026-09-01",
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "scope": "M2-SLICE-002 durable restore to a new destination",
+  "status": "PASS_FOR_INTERNAL_SLICE",
+  "timestamp": "2026-09-01T08:03:02.3720698Z",
+  "platform": {
+    "os": "Windows 11 10.0.26200",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "filesystem_source": "Get-CimInstance Win32_LogicalDisk DeviceID D:"
+  },
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "declared_msrv": "1.78",
+    "msrv_execution": "NOT_EXECUTED_FOR_THIS_DEVELOPMENT_EVIDENCE"
+  },
+  "source": {
+    "baseline_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "binding_note": "Evidence was executed against uncommitted M2-SLICE-001 and M2-SLICE-002 changes on the v0.1.0 baseline; it is not release-candidate or cross-platform evidence."
+  },
+  "commands": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "duration_ms": 369,
+      "result": "PASS"
+    },
+    {
+      "command": "cargo check --locked",
+      "exit_code": 0,
+      "duration_ms": 2550,
+      "result": "PASS"
+    },
+    {
+      "command": "cargo test --locked --test snapshot_publication",
+      "exit_code": 0,
+      "duration_ms": 499,
+      "result": "PASS (4 passed, 0 ignored)"
+    },
+    {
+      "command": "cargo test --locked --test durable_restore",
+      "exit_code": 0,
+      "duration_ms": 301,
+      "result": "PASS (8 passed, 0 ignored)"
+    },
+    {
+      "command": "cargo test --locked --test compatibility_boundaries",
+      "exit_code": 0,
+      "duration_ms": 344,
+      "result": "PASS (9 passed, 0 ignored)"
+    },
+    {
+      "command": "cargo test --locked --test workspace_snapshot",
+      "exit_code": 0,
+      "duration_ms": 333,
+      "result": "PASS (11 passed, 0 ignored)"
+    },
+    {
+      "command": "cargo test --locked --test workspace_faults",
+      "exit_code": 0,
+      "duration_ms": 281,
+      "result": "PASS (8 passed, 0 ignored)"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-002-full'; cargo test --all --locked",
+      "exit_code": 0,
+      "duration_ms": 32782,
+      "result": "PASS (161 passed, 2 ignored, 0 failed)"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-002-full'; cargo clippy --all-targets --all-features --locked -- -D warnings",
+      "exit_code": 0,
+      "duration_ms": 294,
+      "result": "PASS"
+    }
+  ],
+  "synthetic_faults": [
+    "MaterializeFileWrite",
+    "MaterializeParentDirectorySync",
+    "BeforeOperationFinishCommit"
+  ],
+  "test_counts": {
+    "durable_restore": 8,
+    "snapshot_publication": 4,
+    "compatibility_boundaries": 9,
+    "workspace_snapshot": 11,
+    "workspace_faults": 8,
+    "full_regression_passed": 161,
+    "full_regression_ignored": 2,
+    "full_regression_failed": 0
+  },
+  "notes": [
+    "Synthetic failpoints are not native host fault evidence.",
+    "The two ignored full-suite tests are the existing opt-in FI-13 host-resource test and measurement-only performance probe; they are not counted as PASS evidence.",
+    "The restore destination must be new and its immediate parent must already exist under the current canonical local-locator contract.",
+    "M1 release artifacts and artifacts/m1-release-evidence were not modified."
+  ]
+}

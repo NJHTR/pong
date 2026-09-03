@@ -1,0 +1,30 @@
+M2-SLICE-007 Provider-Neutral Workspace Lifecycle Contract
+Evidence class: LOCAL_NATIVE_DEVELOPMENT
+Platform: Windows 11 x86_64
+Filesystem: NTFS
+Runner: local Windows native development
+Timestamp: 2026-09-02T17:05:54+08:00
+Base commit: 2aab0aaf4c9ddb342939da17eddb11de4dfa66c1
+Current commit: 2aab0aaf4c9ddb342939da17eddb11de4dfa66c1
+Branch: dev
+Working tree: UNCOMMITTED_DEVELOPMENT_TREE
+Rust: rustc 1.95.0 (59807616e 2026-04-14)
+Cargo: cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+Declared MSRV: 1.78
+
+Commands and exit codes:
+  cargo fmt --all -- --check -> 0
+  cargo check --locked -> 0
+  cargo test --locked --test workspace_lifecycle_contract -> 0
+    15 passed, 0 failed, 0 ignored
+  cargo test --all --locked -> 0
+    227 passed, 0 failed, 2 ignored
+  cargo clippy --all-targets --all-features --locked -- -D warnings -> 0
+  git diff --check -> 0
+
+Contract coverage: L1-L15, 15 executable cases.
+TEST_DOUBLE provider behavior is synthetic and is not non-local provider evidence.
+The legacy case uses a real SQLite v0.1 fixture and does not require provider metadata.
+The full regression retained two ignored tests: host FI-13 ACL evidence and the
+explicit performance-only probe. Ignored tests are not counted as PASS.
+M1 release evidence was not modified.

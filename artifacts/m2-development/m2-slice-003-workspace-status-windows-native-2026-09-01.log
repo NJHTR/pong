@@ -1,0 +1,31 @@
+M2-SLICE-003 WORKSPACE STATUS DEVELOPMENT EVIDENCE
+evidence_class=LOCAL_NATIVE_DEVELOPMENT
+status=PASS_FOR_INTERNAL_SLICE
+timestamp=2026-09-01T08:41:56.3305178Z
+platform=Windows 11 10.0.26200 x86_64
+filesystem=NTFS
+volume_free_bytes=269994213376
+volume_size_bytes=511425114112
+baseline_commit=2aab0aaf4c9ddb342939da17eddb11de4dfa66c1
+current_commit=2aab0aaf4c9ddb342939da17eddb11de4dfa66c1
+branch=dev
+working_tree=UNCOMMITTED_DEVELOPMENT_TREE
+rustc=rustc 1.95.0 (59807616e 2026-04-14)
+cargo=cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+declared_msrv=1.78
+msrv_execution=NOT_EXECUTED_FOR_THIS_DEVELOPMENT_EVIDENCE
+
+PASS exit=0 duration_ms=357 command=cargo fmt --all -- --check
+PASS exit=0 duration_ms=2412 command=cargo check --locked
+PASS exit=0 duration_ms=408 tests=4 command=cargo test --locked --test snapshot_publication
+PASS exit=0 duration_ms=357 tests=8 command=cargo test --locked --test durable_restore
+PASS exit=0 duration_ms=323 tests=9 command=cargo test --locked --test compatibility_boundaries
+PASS exit=0 duration_ms=307 tests=11 command=cargo test --locked --test workspace_snapshot
+PASS exit=0 duration_ms=274 tests=8 command=cargo test --locked --test workspace_faults
+PASS exit=0 duration_ms=394 tests=13 command=cargo test --locked --test workspace_status
+PASS exit=0 duration_ms=26270 passed=174 ignored=2 failed=0 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-003-full cargo test --all --locked
+PASS exit=0 duration_ms=288 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-003-full cargo clippy --all-targets --all-features --locked -- -D warnings
+
+ignored_not_counted_as_pass=FI-13 opt-in host-resource test,measurement-only performance probe
+qualification=internal Windows local NTFS development evidence only
+m1_release_artifacts_modified=false

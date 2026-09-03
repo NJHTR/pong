@@ -1,0 +1,55 @@
+{
+  "evidence_id": "m2-slice-007-workspace-lifecycle-contract-windows-native-2026-09-02",
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "scope": "M2-SLICE-007 provider-neutral workspace lifecycle contract",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "timestamp": "2026-09-02T17:05:54+08:00",
+  "platform": {
+    "os": "Windows 11",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "runner": "local Windows native development"
+  },
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "target": "x86_64-pc-windows-msvc",
+    "declared_msrv": "1.78"
+  },
+  "source": {
+    "base_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "current_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE"
+  },
+  "commands": [
+    { "command": "cargo fmt --all -- --check", "exit_code": 0 },
+    { "command": "cargo check --locked", "exit_code": 0 },
+    { "command": "cargo test --locked --test workspace_lifecycle_contract", "exit_code": 0, "passed": 15, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --all --locked", "exit_code": 0, "passed": 227, "failed": 0, "ignored": 2 },
+    { "command": "cargo clippy --all-targets --all-features --locked -- -D warnings", "exit_code": 0 },
+    { "command": "git diff --check", "exit_code": 0 }
+  ],
+  "coverage": {
+    "contract_tests": "L1-L15",
+    "contract_cases": 15,
+    "full_regression_passed": 227,
+    "full_regression_failed": 0,
+    "full_regression_ignored": 2,
+    "ignored_tests": [
+      "FI-13 host ACL evidence requires PONG_HOST_FAULT_ROOT",
+      "performance measurement-only probe requires explicit --ignored"
+    ]
+  },
+  "notes": [
+    "The provider implementation in the contract suite is an explicit synthetic TEST_DOUBLE.",
+    "TEST_DOUBLE covers provider success, provider failure, unsupported capability, interruption, and core persistence failure without phantom success.",
+    "The legacy case creates and opens a real SQLite v0.1 fixture and reads its legacy event stream; no provider metadata is required.",
+    "Status and diff cases are read-only and provider calls cannot mutate generation identity or event ordering.",
+    "This is local Windows native development evidence, not M2 release qualification or non-local provider evidence.",
+    "M1 release evidence under artifacts/m1-release-evidence was not modified."
+  ],
+  "artifacts": {
+    "log": "artifacts/m2-development/m2-slice-007-workspace-lifecycle-contract-windows-native-2026-09-02.log"
+  }
+}

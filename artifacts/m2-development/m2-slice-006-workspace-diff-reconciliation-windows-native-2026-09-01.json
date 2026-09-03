@@ -1,0 +1,91 @@
+{
+  "evidence_id": "m2-slice-006-workspace-diff-reconciliation-windows-native-2026-09-01",
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "scope": "M2-SLICE-006 workspace diff reconciliation and lifecycle integration",
+  "status": "PASS_FOR_INTERNAL_SLICE",
+  "timestamp": "2026-09-01T20:18:19.3447108+08:00",
+  "verification_completed_at": "2026-09-01T20:18:19.3447108+08:00",
+  "platform": {
+    "os": "Windows 11 10.0.26200",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "filesystem_source": "Get-CimInstance Win32_LogicalDisk DeviceID D:",
+    "volume_free_bytes": 265179447296,
+    "volume_size_bytes": 511425114112,
+    "free_memory_bytes_observed": 3738828800,
+    "total_memory_bytes_observed": 16869548032
+  },
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "declared_msrv": "1.78",
+    "msrv_execution": "NOT_EXECUTED_FOR_THIS_DEVELOPMENT_EVIDENCE"
+  },
+  "source": {
+    "baseline_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "current_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "binding_note": "Evidence was executed against the uncommitted M2-SLICE-001 through M2-SLICE-006 changes on the v0.1.0 baseline; it is not release-candidate or cross-platform evidence."
+  },
+  "commands": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-006-full'; cargo test --test workspace_diff_reconciliation --locked -- --nocapture",
+      "exit_code": 0,
+      "result": "PASS (11 passed, 0 failed)",
+      "performance_samples_ms": {
+        "1000": 92,
+        "10000": 10009
+      }
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-006-full'; cargo check --all-targets --locked",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-006-full'; cargo clippy --all-targets --all-features --locked -- -D warnings",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-006-full'; cargo test --all --locked",
+      "exit_code": 0,
+      "result": "PASS (211 passed, 2 ignored, 0 failed)"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "result": "PASS"
+    }
+  ],
+  "test_counts": {
+    "workspace_diff_reconciliation": 11,
+    "full_regression_passed": 211,
+    "full_regression_ignored": 2,
+    "full_regression_failed": 0
+  },
+  "observation_contract": {
+    "kind": "POINT_IN_TIME_OBSERVATION",
+    "reference": "durable workspace head only",
+    "observation_revision": "captured before scan and revalidated after scan",
+    "environment_identity": "immutable environment_id bound to the workspace project",
+    "observation_stability": "stable only when workspace identity, locator, head, environment, and revision match before/after scan",
+    "unstable_result": "CONFLICT with UNSTABLE_OBSERVATION diagnostic",
+    "scan_timestamp": "omitted to preserve deterministic equality; no clock contract exists",
+    "current_tree_identity": "workspace-current-<manifest-digest> (ephemeral)",
+    "state_mutation": "none; no CAS, SQLite, lease, revision, operation, or event mutation"
+  },
+  "notes": [
+    "Snapshot publication advances head/revision and the next diff is empty.",
+    "A restored new destination compares empty against its source snapshot; a subsequent edit is reported.",
+    "The scan-time revision test uses a direct SQLite mutation in a test harness to model a concurrent lifecycle writer; it is synthetic coordination evidence, not a host-resource claim.",
+    "This is local Windows native development evidence only. It is not M2 release evidence, M1 release evidence, or cross-platform qualification.",
+    "M1 release artifacts and artifacts/m1-release-evidence were not modified."
+  ]
+}

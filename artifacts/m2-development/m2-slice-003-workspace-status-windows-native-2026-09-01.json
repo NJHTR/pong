@@ -1,0 +1,107 @@
+{
+  "evidence_id": "m2-slice-003-workspace-status-windows-native-2026-09-01",
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "scope": "M2-SLICE-003 read-only workspace status",
+  "status": "PASS_FOR_INTERNAL_SLICE",
+  "timestamp": "2026-09-01T08:41:56.3305178Z",
+  "platform": {
+    "os": "Windows 11 10.0.26200",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "filesystem_source": "Get-CimInstance Win32_LogicalDisk DeviceID D:",
+    "volume_free_bytes": 269994213376,
+    "volume_size_bytes": 511425114112
+  },
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "declared_msrv": "1.78",
+    "msrv_execution": "NOT_EXECUTED_FOR_THIS_DEVELOPMENT_EVIDENCE"
+  },
+  "source": {
+    "baseline_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "current_commit": "2aab0aaf4c9ddb342939da17eddb11de4dfa66c1",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "binding_note": "Evidence was executed against the uncommitted M2-SLICE-001, M2-SLICE-002, and M2-SLICE-003 changes on the v0.1.0 baseline; it is not release-candidate or cross-platform evidence."
+  },
+  "commands": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "duration_ms": 357,
+      "result": "PASS"
+    },
+    {
+      "command": "cargo check --locked",
+      "exit_code": 0,
+      "duration_ms": 2412,
+      "result": "PASS"
+    },
+    {
+      "command": "cargo test --locked --test snapshot_publication",
+      "exit_code": 0,
+      "duration_ms": 408,
+      "result": "PASS (4 passed, 0 ignored)"
+    },
+    {
+      "command": "cargo test --locked --test durable_restore",
+      "exit_code": 0,
+      "duration_ms": 357,
+      "result": "PASS (8 passed, 0 ignored)"
+    },
+    {
+      "command": "cargo test --locked --test compatibility_boundaries",
+      "exit_code": 0,
+      "duration_ms": 323,
+      "result": "PASS (9 passed, 0 ignored)"
+    },
+    {
+      "command": "cargo test --locked --test workspace_snapshot",
+      "exit_code": 0,
+      "duration_ms": 307,
+      "result": "PASS (11 passed, 0 ignored)"
+    },
+    {
+      "command": "cargo test --locked --test workspace_faults",
+      "exit_code": 0,
+      "duration_ms": 274,
+      "result": "PASS (8 passed, 0 ignored)"
+    },
+    {
+      "command": "cargo test --locked --test workspace_status",
+      "exit_code": 0,
+      "duration_ms": 394,
+      "result": "PASS (13 passed, 0 ignored)"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-003-full'; cargo test --all --locked",
+      "exit_code": 0,
+      "duration_ms": 26270,
+      "result": "PASS (174 passed, 2 ignored, 0 failed)"
+    },
+    {
+      "command": "$env:CARGO_TARGET_DIR='D:\\pong\\target\\m2-slice-003-full'; cargo clippy --all-targets --all-features --locked -- -D warnings",
+      "exit_code": 0,
+      "duration_ms": 288,
+      "result": "PASS"
+    }
+  ],
+  "test_counts": {
+    "snapshot_publication": 4,
+    "durable_restore": 8,
+    "compatibility_boundaries": 9,
+    "workspace_snapshot": 11,
+    "workspace_faults": 8,
+    "workspace_status": 13,
+    "full_regression_passed": 174,
+    "full_regression_ignored": 2,
+    "full_regression_failed": 0
+  },
+  "notes": [
+    "Workspace status is read-only: the status query derives filesystem changes in memory and does not write CAS or metadata.",
+    "The two ignored full-suite tests are the existing opt-in FI-13 host-resource test and measurement-only performance probe; they are not counted as PASS evidence.",
+    "This is local Windows NTFS development evidence only. It is not M2 release evidence, M1 release evidence, or cross-platform qualification.",
+    "M1 release artifacts and artifacts/m1-release-evidence were not modified."
+  ]
+}

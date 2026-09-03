@@ -1,6 +1,6 @@
 # M2 Workspace and Snapshot Gate
 
-**Status: bounded internal slice frozen until M1 passes; gate not passed.**
+**Status: bounded internal, test-gated M2 slice; not a public-release gate.**
 
 This document is the acceptance boundary for the first M2 implementation slice.
 It records executable behavior that exists in the Rust library while keeping
@@ -35,6 +35,37 @@ has been published to CAS and the metadata update succeeds under a valid lease.
 An error may leave a verified but unreachable CAS object; it must not advance
 the workspace head.
 
+M2-SLICE-001 also persists a typed `snapshot_id`, the CAS root digest,
+workspace/project/environment, manifest/redaction identities, counts,
+operation/event IDs, and generation/migration identity in an additive
+`snapshots` table. The metadata row, `snapshot.created` Event Envelope, and
+workspace head/revision commit atomically. A synthetic post-commit error is
+reconciled by an exact retry only after it verifies the complete existing
+metadata/event/head/operation relation.
+
+M2-SLICE-002 adds a durable new-destination restore operation. It verifies the
+snapshot record, canonical manifest, blobs, generation identity, and canonical
+destination before/while materializing. The terminal operation outcome and
+`snapshot.restore.*` event share one metadata transaction. Failed publication,
+post-rename sync uncertainty, cold reopen, and retry reconciliation are
+explicit; existing user destinations are never overwritten.
+
+M2-SLICE-003 adds a read-only local workspace status view. It validates the
+ durable workspace/head/snapshot/environment/operation relations, reports lease
+ activity at a caller-supplied time, and derives filesystem change state by
+ comparing the current tree to the published head without writing CAS or
+ changing metadata.
+
+M2-SLICE-005 adds a read-only path-level current-tree diff against that same
+durable head. It validates head metadata/event/generation identity, scans the
+current local tree with the existing canonical safety checks, and reuses the
+deterministic `SnapshotDiff` result. The current-tree identity is ephemeral;
+the operation does not publish CAS, metadata, leases, revisions, operations,
+or events. Scans are point-in-time observations without watcher or lock
+semantics. M2-SLICE-006 binds the result to the observed durable revision,
+head, and environment. The workspace row is re-read after scanning; a
+detectable lifecycle/head change returns `CONFLICT/UNSTABLE_OBSERVATION`.
+
 Workspace creation validates an optional environment ID against the same
 project before the row is committed. The guarded transition to
 `ready`/`active`/`paused` repeats the cross-row check, so a binding cannot become
@@ -44,8 +75,8 @@ valid merely because an environment row was later replaced or moved.
 
 The slice does **not** yet provide:
 
-- commit objects, branch movement, diff/log projections, or operation-ledger
-  links;
+- commit objects, branch movement, persistent diff/log projections, or restore into an
+  existing workspace;
 - attach/detach/migrate/freeze/resume/archive lifecycle transitions;
 - crash-time provider reconciliation or a durable snapshot-intent journal;
 - incremental snapshots, hard-link/reflink optimization, or a total-byte
@@ -83,6 +114,20 @@ require a later driver/materialization contract.
 9. Configured secrets are rejected or redacted before locator, manifest, and
    metadata persistence. No test may assert safety from a post-persistence
    cleanup scan alone.
+10. A durable snapshot publication is all-or-nothing: before commit it exposes
+    the old head with no metadata/event; after commit, cold reopen exposes the
+    matching metadata, event, head, and revision.
+11. A restore publishes only to a new destination. Its durable terminal
+    operation and domain event agree on completed/failed/unknown; an exact
+    retry can reconcile an already-published destination only after full CAS
+    and manifest verification.
+12. A status query is read-only. It reports `changed` only as the current
+    filesystem tree versus the published head; without a head it reports
+    `change_state = "no_snapshot"` and does not infer a clean baseline.
+13. A workspace diff uses only the durable head, fails closed for a missing or
+    inconsistent head, reports deterministic path-level changes without
+    advancing workspace state, and rejects a detectable head/revision/
+    environment change around the scan as an unstable observation.
 
 ## Current evidence
 
@@ -118,6 +163,36 @@ Additional bounded-slice evidence is in `tests/workspace_faults.rs` and
 - a raw v0.1 SQLite fixture remains limited to legacy tables during source
   migration while the target generation receives additive M2 tables and passes
   a cold reopen.
+
+`tests/snapshot_publication.rs` provides M2-SLICE-001 synthetic
+metadata/head-atomicity and post-commit retry coverage. This is Windows local
+development evidence, not a cross-platform M2 release qualification.
+
+`tests/durable_restore.rs` provides M2-SLICE-002 success, cold-reopen,
+idempotent retry, existing-destination, missing-blob, materialization-fault,
+parent-sync unknown, and post-materialization metadata-retry coverage. The
+bounded slice is `PASS / INTERNAL / TEST-GATED` on retained Windows local NTFS
+development evidence; this is not the M2 exit gate or cross-platform evidence.
+
+`tests/workspace_status.rs` provides M2-SLICE-003 status coverage for no-head
+and published/changed trees, restore and unresolved operations, lease expiry and
+takeover, corruption fail-closed behavior, cold reopen, serialization, and a
+raw v0.1-style no-snapshot workspace. The retained status record is
+[`m2-slice-003-workspace-status-windows-native-2026-09-01.json`](../../artifacts/m2-development/m2-slice-003-workspace-status-windows-native-2026-09-01.json).
+The Windows local NTFS development run recorded `cargo fmt --all -- --check`,
+`cargo check --locked`, the focused M2 suites, an independent-target
+`cargo test --all --locked` result of 174 passed / 2 ignored / 0 failed, and
+`cargo clippy --all-targets --all-features --locked -- -D warnings` with exit
+code 0. The ignored FI-13 host-resource and measurement-only tests remain
+ignored and are not counted as PASS evidence.
+
+`tests/workspace_diff.rs` provides M2-SLICE-005 coverage for clean, added,
+removed, modified, file/directory type changes, deterministic repeated scans,
+10,000 files, corrupt references, missing heads, cold reopen, head identity
+corruption, and point-in-time mutation. The retained record is
+[`m2-slice-005-workspace-diff-windows-native-2026-09-01.json`](../../artifacts/m2-development/m2-slice-005-workspace-diff-windows-native-2026-09-01.json).
+This is Windows local native / NTFS development evidence only and is not
+cross-platform or release qualification.
 
 The focused evidence is still local and synthetic where failpoints are used;
 it does not close the declared-platform, host-resource, performance, or old

@@ -1,24 +1,33 @@
 # Next Task
 
-**Current Phase:** Phase 1 - M1 final candidate readiness
+**Current Phase:** Phase 2 - M2 local workspace and snapshot
 
-**Current Milestone:** M1 Durable local repository (ready for release; tag not created)
+**Current Milestone:** M2-SLICE-009 Lifecycle Operation Identity Integration
 
-**M1 release gate:** **Ready for release (final CI passed; tag not created).**
-M1 remains a prerequisite for any tagged release claim. No new M2/M3 feature
-work or public CLI, runtime, SDK, server, or UI work is authorized from this
-task. Existing internal slices remain frozen evidence only.
+**M1 release baseline:** `v0.1.0` at
+`2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
+immutable.
 
-**Current Task:** Preserve the accepted M1 scope and complete the normal
-owner-controlled release/tag process. The accepted scope is Windows
-x86_64/NTFS, Linux x86_64/ext4, and a GitHub-hosted macOS runner whose
-filesystem remains `unknown`. The release bundle at
-`artifacts/m1-release-evidence/` contains executable platform, fault, property,
-projection, and measurement evidence within its stated boundaries. Keep
-FI-03, old-reader compatibility, and the source ADR files remain explicit
-scope boundaries; the corresponding Owner decisions are recorded separately.
-Do not start M2 or add
-Runtime, SDK, CLI, server, or framework-adapter work.
+**Current Task:** M2-SLICE-009 is implemented as an internal, test-gated
+operation identity integration. `WorkspaceManager::transition_lifecycle_operation`
+reuses the existing operation ledger and atomically binds operation intent,
+workspace lifecycle revision/status, terminal result, journal phase, and
+operation events. Exact retries return the same durable result; changed action,
+request, or expected revision fails closed. `Open`, status, and diff remain
+read-only. No lifecycle event taxonomy, SQLite schema, M1 contract, ADR-0016,
+provider, public API, version, branch, commit, merge, CLI, or SDK is introduced.
+
+**Verification:** Windows local NTFS development evidence records the eight
+operation identity integration tests, the eight durable lifecycle integration
+tests, the 15 S007 contract tests, and the full regression. Evidence is under
+[`artifacts/m2-development/m2-slice-009-workspace-lifecycle-operation-windows-native-2026-09-02.json`](../../artifacts/m2-development/m2-slice-009-workspace-lifecycle-operation-windows-native-2026-09-02.json)
+and must not be interpreted as M2 release or cross-platform qualification.
+
+**Next Action:** Review and commit M2-SLICE-009 as a bounded internal change.
+Do not start provider integration, Version, Branch, Merge, CLI, or SDK work from
+this task.
+
+## M1 Historical Handoff
 
 The minimal native-platform workflow is now defined at
 `.github/workflows/m1-release-evidence.yml`. Runs `33074865773` through

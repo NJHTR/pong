@@ -1,0 +1,38 @@
+M2-SLICE-004 DETERMINISTIC SNAPSHOT DIFF DEVELOPMENT EVIDENCE
+evidence_class=LOCAL_NATIVE_DEVELOPMENT
+status=PASS_FOR_INTERNAL_SLICE
+timestamp=2026-09-01T09:04:37.2693595Z
+platform=Windows 11 10.0.26200 x86_64
+filesystem=NTFS
+volume_free_bytes=268364709888
+volume_size_bytes=511425114112
+baseline_commit=2aab0aaf4c9ddb342939da17eddb11de4dfa66c1
+current_commit=2aab0aaf4c9ddb342939da17eddb11de4dfa66c1
+branch=dev
+working_tree=UNCOMMITTED_DEVELOPMENT_TREE
+rustc=rustc 1.95.0 (59807616e 2026-04-14)
+cargo=cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+declared_msrv=1.78
+msrv_execution=NOT_EXECUTED_FOR_THIS_DEVELOPMENT_EVIDENCE
+
+PASS exit=0 duration_ms=392 command=cargo fmt --all -- --check
+PASS exit=0 duration_ms=14452 command=cargo check --locked
+PASS exit=0 duration_ms=22111 tests=12 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-004-full cargo test --locked --test deterministic_diff
+PASS exit=0 duration_ms=22536 tests=1 filtered_out=11 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-004-full cargo test --locked --test deterministic_diff d8_performance_sanity_scales_manifest_sizes -- --nocapture
+performance_input_class=SYNTHETIC_MANIFESTS
+performance_entries=100 diff_duration_ms=28
+performance_entries=1000 diff_duration_ms=36
+performance_entries=10000 diff_duration_ms=194
+performance_entries=100000 diff_duration_ms=16585
+PASS exit=0 duration_ms=48378 passed=186 ignored=2 failed=0 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-004-full cargo test --all --locked
+PASS exit=0 duration_ms=6692 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-004-full cargo clippy --all-targets --all-features --locked -- -D warnings
+
+diff_inputs=two verified workspace/tree/v1 manifests same workspace/project/redaction profile
+change_types=ADDED,REMOVED,MODIFIED,TYPE_CHANGED
+ordering=existing canonical path byte ordering
+complexity=O(N+M) expected time and O(N+M) memory
+blob_reads=not required for classification
+workspace_current_tree_diff=NOT_IMPLEMENTED_IN_THIS_SLICE
+ignored_not_counted_as_pass=FI-13 opt-in host-resource test,measurement-only performance probe
+qualification=internal Windows local NTFS development evidence only
+m1_release_artifacts_modified=false

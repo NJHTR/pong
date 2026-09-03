@@ -1,0 +1,42 @@
+M2-SLICE-005 WORKSPACE CURRENT-TREE DIFF DEVELOPMENT EVIDENCE
+evidence_class=LOCAL_NATIVE_DEVELOPMENT
+status=PASS_FOR_INTERNAL_SLICE
+timestamp=2026-09-01T11:15:49.5829228Z
+platform=Windows 11 10.0.26200 x86_64
+filesystem=NTFS
+volume_free_bytes=266597416960
+volume_size_bytes=511425114112
+free_memory_bytes_observed=3010985984
+total_memory_bytes_observed=16869548032
+baseline_commit=2aab0aaf4c9ddb342939da17eddb11de4dfa66c1
+current_commit=2aab0aaf4c9ddb342939da17eddb11de4dfa66c1
+branch=dev
+working_tree=UNCOMMITTED_DEVELOPMENT_TREE
+rustc=rustc 1.95.0 (59807616e 2026-04-14)
+cargo=cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+declared_msrv=1.78
+msrv_execution=NOT_EXECUTED_FOR_THIS_DEVELOPMENT_EVIDENCE
+
+PASS exit=0 command=cargo fmt --all
+PASS exit=0 duration_ms=296 command=cargo fmt --all -- --check
+PASS exit=0 duration_ms=160 command=cargo check --locked
+PASS exit=0 duration_ms=18408 tests=15 ignored=0 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-005-full cargo test --locked --test workspace_diff -- --nocapture
+performance_input_class=LOCAL_CURRENT_TREE_FILES
+performance_entries=100 diff_duration_ms=13
+performance_entries=1000 diff_duration_ms=85
+performance_entries=10000 diff_duration_ms=8472
+PASS exit=0 duration_ms=243 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-005-full cargo clippy --test workspace_diff --locked -- -D warnings
+PASS exit=0 duration_ms=63752 passed=200 ignored=2 failed=0 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-005-full cargo test --all --locked
+PASS exit=0 duration_ms=358 command=CARGO_TARGET_DIR=D:\pong\target\m2-slice-005-full cargo clippy --all-targets --all-features --locked -- -D warnings
+PASS exit=0 command=git diff --check
+
+reference=durable workspace head only
+current_tree_identity=workspace-current-<manifest-digest> ephemeral
+change_types=ADDED,REMOVED,MODIFIED,TYPE_CHANGED
+ordering=existing canonical path byte ordering
+scan=point-in-time with file size and modification-time checks around reads
+complexity=O(N+M) merge after bounded current-tree scan
+state_mutation=none CAS/SQLite/lease/revision/operation/event
+ignored_not_counted_as_pass=FI-13 opt-in host-resource test,measurement-only performance probe
+qualification=internal Windows local NTFS development evidence only
+m1_release_artifacts_modified=false
