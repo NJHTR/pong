@@ -23,8 +23,13 @@ tests, the 15 S007 contract tests, and the full regression. Evidence is under
 [`artifacts/m2-development/m2-slice-009-workspace-lifecycle-operation-windows-native-2026-09-02.json`](../../artifacts/m2-development/m2-slice-009-workspace-lifecycle-operation-windows-native-2026-09-02.json)
 and must not be interpreted as M2 release or cross-platform qualification.
 
-**Next Action:** Review and commit M2-SLICE-009 as a bounded internal change.
-Do not start provider integration, Version, Branch, Merge, CLI, or SDK work from
+**Checkpoint:** M2-SLICE-009 and the accumulated bounded M2 internal changes are
+committed locally as `be44fab`. The working tree is clean at this checkpoint;
+the retained local evidence remains historical Windows development evidence
+bound to the pre-commit execution tree and is not M2 release qualification.
+
+**Next Action:** Await explicit authorization for the next bounded M2 task. Do
+not start provider integration, Version, Branch, Merge, CLI, or SDK work from
 this task.
 
 ## M1 Historical Handoff
