@@ -21,6 +21,7 @@ fn workspace_record(id: &str) -> WorkspaceRecord {
         locator: "C:/workspace-test".into(),
         branch_ref: Some("refs/heads/main".into()),
         head: None,
+        version_head_id: None,
         environment_id: None,
         status: "created".into(),
         revision: 0,

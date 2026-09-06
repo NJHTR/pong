@@ -1,291 +1,207 @@
 # Pong
 
-<p align="center">
-  <strong>Durable execution state for AI agents</strong>
-  <br />
-  <sub>让 Agent 的执行过程可追踪、可快照、可恢复、可回放。</sub>
-</p>
+> Pong is an agent-first, versioned workspace and execution infrastructure for long-running and multi-agent software development.
 
-<p align="center">
-  <a href="https://github.com/NJHTR/pong/tree/dev">dev branch</a>
-  · <a href="docs/README.md">Documentation</a>
-  · <a href="docs/roadmap/ROADMAP.md">Roadmap</a>
-  · <a href="docs/development/DEVELOPMENT_GUIDE.md">Development guide</a>
-</p>
+Pong 不是给 AI 套一层 Git，而是为 AI Agent 重新设计版本、状态、任务和执行管理。项目当前是 **Internal / Experimental / Test-Gated** Rust core：M1 已发布，M2 状态引擎已完成内部切片，M3 正在从 contract 进入实现。
 
-> **项目状态：早期开发，M1 release gate 尚未通过。**
-> 当前仓库提供的是内部 test-gated Rust durable-primitives core，以及受限的
-> M2 workspace/snapshot 和 M3 operation-ledger 实现切片。它还不是 production-ready
-> 产品，也不承诺 public CLI、SDK、server、UI 或 provider/runtime contract。
+**Current release:** `v0.1.0`
 
-## 为什么需要 Pong
+**M1:** Released
 
-Agent 不只是生成文本，它会修改文件、运行命令、调用工具、改变环境，并在长时间运行后留下大量上下文。传统 Agent runtime 通常只关心“这次执行成功还是失败”，却很难回答：
+**M2:** Internal development complete (`M2-SLICE-001` ~ `012`, internal/test-gated)
 
-- 最后一个已知良好的状态是什么？
-- 哪个 operation 造成了失败？
-- 发生崩溃后，哪些状态已经可靠落盘？
-- 能否从 checkpoint 恢复，并重放同一条执行路径？
-- 多个 Agent 是否可以在隔离 workspace 中安全协作？
+**M3:** Agent Execution in development (`M3-SLICE-001A = CONTRACT_READY`)
 
-Pong 的职责是保存这些 **durable execution state**。它位于 Agent framework 和本地存储之间，提供可验证的状态边界，而不是替 Agent 做推理或调度。
+## What Is Pong?
 
-```mermaid
-flowchart LR
-    A[AI Agent] --> B[Agent Runtime]
-    B --> C[Pong Core]
-    C --> D[(SQLite metadata)]
-    C --> E[(Content-addressed storage)]
-    C --> F[Event journal / WAL]
-    C --> G[Snapshots & checkpoints]
-    C -. optional future adapter .-> H[(Remote replication)]
-```
+Pong 为 Agent 工作空间提供可验证、持久化的状态边界。它记录 Workspace、Snapshot、Version 和 Operation 的身份与关系，使自动化修改在崩溃、重试、恢复和审计时仍有明确的 durable state。
 
-## 核心模型
+Pong 是本地优先的 Rust library/core，不是 Agent provider、模型运行时、调度器、公开 CLI、服务器或 UI。它与 Git 互补：Git 管理源代码历史，Pong 管理 Agent 执行过程中产生的工作空间状态和证据。
 
-Pong 将一次 Agent 执行拆成几层相互关联、但职责明确的对象：
+## The Problem
 
-| 对象 | 作用 | 典型问题 |
-| --- | --- | --- |
-| **Workspace** | Agent 实际读写的工作目录和环境边界 | 当前工作状态在哪里？谁持有 lease？ |
-| **Operation** | 一次有意义的执行单元，如 tool call 或 command | 哪次动作改变了状态？ |
-| **Event** | 按顺序追加的执行事实 | 发生了什么？顺序和因果关系是什么？ |
-| **Artifact** | 不可变的大对象或外部结果引用 | 结果内容如何校验和复用？ |
-| **Snapshot** | Workspace 在某一时刻的可复现树状态 | 如何保存一个 known-good state？ |
-| **Checkpoint** | 面向恢复的命名位置 | 从哪里继续执行？ |
-| **Generation** | 一组一致的 metadata、CAS 和 selector | 如何避免迁移时混用新旧数据？ |
+传统 Git 默认围绕人类开发者：`commit`、`branch`、`merge`、`checkout`、`rebase`。Agent 的执行模型更复杂：
 
-这些对象不是孤立的：operation 产生 event，event 引用 artifact，snapshot 固化 workspace，checkpoint 指向可恢复状态。
+- 一个 Agent 可以启动多个 SubAgent；
+- 多个 Agent 可以并行开发；
+- Agent 可能失败、崩溃、超时或耗尽额度；
+- 任务可能从 Cursor、Codex、Claude 或其他 runtime 接管；
+- 一次任务可能产生许多自动修改和多个候选状态；
+- 用户需要恢复到任务开始或某个稳定状态，而不是删除历史。
 
-```mermaid
-flowchart TD
-    W[Workspace] --> O[Operation]
-    O --> EV[Event envelope]
-    O --> AR[Artifact references]
-    W --> SN[Snapshot]
-    SN --> CAS[Immutable CAS objects]
-    SN --> CP[Checkpoint]
-    EV --> PR[Projection / history]
-    CP --> RC[Recovery plan]
-    RC --> W
-```
+因此问题不是“AI 会不会用 Git？”，而是“Git 的状态模型是否适合 Agent 的执行模型？” Pong 以显式身份、不可变状态、操作耐久性和恢复边界回答这个问题。
 
-## 架构
+## Pong and Git
 
-Pong 采用 local-first 设计。v0.x 的本地 journal、metadata 和 object store 是权威数据源；网络同步只能作为后续 adapter，不能成为核心写入路径的隐式依赖。
+| Git | Pong |
+| --- | --- |
+| 源代码 commit、branch、merge | Agent workspace、snapshot、version、operation |
+| 面向人类协作的历史 | 面向自动执行的 durable state |
+| 代码树的版本关系 | 执行上下文、状态引用和恢复证据 |
 
-```mermaid
-flowchart TB
-    subgraph Runtime[Agent runtime boundary]
-        FW[Framework or custom runtime]
-        AD[Adapter / explicit recording API]
-    end
+两者可以同时存在：项目源代码继续使用 Git，Agent 执行状态由 Pong 记录。Pong 当前不是 Git replacement。
 
-    subgraph Core[Pong Core]
-        WS[Workspace lifecycle]
-        OP[Operation ledger]
-        EV[Event envelope]
-        SS[Snapshot & checkpoint]
-        RP[Recovery & replay primitives]
-    end
+## Current Architecture
 
-    subgraph Durable[Durability boundary]
-        TX[Transactional metadata]
-        JR[Append-only journal / WAL]
-        OBJ[Content-addressed objects]
-        ID[Repository and generation identity]
-    end
-
-    FW --> AD --> WS
-    AD --> OP
-    WS --> SS
-    OP --> EV
-    EV --> JR
-    SS --> OBJ
-    WS --> TX
-    OP --> TX
-    RP --> TX
-    RP --> OBJ
-    TX --> ID
-    JR --> ID
-    OBJ --> ID
-```
-
-### 存储边界
-
-核心存储由三类 durable primitive 组成：
-
-1. **Metadata**：SQLite 中的事务性记录、引用、lease、operation 和 projection 状态。
-2. **CAS**：按内容哈希寻址的不可变对象，用于 snapshot、artifact 和 manifest。
-3. **Journal/WAL**：记录事件顺序和恢复所需的 durable evidence。
-
-仓库启动时通过 `.pong/repository.json` 验证 repository identity、schema 和 active generation，然后再打开 metadata 与 CAS。启动检查失败会 fail closed，不会把不完整或不兼容的仓库报告为健康。
-
-## 一次执行如何落盘
-
-下面的流程强调一个重要边界：只有在事实已经达到约定的 durability point 后，operation 才能被报告为 durable。
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Agent as Agent
-    participant Core as Pong Core
-    participant Meta as Metadata
-    participant Journal as Journal/WAL
-    participant CAS as CAS
-
-    Agent->>Core: begin operation
-    Core->>Meta: write intent + request id
-    Core->>Journal: append start event
-    Core->>CAS: store immutable artifact (optional)
-    Agent->>Core: tool/file/command result
-    Core->>Meta: write outcome + references
-    Core->>Journal: append terminal event
-    Core->>Meta: commit projection / cursor
-    Core-->>Agent: durable outcome
-```
-
-Pong 对 crash、重复投递和不完整捕获保持显式态度：不确定的结果会被标记为 unknown 或 incomplete，而不是静默丢弃。
-
-## 快照、恢复与重放
-
-Snapshot 只描述可验证的 workspace 内容；Recovery 负责把状态恢复到某个 checkpoint；Replay 则创建新的 session 和 lineage，不改写原始 DAG 或 event log。
-
-```mermaid
-stateDiagram-v2
-    [*] --> Working
-    Working --> Capturing: snapshot requested
-    Capturing --> Checkpointed: metadata + objects durable
-    Checkpointed --> Working: continue
-    Working --> Interrupted: process crash / write failure
-    Interrupted --> Reconciling: repository reopen
-    Reconciling --> Checkpointed: recover last known-good state
-    Reconciling --> Unknown: evidence is incomplete
-    Unknown --> Checkpointed: explicit operator decision
-    Checkpointed --> Replaying: replay requested
-    Replaying --> NewLineage: create new session
-    NewLineage --> Working
-```
-
-恢复外部副作用并不由 Core 自动宣称完成。文件、进程、网络、数据库等资源必须有明确 adapter contract、权限边界和证据，才能进入可用的 recovery workflow。
-
-## 当前实现范围
-
-### 已存在的内部实现
-
-- Rust durable repository core
-- canonical JSON、typed identity 和 schema/version checks
-- SQLite metadata adapter
-- content-addressed storage
-- event、projection、WAL tail recovery primitives
-- repository generation migration 和 selector validation
-- workspace lease、local filesystem driver、tree snapshot
-- operation ledger 的内部切片
-- redaction、fault injection、property tests 和跨平台验证材料
-
-### 尚未承诺的能力
-
-- public CLI 和稳定的 `v0.1` SDK
-- runtime interception 或任何特定 Agent framework adapter
-- server、web UI 和 remote replication service
-- production support matrix
-- M1 release gate 通过后的兼容性承诺
-
-## 快速开始
-
-### 环境要求
-
-- Rust `1.78` 或兼容的更新版本
-- Windows、Linux 等平台的本地文件系统
-
-### 构建与测试
-
-```bash
-cargo check --locked
-cargo test --locked
-cargo fmt --check
-```
-
-发布前的完整验证还包括 clippy、故障注入、property corpus、迁移和平台专项证据。请先阅读 [`docs/development/DEVELOPMENT_GUIDE.md`](docs/development/DEVELOPMENT_GUIDE.md) 与 [`docs/development/M1_EVIDENCE.md`](docs/development/M1_EVIDENCE.md)。
-
-### 从哪里开始读代码
+已实现的核心关系如下。`Workspace.head` 仍然是 Snapshot root digest；Version Head 是独立的逻辑选择，不改变 M1 Snapshot-head 语义。
 
 ```text
-src/
-├── repository.rs       repository identity, generations, startup checks
-├── metadata.rs         SQLite metadata and transactional records
-├── cas.rs              immutable content-addressed objects
-├── workspace.rs        workspace lifecycle and snapshots
-├── canonical.rs        deterministic serialization and hashing
-├── redaction.rs        secret-aware structured redaction
-└── error.rs            stable error categories
+Workspace
+    |
+    +-- Snapshot Head
+    |
+    +-- Version Head
+          |
+          +-- Version
+                |
+                +-- Parent Version
+                |
+                +-- Snapshot
+                      |
+                      +-- CAS / Tree
+
+Operation
+    |
+    +-- Version
+    +-- Workspace lifecycle
 ```
 
-根目录之外的设计权威在 [`docs/`](docs/README.md)：
+当前实现边界：
 
-| 目录 | 内容 |
-| --- | --- |
-| `docs/vision/` | 产品边界与设计原则 |
-| `docs/architecture/` | 系统、运行时、数据和存储架构 |
-| `docs/protocol/` | API、CLI、事件和版本协议 |
-| `docs/reliability/` | 一致性、故障、恢复和幂等性 |
-| `docs/security/` | 权限、信任边界和秘密处理 |
-| `docs/decisions/ADR/` | 已确认的架构决策 |
-| `docs/roadmap/` | 里程碑、状态和下一步任务 |
-| `artifacts/` | 测试、性能和平台验证材料 |
+- **Storage Core:** SQLite metadata、content-addressed storage (CAS)、filesystem、canonical identity and schema checks。
+- **State Engine:** Workspace lifecycle、Snapshot、Restore、Diff、Reconciliation、Version、Version Graph、Version Head、durable Operation ledger、lease/revision guards and recovery boundaries。
+- **Execution Engine:** Task、Agent、Execution、SubAgent、Handoff、Checkpoint、Rollback 等正在设计和实现中。
+- **Agent State Layer:** Memory、Skill、Automation、Policy、Plugin、Permission、Candidate、Approval 等属于后续范围。
 
-## Roadmap
+## Agent Execution Model
 
-```mermaid
-flowchart LR
-    P0[Phase 0<br/>Research & architecture] --> P1[Phase 1<br/>Durable core]
-    P1 --> P2[Phase 2<br/>Workspace & snapshot]
-    P2 --> P3[Phase 3<br/>Operation history]
-    P3 --> P4[Phase 4<br/>Versioning & collaboration]
-    P4 --> P5[Phase 5<br/>Recovery & replay]
-    P5 --> P6[Phase 6<br/>Stable API & CLI]
-    P6 --> P7[Phase 7<br/>Framework adapters]
-    P7 --> P8[Phase 8<br/>Drivers & observability]
-    P8 --> P9[Phase 9<br/>Replication & service mode]
+`M3-SLICE-001A = CONTRACT_READY`。该 slice 是 proposal-only contract；它没有添加生产类型、SQLite DDL、provider、CLI、SDK、UI，也没有实现 Handoff、Checkpoint、Rollback、Candidate 或 Approval。相关设计见 [`M3_AGENT_EXECUTION.md`](docs/architecture/M3_AGENT_EXECUTION.md)、[`M3_EXECUTION_GRAPH.md`](docs/architecture/M3_EXECUTION_GRAPH.md) 和 [`ADR-M3-001`](docs/decisions/ADR-M3-001-agent-execution-model.md)。
+
+目标模型区分：
+
+- **Agent Identity**：跨进程的 durable actor identity；provider metadata 与 credentials 分离，秘密不进入 Core。
+- **Task**：工作的持久身份和协调状态。
+- **Execution**：某个 Agent 为某个 Task 运行的一次具体尝试，有独立状态、Workspace、base/current Version 和 Operation 引用。
+- **SubAgent / Execution Graph**：父子 Execution 是独立的、有限深度且无环的关系；它不是 Version parent，也不是 Handoff。
+
+### Multi-Agent Direction
+
+目标架构中的一个任务可能这样展开：
+
+```text
+Task
+|
++-- Codex Execution
+|     |
+|     +-- Backend SubAgent
+|     +-- Test SubAgent
+|
++-- Cursor Execution
+|
++-- Claude Review Execution
 ```
 
-当前工作集中在 **Phase 1 - M1 Durable primitives release audit**。M1 尚未通过前，M2/M3 只作为内部、test-gated development slices 保留，不升级为 public release claim。详细状态请看 [`docs/roadmap/NEXT_TASK.md`](docs/roadmap/NEXT_TASK.md)。
+多个 Execution 可以并行，并从相同的 base Version 开始。每个 writable Execution 默认绑定独立 Workspace，并继续遵守现有 lease 和 revision CAS。最终通过显式 reconciliation 汇合。这是当前发展方向，不是已经全部实现的运行时能力。
 
-## 设计边界
+### Handoff
 
-Pong 是 Agent infrastructure，不是：
-
-- LLM 或模型供应商
-- prompt management system
-- Agent planner、scheduler 或 workflow orchestrator
-- Multi-Agent framework
-- Git 的替代品
-
-Git 负责 source code versioning；Pong 负责 agent execution state。两者可以并行存在：
-
-```mermaid
-flowchart LR
-    Project[Project]
-    Project --> Git[Git\nsource code history]
-    Project --> Pong[Pong\nagent execution state]
-    Git --> Commits[commits / branches]
-    Pong --> State[snapshots / operations / events / recovery]
+```text
+Codex
+  |
+Task T100
+  |
+quota exhausted
+  |
+Cursor
+  |
+继续 Task T100
 ```
 
-## 贡献
+Handoff 的目标是保持 Task identity、Version context 和 Operation history，通过显式 context reference 把工作交给另一个 Execution。Handoff 当前仍是未来 slice，不会重写身份或伪造 Version。
 
-在修改核心持久化语义前，请先阅读：
+### Checkpoint, Rollback and Resume
 
-1. [`docs/roadmap/NEXT_TASK.md`](docs/roadmap/NEXT_TASK.md)
-2. 相关 architecture、protocol、security 和 reliability 文档
-3. 适用的 ADR、测试策略和 release gate
+```text
+Task baseline
+     |
+Checkpoint
+     |
+Agent execution
+     |
+many versions
+     |
+Rollback / Resume
+```
 
-涉及 identity、event、permission、migration 或 recovery 的行为变化，应同时补充测试、失败路径、迁移说明和必要的 ADR。贡献流程详见 [`docs/development/CONTRIBUTING.md`](docs/development/CONTRIBUTING.md)。
+Rollback 应恢复到稳定的 Version 或 Checkpoint，并从那里创建新的尝试；它不删除历史 Version、Operation 或 Execution。Checkpoint、Rollback 和 Resume 当前仍是未来能力。
 
-## License
+## Progress
 
-License information will be added before the first public release.
+### Completed
 
-<p align="center">
-  <sub>Pong · Durable execution state for AI agents</sub>
-</p>
+- M1 durable primitives release：`v0.1.0`。
+- M2 core state engine：Workspace/snapshot、lifecycle、operation ledger、Version persistence、Version graph、Version Head，以及对应迁移、故障和恢复测试。
+
+### In Progress
+
+- M3 Agent Execution：当前为 `M3-SLICE-001A = CONTRACT_READY`；35 个 contract-only tests 明确标记为 `NOT_IMPLEMENTED_CONTRACT_TEST` 并被 ignored，不计作 PASS 或 runtime evidence。
+
+### Planned
+
+- Multi-agent parallel execution
+- Handoff
+- Checkpoint and Rollback
+- Reconciliation across executions
+- Candidate and Approval
+- Agent State layer
+- Safe self-evolution
+
+## Running Locally
+
+### Requirements
+
+- Rust `1.78` or a compatible newer toolchain
+- A local filesystem supported by the host platform
+
+### Build and Test
+
+```bash
+cargo fmt --all -- --check
+cargo check --locked
+cargo test --all --locked
+cargo clippy --all-targets --all-features --locked -- -D warnings
+git diff --check
+```
+
+The repository currently has no public `pong init`, `pong checkpoint`, or `pong rollback` CLI. Read [`docs/development/DEVELOPMENT_GUIDE.md`](docs/development/DEVELOPMENT_GUIDE.md) and [`docs/roadmap/NEXT_TASK.md`](docs/roadmap/NEXT_TASK.md) before changing persistence semantics.
+
+## Technical Principles
+
+- immutable state
+- explicit identity
+- deterministic behavior
+- fail closed
+- crash recovery
+- durable operations
+- explicit version references
+- no phantom success
+- provider-neutral design
+- agent-neutral execution model
+
+## Explicit Limits
+
+Pong is not production-ready, enterprise-ready, fully multi-agent, fully autonomous, or a Git replacement. There is no supported provider integration, public SDK/CLI, server mode, remote replication service, shared-writable-workspace policy, Candidate/Approval flow, or Agent State implementation. External side effects and credentials remain outside Core behind explicit adapter and permission boundaries.
+
+## Documentation
+
+- [`docs/architecture/`](docs/architecture/) — system and data contracts
+- [`docs/decisions/`](docs/decisions/) — ADRs and accepted boundaries
+- [`docs/development/`](docs/development/) — development and test gates
+- [`docs/roadmap/`](docs/roadmap/) — milestone status and next task
+- [`artifacts/`](artifacts/) — retained internal validation evidence
+
+## Next Step
+
+`M3-SLICE-001B — IMPLEMENT AGENT EXECUTION CORE`
+
+This is the single next slice. M1 remains **RELEASED**, M2 remains **INTERNAL / TEST-GATED**, and M3-001A remains **CONTRACT_READY**.

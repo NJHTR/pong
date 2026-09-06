@@ -200,6 +200,99 @@ passes 8/8 cases on Windows 11 / NTFS local development. Operation intent,
 workspace update, terminal operation outcome, journal phase, and operation
 events are verified as one transaction; no second ledger or schema is added.
 
+## M2-SLICE-010A / 010B Version Coverage
+
+`tests/version_persistence_contract.rs` records and executes the 18 Version
+persistence requirements: identity, immutable fields,
+Snapshot/workspace/project/environment/generation binding, operation identity,
+exact retry, changed-operation semantics, same-Snapshot policy, broken
+Snapshot, deletion policy, transaction atomicity, interrupted migration, cold
+reopen, legacy v0.1 compatibility, and M1 semantic preservation.
+
+M2-SLICE-010B implements the additive `versions` table, deterministic
+`VersionRecord` identity, domain referential checks, operation binding,
+transaction failpoints, exact retry, cold reopen, and empty-table legacy
+migration. The contract suite passes 18/18 on Windows 11 / NTFS local native
+development, and `tests/workspace_version.rs` passes 8/8 durable SQLite cases.
+The corresponding schema design remains [`M2_VERSION_SCHEMA.md`](../architecture/M2_VERSION_SCHEMA.md)
+and ADR-M2-010 remains Proposed / Internal M2.
+
+The implementation reuses existing Snapshot/Operation/generation validation and
+selector migration semantics without changing M1 table meaning. Parent/version
+graph, branch, merge, candidate, approval, Version head, and public API remain
+outside this slice.
+
+At the time of the 010B checkpoint, the full `cargo test --all --locked` run
+passed 269 tests with 0 failures and 2 ignored tests. That historical count is
+superseded by the current 011B regression recorded below; the ignored cases
+were never counted as Version or M2 PASS evidence.
+
+## M2-SLICE-011A Version Graph Contract
+
+`tests/version_graph_contract.rs` freezes the design-only G1-G15 cases. All
+fifteen are explicitly ignored with the reason
+`NOT_IMPLEMENTED_CONTRACT_TEST`; they are placeholders and do not count as
+passing tests. The contract defines a nullable, immutable single-parent
+lineage, stable roots, same-workspace/project/environment/generation scope,
+cycle prevention, exact retry, same-Snapshot/different-operation behavior,
+cold-reopen validation, additive migration, deletion constraints, and atomic
+parent binding. No production graph code, SQLite migration, or runtime evidence
+was added in 011A.
+
+The 010B implementation's same-Snapshot/different-operation behavior was an
+explicit open boundary. The 011A contract now recommends distinct logical
+Versions for distinct successful creation Operations, even when they reference
+the same Snapshot; this is a design decision only until the graph slice is
+implemented.
+
+## M2-SLICE-011B Durable Version Graph Parent Relation
+
+`tests/version_graph.rs` is the executable durable integration suite. It runs
+through the real Repository, CAS-backed snapshots, SQLite operation ledger,
+and cold-reopen path. The 31 default-executed cases cover roots, children,
+three-level chains, deterministic parent/children queries, missing/self/
+corrupt/cross-scope/cyclic parents, immutable bindings, typed operation
+references, exact and wrong-parent retries, duplicate protection,
+same-Snapshot open-decision preservation, pre/post-commit recovery, no
+phantom Version, unchanged workspace head, v0.1 empty migration, and
+additive migration of a pre-graph Version row to an explicit root without
+changing Version identity.
+
+The explicit `chain_depth_sanity_for_one_thousand_nodes` case was run with
+`--ignored` and passed after the production validator was made iterative. It
+is a development-only stack/complexity boundary check, remains ignored by the
+default regression command, and is not counted as a default PASS case. The
+historical 15 `NOT_IMPLEMENTED_CONTRACT_TEST` cases in
+`version_graph_contract.rs` remain ignored 011A placeholders and are not used
+as 011B evidence. Evidence is Windows 11 / x86_64 / NTFS
+`LOCAL_NATIVE_DEVELOPMENT` only.
+
+## M2-SLICE-012B Durable Version Reference / Head
+
+The implementation adds only the nullable additive `version_head_id` column
+to `workspaces`, plus `MetadataStore::get_current_version` and
+`set_version_head`. Snapshot Head remains `Workspace.head`; Version creation,
+parent lineage, Version identity, and children are unchanged. Writes validate
+the durable Version/Snapshot/operation/parent chain and bounded workspace,
+project, environment, generation, and migration scope, then use the existing
+lease/revision CAS in one SQLite transaction. Reads create no operations or
+events.
+
+`tests/version_reference.rs` is the durable integration suite (31 passed).
+It covers detached selection, missing/broken references, scope mismatches,
+stale revision and lease, atomic pre-commit rollback, post-commit interruption,
+cold reopen, exact retry, legacy NULL migration, additive workspace migration,
+and preservation of Snapshot head and graph relations. The same-Snapshot /
+different-operation policy remains `CONTRACT_OPEN_DECISION` as defined by
+010B. Version Head is internal/test-gated and is not release evidence.
+
+The current full `cargo test --all --locked` run passes 362 tests with 0
+failures and 33 ignored tests (the pre-existing host/measurement probes, the
+15 historical 011A placeholders, the 15 historical 012A placeholders, and
+the one development-only 1,000-node sanity). Ignored tests remain explicitly
+outside PASS counts. The retained 012B record is
+[`m2-slice-012-version-reference-head-windows-native-2026-09-05.json`](../../artifacts/m2-development/m2-slice-012-version-reference-head-windows-native-2026-09-05.json).
+
 ## Unit
 
 - Validate workspace/snapshot IDs, project binding, status transitions, and

@@ -1,0 +1,112 @@
+{
+  "evidence_id": "m2-slice-010-version-persistence-windows-native-2026-09-03",
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "scope": "M2-SLICE-010B durable Version persistence",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "timestamp": "2026-09-04T19:04:04+08:00",
+  "platform": {
+    "os": "Windows 11 Home 10.0.26200",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "runner": "local Windows native development",
+    "drive": "D:",
+    "available_disk_bytes": 262956425216,
+    "available_memory_kib": 2534640
+  },
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "target": "x86_64-pc-windows-msvc",
+    "declared_msrv": "1.78"
+  },
+  "source": {
+    "base_commit": "e110ce61436319cc4b9c8af2dc8bd73e6d392b27",
+    "current_commit": "e110ce61436319cc4b9c8af2dc8bd73e6d392b27",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE"
+  },
+  "implementation": {
+    "schema": "additive versions table with primary key, unique version identity, and workspace/snapshot indexes",
+    "migration": "v0.1.0 repository migration creates an empty versions table; existing workspace, snapshot, operation, and event meaning remains unchanged",
+    "identity": "deterministic ver-<sha256> derived from the contract identity tuple",
+    "bindings": [
+      "workspace",
+      "project",
+      "snapshot",
+      "environment",
+      "generation",
+      "migration",
+      "creation operation"
+    ],
+    "immutability": "Version identity and bindings are not updateable through the production API",
+    "transaction": "Version insertion and started-operation completion use the existing SQLite transaction boundary and failpoints",
+    "integrity": "missing or corrupted Snapshot references fail closed on create/read; CAS manifest bytes are validated by existing Snapshot integrity paths",
+    "open_decision": "different operations targeting one Snapshot remain an explicit CONTRACT_OPEN_DECISION boundary"
+  },
+  "coverage": {
+    "contract_test_file": "tests/version_persistence_contract.rs",
+    "contract_cases": 18,
+    "contract_passed": 18,
+    "contract_failed": 0,
+    "durable_test_file": "tests/workspace_version.rs",
+    "durable_cases": 8,
+    "durable_passed": 8,
+    "durable_failed": 0,
+    "migration_cases": [
+      "additive versions table",
+      "legacy v0.1 migration leaves versions empty",
+      "cold reopen preserves legacy data"
+    ],
+    "failure_recovery_cases": [
+      "validation and missing-reference rejection",
+      "pre-commit rollback leaves Version absent and operation started",
+      "post-commit interruption reopens with durable Version and completed operation",
+      "exact retry returns the original Version without duplication",
+      "broken Snapshot reference fails closed after cold reopen"
+    ],
+    "full_regression_passed": 269,
+    "full_regression_failed": 0,
+    "full_regression_ignored": 2,
+    "ignored_tests": [
+      "FI-13 host ACL evidence requires PONG_HOST_FAULT_ROOT",
+      "measurement-only performance probe requires explicit --ignored"
+    ]
+  },
+  "commands": [
+    { "command": "cargo fmt --all -- --check", "exit_code": 0, "duration_seconds": 1.549 },
+    { "command": "cargo check --locked", "exit_code": 0, "duration_seconds": 1.252 },
+    { "command": "cargo test --locked --test version_persistence_contract", "exit_code": 0, "duration_seconds": 1.537, "passed": 18, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --locked --test workspace_version", "exit_code": 0, "duration_seconds": 1.391, "passed": 8, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --locked --test workspace_lifecycle_contract", "exit_code": 0, "duration_seconds": 1.365, "passed": 15, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --locked --test workspace_lifecycle_integration", "exit_code": 0, "duration_seconds": 1.419, "passed": 8, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --locked --test workspace_lifecycle_operation", "exit_code": 0, "duration_seconds": 1.432, "passed": 8, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --all --locked", "exit_code": 0, "duration_seconds": 42.6, "passed": 269, "failed": 0, "ignored": 2 },
+    { "command": "cargo clippy --all-targets --all-features --locked -- -D warnings", "exit_code": 0, "duration_seconds": 0.425 },
+    { "command": "git diff --check", "exit_code": 0, "duration_seconds": 0.194 }
+  ],
+  "regression": {
+    "m1": "PASS",
+    "m2_slice_001": "PASS",
+    "m2_slice_002": "PASS",
+    "m2_slice_003": "PASS",
+    "m2_slice_004": "PASS",
+    "m2_slice_005": "PASS",
+    "m2_slice_006": "PASS",
+    "m2_slice_007": "PASS",
+    "m2_slice_008": "PASS",
+    "m2_slice_009": "PASS"
+  },
+  "artifacts": {
+    "evidence_json": "artifacts/m2-development/m2-slice-010-version-persistence-windows-native-2026-09-03.json",
+    "log": "artifacts/m2-development/m2-slice-010-version-persistence-windows-native-2026-09-03.log",
+    "m1_release_artifacts_modified": false,
+    "release_tag_created": false,
+    "pushed": false
+  },
+  "notes": [
+    "This is Windows local native development evidence only; it is not M2 release qualification.",
+    "The working tree is intentionally uncommitted and the record is bound to the base/current commits above.",
+    "No M1 contract, ADR-0016, SQLite schema meaning, Repository architecture, provider, Version graph, branch, merge, candidate, approval, or public API was added.",
+    "The two ignored tests are not counted as PASS."
+  ]
+}

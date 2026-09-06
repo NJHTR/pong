@@ -71,7 +71,7 @@ roadmap phases or explicit future ADRs.
 | Snapshot diff | `IMPLEMENTED (M2-SLICE-004)` | `LocalWorkspace::diff_snapshots` validates both manifests and performs a deterministic O(N + M) path merge with added/removed/modified/type-changed results. | Public contract and large-scale release qualification remain out of scope. |
 | Operation identity/lifecycle | `EXISTS` (internal) | M3 bounded ledger has immutable envelope, idempotent start/finish and terminal states. | It is not yet the M2 snapshot/restore public contract. |
 | Operation-event relation | `IMPLEMENTED (M2-SLICE-001/002, internal)` | Snapshot publication and restore outcomes are linked to durable operations with workspace, causation, correlation, generation, and snapshot identity. | Public operation/event contracts remain unfrozen. |
-| Version identity/parents | `MISSING` | No commit/version/branch object or parent graph exists in `src`. | Planned for Phase 4; do not invent it in M2. |
+| Version identity/parents | `PASS (M2-SLICE-011B, internal)` | Immutable Version rows reference existing Snapshots, derive deterministic identities, bind creation operations, and validate one nullable parent across workspace/project/environment/generation/migration scope with cycle prevention and durable parent/children queries. | Branch/merge semantics, Version head, graph traversal, and public API remain out of scope. |
 | Version replay/immutable history | `MISSING` | Event history is immutable, but version replay is not implemented. | Planned for later recovery/version phases. |
 | Recovery of workspace/snapshot | `PARTIAL` | M1 recovery, materialization fault tests, and restore cold-reopen/retry reconciliation exist. | General provider reconciliation and restore-into-existing-workspace recovery remain out of scope. |
 
@@ -242,7 +242,128 @@ The focused durable suite is
 [`m2-slice-009-workspace-lifecycle-operation-windows-native-2026-09-02.json`](../../artifacts/m2-development/m2-slice-009-workspace-lifecycle-operation-windows-native-2026-09-02.json).
 This remains Windows local native / NTFS development evidence only.
 
+## M2-SLICE-010A: Version Persistence Contract
+
+**Status:** `CONTRACT_READY` (design predecessor). M2-SLICE-010B implements this
+bounded contract as an internal, test-gated persistence slice.
+
+The contract defines Version as an immutable durable logical node that refers to
+one existing immutable Snapshot. It does not copy CAS/tree content, replace
+`workspaces.head`, or become an Operation alias. The proposed `VersionRecord`
+stores `version_id`, workspace/project binding, `snapshot_id`, unique
+`creation_operation_id`, optional environment identity, generation/migration
+identity, and `created_at`; parent, branch, merge, candidate, approval, and
+Version-head fields are intentionally absent.
+
+`version_id` is designed as a deterministic `ver-<sha256>` over canonical
+project/workspace/Snapshot/creation-operation identity inputs. Exact operation
+retry must discover the same Version; changed Snapshot or binding fails closed.
+The operation and Version are designed to become visible in one transaction,
+with the existing post-commit recovery model. Snapshot, manifest/CAS,
+workspace/project/environment, generation, migration, and operation/event
+relations remain domain integrity checks rather than assumptions about a single
+SQLite foreign key.
+
+The additive migration design creates `versions` only in a target generation,
+starts it empty for v0.1 repositories, and publishes the selector only after
+schema and identity validation. Interrupted migration exposes the complete old
+generation or an unpublished target, never a mixed state. These design
+properties are exercised by the 010B implementation and migration tests.
+
+The schema design is [`M2_VERSION_SCHEMA.md`](../architecture/M2_VERSION_SCHEMA.md),
+the decision record is the Proposed [`ADR-M2-010`](../decisions/ADR-M2-010-version-persistence.md),
+and the future-facing contract cases are
+[`version_persistence_contract.rs`](../../tests/version_persistence_contract.rs).
+The former 18 `NOT_IMPLEMENTED_CONTRACT_TEST` placeholders are now executable
+contract tests; they pass on the retained 010B Windows native run. Open decisions include
+same-Snapshot/different-operation behavior, Snapshot deletion/GC policy,
+Version head, `created_at` authority, parent relations, and human labels.
+
+## M2-SLICE-010B: Durable Version Persistence
+
+**Status:** `PASS / INTERNAL / TEST-GATED`.
+
+The additive `versions` table and indexes are created and schema-validated by
+the existing metadata initialization and generation migration paths. v0.1
+repositories migrate with an empty Version table and no synthetic rows. The
+production `VersionRecord`/`VersionPublication` path derives deterministic
+`ver-<sha256>` identity, validates Snapshot/workspace/project/environment and
+generation/migration bindings, binds one creation Operation, and keeps all
+Version fields immutable.
+
+Creation and completion of a started `version.create` operation share one
+SQLite transaction. Exact retry returns the durable row, changed identity
+fails closed, different operations targeting one Snapshot remain the explicit
+`CONTRACT_OPEN_DECISION` boundary, and pre/post-commit failpoints preserve the
+existing old-or-new recovery model. Cold reopen re-validates Version,
+Snapshot, and Operation relations. `workspaces.head` remains a Snapshot head.
+
+The retained local evidence is
+[`m2-slice-010-version-persistence-windows-native-2026-09-03.json`](../../artifacts/m2-development/m2-slice-010-version-persistence-windows-native-2026-09-03.json).
+It is Windows 11 / NTFS local native development evidence bound to the
+uncommitted development tree, not M2 release qualification. The focused
+contract suite passes 18/18 and the durable workspace suite passes 8/8; the
+full repository regression passes 269 tests with 2 pre-existing ignored
+host/measurement probes.
+
+## M2-SLICE-011B: Durable Version Graph Parent Relation
+
+**Status:** `PASS / INTERNAL / TEST-GATED`.
+
+The additive graph implementation adds nullable `parent_version_id` to the
+existing `versions` table, creates the parent lookup index after legacy-table
+column migration, and preserves the frozen 010B Version identity. Root rows
+use `NULL`; child rows bind exactly one existing, healthy parent in the same
+workspace, project, environment, generation, and migration. Parent bindings
+are immutable and validated iteratively for missing rows, corrupt ancestors,
+self-parent, and longer cycles.
+
+`create_version` reuses the existing operation, journal, event, and SQLite
+transaction boundary. A non-root operation must carry a typed parent Version
+input reference. Exact retries return the same durable Version; changed parent
+inputs fail closed; pre-commit and post-commit failpoints preserve the
+existing old-or-new recovery model. `get_parent` and `get_children` validate
+the graph on read. `workspaces.head`, Version identity, same-Snapshot open
+decision, and v0.1 empty-table migration semantics are unchanged.
+
+`tests/version_graph.rs` executes 31 durable graph cases on Windows 11 / NTFS:
+roots, chains, scope and corruption rejection, cycle prevention, immutable
+bindings, operation references, exact retry, cold reopen, atomicity, legacy
+column migration, head/identity preservation, and deterministic queries. A
+development-only 1,000-node retained-chain sanity also passed after the chain
+validator was changed from recursive to iterative traversal; it remains
+ignored in the default suite and is not release evidence.
+
+The retained evidence is
+[`m2-slice-011-version-graph-parent-windows-native-2026-09-03.json`](../../artifacts/m2-development/m2-slice-011-version-graph-parent-windows-native-2026-09-03.json).
+It is `LOCAL_NATIVE_DEVELOPMENT` on Windows 11 / x86_64 / NTFS, bound to the
+dirty development tree at the recorded base commit. It is not M2 release or
+cross-platform qualification evidence.
+
 ## Remaining Tests and Evidence
+
+## M2-SLICE-012B: Durable Version Reference / Head
+
+**Status:** `PASS / INTERNAL / TEST-GATED`.
+
+The bounded Version Head is stored as nullable `workspaces.version_head_id`;
+legacy rows remain `NULL`. `Workspace.head` remains the Snapshot root digest.
+`MetadataStore::get_current_version` validates Version identity, Snapshot and
+operation bindings, parent integrity, and workspace/project/environment/
+generation/migration scope. `set_version_head` reuses the existing lease and
+revision CAS and updates the logical reference and revision atomically without
+creating an operation or event. Version creation does not implicitly select a
+head; detached historical Versions remain valid.
+
+`tests/version_reference.rs` executes 31 durable SQLite cases covering selection,
+missing/broken/out-of-scope references, detached Versions, read-only semantics,
+stale revision/lease, pre/post-commit recovery, exact retry, cold reopen,
+legacy migration, additive schema migration, and unchanged Snapshot Head,
+Version identity, parent, and children. The suite passes 31/31. The current
+full regression passes 362 tests with 0 failures and 33 ignored tests; the
+retained record is
+[`m2-slice-012-version-reference-head-windows-native-2026-09-05.json`](../../artifacts/m2-development/m2-slice-012-version-reference-head-windows-native-2026-09-05.json).
+Both are Windows native development evidence for this uncommitted tree.
 
 - non-local provider qualification and broader lifecycle orchestration;
 - non-local provider qualification and durable lifecycle orchestration;
@@ -274,7 +395,7 @@ explicit.
 
 ## Entry Decision
 
-`M2_ENTRY = READY FOR DESIGN; M2-SLICE-001/002/003/004/005/006/007 = PASS (INTERNAL); M2 = NOT READY FOR PUBLIC RELEASE`.
+`M2_ENTRY = READY FOR DESIGN; M2-SLICE-001/002/003/004/005/006/007/008/009/010B/011B = PASS (INTERNAL); M2-SLICE-010A/011A = CONTRACT_READY predecessors; M2 = NOT READY FOR PUBLIC RELEASE`.
 
 Snapshot publication and durable new-destination restore are implemented.
 Workspace status is implemented as a read-only internal view. Diff,

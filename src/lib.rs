@@ -17,11 +17,11 @@ pub mod workspace;
 pub use environment::{EnvironmentFacts, ENVIRONMENT_SCHEMA_VERSION};
 pub use error::PongError;
 pub use metadata::{
-    EnvironmentRecord, EventEnvelope, EventRecord, LeaseRecord, LeaseToken, MetadataFailpoint,
     MetadataFailpoints, NewEvent, NewEventEnvelope, OperationEnvelope, OperationError,
     OperationOutcome, OperationRecord, OperationRef, ProjectionAppliedEvent, ProjectionCursor,
     ProjectionDefinition, ProjectionFailpoint, ProjectionFailpoints, ProjectionHandler,
     ProjectionRecord, SnapshotPublication, SnapshotRecord, WorkspaceRecord, WorkspaceUpdate,
+    ProjectionRecord, SnapshotPublication, SnapshotRecord, VersionCreation, VersionPublication, VersionRecord, WorkspaceRecord, WorkspaceUpdate,
     EVENT_ENVELOPE_SCHEMA_VERSION, OPERATION_SCHEMA_VERSION, PROJECTION_SCHEMA_VERSION,
     SNAPSHOT_SCHEMA_VERSION,
 };

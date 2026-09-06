@@ -1,0 +1,120 @@
+{
+  "evidence_id": "m2-slice-012-version-reference-head-windows-native-2026-09-05",
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "scope": "M2-SLICE-012B durable Version Reference / Head",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "timestamp": "2026-09-06T02:22:56+08:00",
+  "platform": {
+    "os": "Microsoft Windows 11 Home 10.0.26200",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "runner": "local Windows native development",
+    "drive": "D:",
+    "available_disk_bytes": 262861963264,
+    "available_memory_mib": 2445
+  },
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "target": "x86_64-pc-windows-msvc",
+    "declared_msrv": "1.78"
+  },
+  "source": {
+    "base_commit": "e110ce61436319cc4b9c8af2dc8bd73e6d392b27",
+    "current_commit": "e110ce61436319cc4b9c8af2dc8bd73e6d392b27",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE"
+  },
+  "implementation": {
+    "schema": "nullable additive workspaces.version_head_id; legacy rows default to NULL",
+    "snapshot_head": "Workspace.head remains the Snapshot root digest and is never used as a Version ID",
+    "version_head": "explicit workspace-local Version selection with get_current_version and set_version_head",
+    "validation": "Version, Snapshot, operation, parent chain, workspace, project, environment, generation, and migration scope are validated fail-closed",
+    "transaction": "lease validation, revision CAS, Version Head update, and revision increment share one SQLite transaction",
+    "semantics": "reads create no operations/events; Version creation does not implicitly select a head; detached Versions remain valid",
+    "recovery": "pre-commit rollback, post-commit interruption, cold reopen, and exact retry converge to old-or-new complete state",
+    "open_decisions": "same-Snapshot/different-operation policy, broader head scope, labels, ordinals, deletion/GC, cross-generation references, Branch, and Merge remain open"
+  },
+  "coverage": {
+    "focused_test_file": "tests/version_reference.rs",
+    "focused_cases": 31,
+    "focused_passed": 31,
+    "focused_failed": 0,
+    "focused_ignored": 0,
+    "full_regression_passed": 362,
+    "full_regression_failed": 0,
+    "full_regression_ignored": 33,
+    "ignored_tests": [
+      "FI-13 host ACL evidence requires PONG_HOST_FAULT_ROOT",
+      "measurement-only performance probe",
+      "development-only 1,000-node Version graph sanity",
+      "15 historical version_graph_contract.rs placeholders",
+      "15 historical version_reference_contract.rs placeholders"
+    ],
+    "scenarios": [
+      "durable creation and read",
+      "missing and broken Version/Snapshot references",
+      "workspace/project/environment/generation/migration mismatch",
+      "detached Version selection",
+      "Snapshot Head independence",
+      "stale revision and stale lease",
+      "read-only operation/event invariants",
+      "pre-commit atomic rollback",
+      "post-commit interruption and cold reopen",
+      "exact retry",
+      "legacy v0.1 migration with NULL Version Head",
+      "additive workspace schema migration",
+      "Version identity, parent, and children preservation"
+    ]
+  },
+  "sanity": {
+    "command": "cargo test --locked --test m2_slice_012_sanity -- --nocapture",
+    "classification": "development-only lightweight measurement",
+    "exit_code": 0,
+    "reads": [
+      { "count": 10, "elapsed_ns": 1122200 },
+      { "count": 100, "elapsed_ns": 11147700 },
+      { "count": 1000, "elapsed_ns": 113266400 }
+    ],
+    "head_writes": { "count": 10, "elapsed_ns": 3539100 },
+    "harness": "temporary test harness removed after execution"
+  },
+  "commands": [
+    { "command": "cargo fmt --all -- --check", "exit_code": 0, "duration_seconds": 0.315 },
+    { "command": "cargo check --locked", "exit_code": 0, "duration_seconds": 0.135 },
+    { "command": "cargo test --locked --test version_reference", "exit_code": 0, "duration_seconds": 0.607, "passed": 31, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --all --locked", "exit_code": 0, "duration_seconds": 35.031, "passed": 362, "failed": 0, "ignored": 33 },
+    { "command": "cargo clippy --all-targets --all-features --locked -- -D warnings", "exit_code": 0, "duration_seconds": 0.28 },
+    { "command": "git diff --check", "exit_code": 0, "duration_seconds": 0.046 },
+    { "command": "cargo test --locked --test m2_slice_012_sanity -- --nocapture", "exit_code": 0, "passed": 1, "failed": 0, "ignored": 0 }
+  ],
+  "regression": {
+    "m1": "PASS",
+    "m2_slice_001": "PASS",
+    "m2_slice_002": "PASS",
+    "m2_slice_003": "PASS",
+    "m2_slice_004": "PASS",
+    "m2_slice_005": "PASS",
+    "m2_slice_006": "PASS",
+    "m2_slice_007": "PASS",
+    "m2_slice_008": "PASS",
+    "m2_slice_009": "PASS",
+    "m2_slice_010": "PASS",
+    "m2_slice_011": "PASS"
+  },
+  "artifacts": {
+    "evidence_json": "artifacts/m2-development/m2-slice-012-version-reference-head-windows-native-2026-09-05.json",
+    "log": "artifacts/m2-development/m2-slice-012-version-reference-head-windows-native-2026-09-05.log",
+    "m1_release_artifacts_modified": false,
+    "release_tag_created": false,
+    "pushed": false
+  },
+  "notes": [
+    "This is Windows 11 local native development evidence only; it is not M2 release qualification or M1 release evidence.",
+    "The working tree is intentionally uncommitted and the record is bound to the base/current commit above.",
+    "Temporary sanity harness output is retained in the log; the harness source was removed after execution.",
+    "Initial test and clippy attempts exposed only test-side issues: a stale legacy-column assertion and an eight-argument helper; both were corrected before the final zero-exit verification run.",
+    "No M1 contract, ADR-0016, Repository architecture, Branch, Merge, provider, public API, release tag, or push was added.",
+    "Ignored tests are not counted as PASS."
+  ]
+}

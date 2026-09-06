@@ -301,6 +301,7 @@ fn v01_database_cold_open_keeps_legacy_rows_and_adds_additive_tables() {
                 locator: "C:/workspace".into(),
                 branch_ref: Some("refs/heads/main".into()),
                 head: None,
+                version_head_id: None,
                 environment_id: None,
                 status: "created".into(),
                 revision: 0,
@@ -446,7 +447,8 @@ fn migration_backs_up_raw_v01_without_mutating_source_schema() {
             "status",
             "revision",
             "created_at",
-            "updated_at"
+            "updated_at",
+            "version_head_id"
         ]
     );
     assert_eq!(

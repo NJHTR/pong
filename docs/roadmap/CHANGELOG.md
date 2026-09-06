@@ -1,5 +1,109 @@
 # Changelog
 
+## Unreleased - M3-SLICE-001A Agent / Task / Execution Contract (2026-09-06)
+
+- Added proposal-only architecture documents for Agent Identity, Provider,
+  Task, Execution, SubAgent hierarchy, Workspace/Version attachment,
+  Operation ownership, Handoff, Checkpoint, Rollback, Resume, failure, and
+  recovery semantics.
+- Froze only the acyclic parent-child Execution relation. Handoff, resume,
+  dependency, Checkpoint, and Operation ownership remain separate proposed
+  relations; Task State and Execution State remain distinct.
+- Added ADR-M3-001 with `Proposed / Internal M3` status and 35 explicitly
+  ignored `NOT_IMPLEMENTED_CONTRACT_TEST` placeholders. No production code,
+  SQLite schema, migration, provider, CLI, SDK, UI, release tag, or push was
+  created.
+- Recorded `M3-SLICE-001A = CONTRACT_READY`; the next separately approved
+  implementation task is `IMPLEMENT AGENT EXECUTION CORE`.
+
+## Unreleased - M2-SLICE-012B Durable Version Reference / Head (2026-09-05)
+
+- Implemented the bounded nullable `workspaces.version_head_id` reference
+  without changing `Workspace.head`, Version identity, parent lineage, M1
+  semantics, or the SQLite v0.1 meaning.
+- Added explicit `get_current_version` and lease/revision-guarded
+  `set_version_head` paths with Version, Snapshot, operation, parent-chain,
+  workspace, project, environment, generation, and migration validation.
+- Covered detached selection, read-only semantics, exact retry, stale caller
+  rejection, atomic pre/post-commit recovery, cold reopen, broken references,
+  and additive legacy migration with 31 durable integration cases.
+- Retained Windows 11 / x86_64 / NTFS `LOCAL_NATIVE_DEVELOPMENT` evidence
+  under `artifacts/m2-development`; this remains internal/test-gated and is
+  not M1 release evidence. No release tag or push was created.
+
+## Unreleased - M2-SLICE-011B Durable Version Graph Parent Relation (2026-09-05)
+
+- Implemented the additive nullable `parent_version_id` relation without
+  changing the M2-SLICE-010 Version identity, operation ledger, Snapshot head,
+  M1 contract, or ADR-0016.
+- Added migration-safe schema validation/index creation, same-scope parent
+  validation, iterative cycle prevention, parent/children queries, immutable
+  binding, typed operation references, exact retry, cold reopen, and atomic
+  failpoint recovery.
+- Added 31 durable SQLite graph integration cases plus an explicit development
+  1,000-node chain sanity. The default graph suite passes 31 cases with one
+  development-only ignored case; the historical 011A placeholders remain
+  ignored and are not counted as evidence.
+- Retained Windows 11 / x86_64 / NTFS `LOCAL_NATIVE_DEVELOPMENT` evidence under
+  `artifacts/m2-development/`; the tree remains uncommitted and no M1 release
+  evidence, tag, or push was created.
+
+## Unreleased - M2-SLICE-011A Version Graph Contract (2026-09-04)
+
+- Froze a proposed nullable, immutable single-parent Version lineage with
+  explicit `based on` / `derived from` semantics, stable null-parent roots,
+  same workspace/project/environment/generation scope, cycle prevention, and
+  atomic retry/recovery boundaries.
+- Recommended distinct logical Versions for same-Snapshot/different-operation
+  creation, while retaining it as an explicit open decision; 010B's current
+  deterministic rejection remains unchanged.
+- Defined the additive graph schema, read queries, v0.1 empty-table migration,
+  and safe referenced-history retention constraints. Non-empty pre-graph
+  generation migration remains fail-closed pending a separate attestation
+  decision; no lineage is inferred.
+- Added G1-G15 `NOT_IMPLEMENTED_CONTRACT_TEST` placeholders. No production
+  graph implementation, SQLite migration, runtime evidence, release tag, or
+  push was created; ADR-M2-011 remains Proposed / Internal M2.
+
+## Unreleased - M2-SLICE-010B Durable Version Persistence (2026-09-04)
+
+- Implemented the additive `versions` table and generation-aware schema
+  validation without changing M1 table meaning or workspace Snapshot-head
+  semantics.
+- Added immutable `VersionRecord` persistence with deterministic `ver-<sha256>`
+  identity, Snapshot/workspace/project/environment and generation/migration
+  validation, one-to-one creation-operation binding, exact retry, and
+  fail-closed changed-identity handling.
+- Kept Version creation and started-operation completion atomic through the
+  existing SQLite transaction/failpoint path; cold reopen re-validates durable
+  Version, Snapshot, and Operation relations. Different operations targeting one
+  Snapshot remain the explicit `CONTRACT_OPEN_DECISION` boundary.
+- Replaced the 18 ignored 010A placeholders with executable contract tests and
+  added 8 durable SQLite workspace-version tests. Focused suites and the full
+  regression pass on Windows 11 / NTFS local native development; 2 pre-existing
+  host/measurement tests remain ignored and are not counted as PASS evidence.
+- Retained evidence under `artifacts/m2-development/`; this is
+  `INTERNAL / TEST-GATED` development evidence, not M2 release evidence. ADR-M2-010
+  remains Proposed / Internal M2, and no tag or push was made.
+
+## Unreleased - M2-SLICE-010A Version Persistence Contract (2026-09-04)
+
+- Defined the internal contract for an independent immutable Version node that
+  references an existing Snapshot and binds 1:1 to a durable creation
+  Operation. The proposed deterministic identity, workspace/project/
+  environment and generation/migration checks, retry semantics, transaction
+  boundary, and additive migration behavior are documented without executing
+  DDL or changing existing M1/M2 schema meaning.
+- Added the design-only [`M2_VERSION_SCHEMA.md`](../architecture/M2_VERSION_SCHEMA.md),
+  Proposed [`ADR-M2-010`](../decisions/ADR-M2-010-version-persistence.md), and
+  18 explicitly ignored `NOT_IMPLEMENTED_CONTRACT_TEST` cases. These cases are
+  contract placeholders, not runtime evidence or a claim that Version
+  persistence exists.
+- Kept parent/version graph, branch, merge, candidate, approval, Version head,
+  Snapshot deletion/GC, and same-Snapshot/different-operation policy outside
+  this slice. No production implementation, migration, release evidence, tag,
+  or push was created.
+
 ## Unreleased - M2-SLICE-009 Lifecycle Operation Identity Integration (2026-09-02)
 
 - Reused the existing durable operation ledger to bind lifecycle mutation

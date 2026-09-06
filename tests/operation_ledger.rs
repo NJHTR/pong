@@ -118,6 +118,7 @@ fn operation_bindings_require_existing_same_project_records() {
             locator: "C:/workspace-ledger".into(),
             branch_ref: None,
             head: None,
+            version_head_id: None,
             environment_id: None,
             status: "created".into(),
             revision: 0,

@@ -9,7 +9,7 @@ use rusqlite::{
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fs;
 use std::path::Path;
@@ -361,6 +361,9 @@ pub struct WorkspaceRecord {
     pub locator: String,
     pub branch_ref: Option<String>,
     pub head: Option<String>,
+    /// Explicit logical Version selection. This is independent from `head`,
+    /// which remains the Snapshot root digest for M1 compatibility.
+    pub version_head_id: Option<String>,
     pub environment_id: Option<String>,
     pub status: String,
     pub revision: i64,
@@ -462,6 +465,36 @@ pub struct SnapshotPublication {
     pub expected_revision: i64,
     pub lease: LeaseToken,
     pub now_ms: i64,
+}
+
+/// Immutable logical Version pointing at an already-published Snapshot.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VersionRecord {
+    pub version_id: String,
+    pub workspace_id: String,
+    pub project_id: String,
+    pub snapshot_id: String,
+    pub creation_operation_id: String,
+    pub environment_id: Option<String>,
+    pub generation_id: String,
+    pub migration_id: String,
+    pub created_at: String,
+    pub parent_version_id: Option<String>,
+}
+
+/// Inputs for one durable Version publication. The Version ID is derived from
+/// the four immutable identity fields and is never caller-generated. A parent
+/// is an additional immutable binding and is intentionally excluded from the
+/// Version ID digest.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VersionPublication {
+    pub workspace_id: String,
+    pub project_id: String,
+    pub snapshot_id: String,
+    pub creation_operation_id: String,
+    pub environment_id: Option<String>,
+    pub created_at: String,
+    pub parent_version_id: Option<String>,
 }
 
 /// A typed, content-addressed input or output reference carried by an
@@ -699,7 +732,56 @@ const SNAPSHOT_COLUMNS: &[&str] = &[
     "generation_id",
     "migration_id",
 ];
-
+const WORKSPACE_COLUMNS: &[&str] = &[
+    "workspace_id",
+    "project_id",
+    "driver",
+    "locator",
+    "branch_ref",
+    "head",
+    "environment_id",
+    "status",
+    "revision",
+    "created_at",
+    "updated_at",
+    "version_head_id",
+];
+const LEGACY_WORKSPACE_COLUMNS: &[&str] = &[
+    "workspace_id",
+    "project_id",
+    "driver",
+    "locator",
+    "branch_ref",
+    "head",
+    "environment_id",
+    "status",
+    "revision",
+    "created_at",
+    "updated_at",
+];
+const VERSION_COLUMNS: &[&str] = &[
+    "version_id",
+    "workspace_id",
+    "project_id",
+    "snapshot_id",
+    "creation_operation_id",
+    "environment_id",
+    "generation_id",
+    "migration_id",
+    "created_at",
+    "parent_version_id",
+];
+const LEGACY_VERSION_COLUMNS: &[&str] = &[
+    "version_id",
+    "workspace_id",
+    "project_id",
+    "snapshot_id",
+    "creation_operation_id",
+    "environment_id",
+    "generation_id",
+    "migration_id",
+    "created_at",
+];
 fn inject_before_commit(
     failpoints: &mut MetadataFailpoints,
     specific: MetadataFailpoint,
@@ -849,7 +931,7 @@ impl MetadataStore {
                 let workspace = transaction
                     .query_row(
                         "SELECT workspace_id, project_id, driver, locator, branch_ref, head,
-                                environment_id, status, revision, created_at, updated_at
+                                version_head_id, environment_id, status, revision, created_at, updated_at
                          FROM workspaces WHERE workspace_id = ?1",
                         [workspace_id],
                         workspace_from_row,
@@ -894,7 +976,7 @@ impl MetadataStore {
         let workspace: WorkspaceRecord = transaction
             .query_row(
                 "SELECT workspace_id, project_id, driver, locator, branch_ref, head,
-                        environment_id, status, revision, created_at, updated_at
+                        version_head_id, environment_id, status, revision, created_at, updated_at
                  FROM workspaces WHERE workspace_id = ?1",
                 [workspace_id],
                 workspace_from_row,
@@ -1444,201 +1526,10 @@ impl MetadataStore {
             true,
         )?;
         validate_additive_table_schema(&self.connection, "snapshots", SNAPSHOT_COLUMNS, true)?;
-        self.connection.execute_batch(
-            "CREATE TABLE IF NOT EXISTS repository_meta (
-                key TEXT PRIMARY KEY NOT NULL,
-                value TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS refs (
-                name TEXT PRIMARY KEY NOT NULL,
-                value TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS idempotency (
-                project_id TEXT NOT NULL,
-                actor_id TEXT NOT NULL,
-                request_id TEXT NOT NULL,
-                command_digest TEXT NOT NULL,
-                result_json TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                PRIMARY KEY (project_id, actor_id, request_id)
-            );
-             CREATE TABLE IF NOT EXISTS events (
-                event_id TEXT PRIMARY KEY NOT NULL,
-                project_id TEXT NOT NULL,
-                stream_id TEXT NOT NULL,
-                sequence INTEGER NOT NULL,
-                schema_version TEXT NOT NULL,
-                actor_id TEXT,
-                request_id TEXT,
-                occurred_at TEXT NOT NULL,
-                payload_digest TEXT NOT NULL,
-                payload_json TEXT NOT NULL,
-                UNIQUE (stream_id, sequence)
-            );
-             CREATE TABLE IF NOT EXISTS event_envelopes (
-                event_id TEXT PRIMARY KEY NOT NULL,
-                project_id TEXT NOT NULL,
-                stream_id TEXT NOT NULL,
-                sequence INTEGER NOT NULL,
-                project_sequence INTEGER NOT NULL,
-                event_type TEXT NOT NULL,
-                schema_version TEXT NOT NULL,
-                occurred_at TEXT NOT NULL,
-                recorded_at TEXT NOT NULL,
-                actor_id TEXT,
-                workspace_id TEXT,
-                task_id TEXT,
-                operation_id TEXT,
-                causation_id TEXT,
-                correlation_id TEXT,
-                parent_event_ids_json TEXT NOT NULL,
-                capture_confidence TEXT,
-                redaction_status TEXT NOT NULL,
-                payload_digest TEXT NOT NULL,
-                payload_json TEXT NOT NULL,
-                UNIQUE (project_id, project_sequence)
-             );
-             CREATE INDEX IF NOT EXISTS event_envelopes_project_cursor
-                 ON event_envelopes(project_id, project_sequence);
-             CREATE TABLE IF NOT EXISTS projections (
-                projection_id TEXT PRIMARY KEY NOT NULL,
-                project_id TEXT NOT NULL,
-                schema_version TEXT NOT NULL,
-                generation_id TEXT NOT NULL,
-                migration_id TEXT NOT NULL,
-                redaction_profile_id TEXT NOT NULL,
-                redaction_profile_version TEXT NOT NULL,
-                status TEXT NOT NULL,
-                initial_state_json TEXT NOT NULL,
-                state_json TEXT NOT NULL,
-                state_digest TEXT NOT NULL,
-                cursor_project_sequence INTEGER,
-                cursor_stream_id TEXT,
-                cursor_sequence INTEGER,
-                cursor_event_id TEXT,
-                cursor_payload_digest TEXT,
-                event_count INTEGER NOT NULL,
-                updated_at TEXT NOT NULL
-             );
-             CREATE TABLE IF NOT EXISTS projection_events (
-                projection_id TEXT NOT NULL,
-                event_id TEXT NOT NULL,
-                payload_digest TEXT NOT NULL,
-                applied_at TEXT NOT NULL,
-                PRIMARY KEY (projection_id, event_id),
-                FOREIGN KEY (projection_id) REFERENCES projections(projection_id)
-             );
-             CREATE TABLE IF NOT EXISTS operation_journal (
-                 project_id TEXT NOT NULL,
-                 actor_id TEXT NOT NULL,
-                 request_id TEXT NOT NULL,
-                 operation_id TEXT NOT NULL,
-                phase TEXT NOT NULL,
-                payload_json TEXT NOT NULL,
-                 created_at TEXT NOT NULL,
-                 PRIMARY KEY (project_id, actor_id, request_id)
-             );
-             CREATE TABLE IF NOT EXISTS operations (
-                 operation_id TEXT PRIMARY KEY NOT NULL,
-                 project_id TEXT NOT NULL,
-                 request_id TEXT NOT NULL,
-                 agent_id TEXT NOT NULL,
-                 session_id TEXT NOT NULL,
-                 workspace_id TEXT,
-                 environment_id TEXT,
-                 parent_operation_id TEXT,
-                 schema_version TEXT NOT NULL,
-                 started_at TEXT NOT NULL,
-                 finished_at TEXT,
-                 tool TEXT NOT NULL,
-                 action TEXT NOT NULL,
-                 input_refs_json TEXT NOT NULL,
-                 output_refs_json TEXT NOT NULL,
-                 resource_json TEXT,
-                 before_state_json TEXT,
-                 after_state_json TEXT,
-                 result_json TEXT,
-                 error_json TEXT,
-                 reversibility TEXT NOT NULL,
-                 replayability TEXT NOT NULL,
-                 side_effect TEXT NOT NULL,
-                 policy_json TEXT,
-                 lifecycle_status TEXT NOT NULL,
-                 recording_status TEXT NOT NULL,
-                 redaction_profile_id TEXT NOT NULL,
-                 redaction_profile_version TEXT NOT NULL,
-                 envelope_digest TEXT NOT NULL,
-                 updated_at TEXT NOT NULL,
-                 UNIQUE (project_id, agent_id, request_id)
-             );
-             CREATE INDEX IF NOT EXISTS operations_project_status
-                 ON operations(project_id, lifecycle_status, updated_at);
-             CREATE TABLE IF NOT EXISTS workspaces (
-                workspace_id TEXT PRIMARY KEY NOT NULL,
-                project_id TEXT NOT NULL,
-                driver TEXT NOT NULL,
-                locator TEXT NOT NULL,
-                branch_ref TEXT,
-                head TEXT,
-                environment_id TEXT,
-                status TEXT NOT NULL,
-                revision INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS workspace_leases (
-                workspace_id TEXT PRIMARY KEY NOT NULL,
-                agent_id TEXT,
-                epoch INTEGER NOT NULL,
-                expires_at_ms INTEGER NOT NULL,
-                acquired_at_ms INTEGER NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS environments (
-                environment_id TEXT PRIMARY KEY NOT NULL,
-                project_id TEXT NOT NULL,
-                fingerprint TEXT NOT NULL,
-                facts_json TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS snapshots (
-                snapshot_id TEXT PRIMARY KEY NOT NULL,
-                root_digest TEXT NOT NULL UNIQUE,
-                workspace_id TEXT NOT NULL,
-                project_id TEXT NOT NULL,
-                environment_id TEXT,
-                manifest_version INTEGER NOT NULL,
-                redaction_profile_id TEXT NOT NULL,
-                redaction_profile_version TEXT NOT NULL,
-                file_count INTEGER NOT NULL,
-                total_bytes INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                operation_id TEXT NOT NULL,
-                event_id TEXT NOT NULL UNIQUE,
-                generation_id TEXT NOT NULL,
-                migration_id TEXT NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS snapshots_workspace_created
-                ON snapshots(workspace_id, created_at, snapshot_id);
-            INSERT OR IGNORE INTO repository_meta(key, value)
-                VALUES ('repository_format', '0.1');",
-        )?;
-        self.backfill_legacy_event_envelopes()?;
-        validate_operations_schema(&self.connection, false)?;
+        validate_workspaces_schema(&self.connection, true)?;
+        validate_versions_schema(&self.connection, true)?;
         validate_additive_table_schema(
             &self.connection,
-            "event_envelopes",
-            EVENT_ENVELOPE_COLUMNS,
-            false,
-        )?;
-        validate_additive_table_schema(&self.connection, "projections", PROJECTION_COLUMNS, false)?;
-        validate_additive_table_schema(
-            &self.connection,
-            "projection_events",
-            PROJECTION_EVENT_COLUMNS,
-            false,
-        )?;
-        validate_additive_table_schema(&self.connection, "snapshots", SNAPSHOT_COLUMNS, false)?;
         let format: String = self.connection.query_row(
             "SELECT value FROM repository_meta WHERE key = 'repository_format'",
             [],
@@ -2029,8 +1920,8 @@ impl MetadataStore {
         let inserted = transaction.execute(
             "INSERT OR IGNORE INTO workspaces
              (workspace_id, project_id, driver, locator, branch_ref, head,
-              environment_id, status, revision, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0, ?9, ?10)",
+              version_head_id, environment_id, status, revision, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7, ?8, 0, ?9, ?10)",
             params![
                 workspace_id,
                 project_id,
@@ -2061,13 +1952,147 @@ impl MetadataStore {
         self.connection
             .query_row(
                 "SELECT workspace_id, project_id, driver, locator, branch_ref, head,
-                        environment_id, status, revision, created_at, updated_at
+                        version_head_id, environment_id, status, revision, created_at, updated_at
                  FROM workspaces WHERE workspace_id = ?1",
                 [&workspace_id],
                 workspace_from_row,
             )
             .optional()
             .map_err(PongError::from)
+    }
+
+    /// Read the explicitly selected logical Version for one workspace.
+    ///
+    /// A null workspace reference means that no Version is selected. A
+    /// non-null reference is never repaired or silently replaced: the Version,
+    /// Snapshot, operation, parent chain, and bounded workspace scope are
+    /// revalidated before returning it.
+    pub fn get_current_version(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Option<VersionRecord>, PongError> {
+        let workspace = self
+            .workspace(workspace_id)?
+            .ok_or_else(|| PongError::NotFound("workspace does not exist".into()))?;
+        let Some(version_id) = workspace.version_head_id.as_deref() else {
+            return Ok(None);
+        };
+        let version = self
+            .version_record(version_id)?
+            .ok_or_else(|| PongError::Integrity("workspace Version Head is missing".into()))?;
+        if version.workspace_id != workspace.workspace_id
+            || version.project_id != workspace.project_id
+            || version.environment_id != workspace.environment_id
+        {
+            return Err(PongError::Integrity(
+                "workspace Version Head scope is inconsistent".into(),
+            ));
+        }
+        Ok(Some(version))
+    }
+
+    /// Set or clear the explicit logical Version selection for a workspace.
+    ///
+    /// The Version Head is independent from the Snapshot `head`. Target
+    /// validation, lease validation, Version Head update, and revision CAS all
+    /// share one SQLite transaction. No operation or event is created for this
+    /// metadata-only mutation. A retry against the immediately preceding
+    /// revision that already has the requested durable value is recognized as
+    /// the same completed result.
+    pub fn set_version_head(
+        &mut self,
+        workspace_id: &str,
+        version_id: Option<&str>,
+        lease: &LeaseToken,
+        expected_revision: i64,
+        updated_at: &str,
+        now_ms: i64,
+    ) -> Result<WorkspaceRecord, PongError> {
+        validate_non_empty(workspace_id, "workspace id")?;
+        validate_non_empty(updated_at, "workspace updated_at")?;
+        if expected_revision < 0 {
+            return Err(PongError::InvalidInput(
+                "workspace revision must not be negative".into(),
+            ));
+        }
+        if lease.workspace_id != workspace_id {
+            return Err(PongError::Conflict(
+                "lease belongs to another workspace".into(),
+            ));
+        }
+        validate_non_empty(&lease.agent_id, "lease agent id")?;
+        let workspace_id = self.redactor.redact_text(workspace_id);
+        let version_id = version_id.map(|value| self.redactor.redact_text(value));
+        let updated_at = self.redactor.redact_text(updated_at);
+        let lease_workspace = self.redactor.redact_text(&lease.workspace_id);
+        let lease_agent = self.redactor.redact_text(&lease.agent_id);
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let workspace: WorkspaceRecord = transaction
+            .query_row(
+                "SELECT workspace_id, project_id, driver, locator, branch_ref, head,
+                        version_head_id, environment_id, status, revision, created_at, updated_at
+                 FROM workspaces WHERE workspace_id = ?1",
+                [&workspace_id],
+                workspace_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("workspace does not exist".into()))?;
+        let lease_valid: Option<i64> = transaction
+            .query_row(
+                "SELECT epoch FROM workspace_leases
+                 WHERE workspace_id = ?1 AND agent_id = ?2 AND epoch = ?3
+                   AND expires_at_ms > ?4",
+                params![lease_workspace, lease_agent, lease.epoch, now_ms],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if lease_valid.is_none() {
+            return Err(PongError::Conflict(
+                "workspace lease is stale or expired".into(),
+            ));
+        }
+
+        if let Some(version_id) = version_id.as_deref() {
+            let version = version_for_workspace_transaction(&transaction, version_id, &workspace)?;
+            if version.version_id != version_id {
+                return Err(PongError::Integrity(
+                    "workspace Version Head identity is inconsistent".into(),
+                ));
+            }
+        }
+
+        if workspace.revision != expected_revision {
+            let same_completed_retry = workspace.version_head_id.as_deref()
+                == version_id.as_deref()
+                && expected_revision.checked_add(1) == Some(workspace.revision);
+            if same_completed_retry {
+                transaction.commit()?;
+                return Ok(workspace);
+            }
+            return Err(PongError::Conflict("workspace revision is stale".into()));
+        }
+
+        if workspace.version_head_id.as_deref() == version_id.as_deref() {
+            transaction.commit()?;
+            return Ok(workspace);
+        }
+        let changed = transaction.execute(
+            "UPDATE workspaces SET version_head_id = ?2, revision = revision + 1,
+                    updated_at = ?3
+             WHERE workspace_id = ?1 AND revision = ?4",
+            params![workspace_id, version_id, updated_at, expected_revision],
+        )?;
+        if changed != 1 {
+            return Err(PongError::Conflict("workspace revision is stale".into()));
+        }
+        inject_before_commit(&mut self.failpoints, MetadataFailpoint::BeforeSqliteCommit)?;
+        transaction.commit()?;
+        inject_after_commit(&mut self.failpoints, MetadataFailpoint::AfterSqliteCommit)?;
+        self.workspace(&workspace_id)?.ok_or_else(|| {
+            PongError::Integrity("workspace disappeared after Version Head update".into())
+        })
     }
 
     /// Read the current lease row for a workspace. A released lease remains
@@ -2333,7 +2358,7 @@ impl MetadataStore {
         let workspace: WorkspaceRecord = transaction
             .query_row(
                 "SELECT workspace_id, project_id, driver, locator, branch_ref, head,
-                        environment_id, status, revision, created_at, updated_at
+                        version_head_id, environment_id, status, revision, created_at, updated_at
                  FROM workspaces WHERE workspace_id = ?1",
                 [&publication.workspace_id],
                 workspace_from_row,
@@ -2573,6 +2598,390 @@ impl MetadataStore {
             )
             .optional()
             .map_err(PongError::from)
+    }
+
+    /// Create or recover one immutable logical Version. The referenced
+    /// Snapshot and creation Operation are validated in the same SQLite
+    /// transaction as the Version insert. A started operation is completed
+    /// atomically with the Version so no steady state can expose a completed
+    /// Version operation without its row.
+    pub fn create_version(
+        &mut self,
+        publication: VersionPublication,
+    ) -> Result<VersionRecord, PongError> {
+        validate_version_publication(&publication)?;
+        let version_id = version_identity_id(
+            &publication.project_id,
+            &publication.workspace_id,
+            &publication.snapshot_id,
+            &publication.creation_operation_id,
+        )?;
+        let (generation_id, migration_id) = self.projection_identity()?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+
+        let workspace: WorkspaceRecord = transaction
+            .query_row(
+                "SELECT workspace_id, project_id, driver, locator, branch_ref, head,
+                        version_head_id, environment_id, status, revision, created_at, updated_at
+                 FROM workspaces WHERE workspace_id = ?1",
+                [&publication.workspace_id],
+                workspace_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("workspace does not exist".into()))?;
+        if workspace.project_id != publication.project_id {
+            return Err(PongError::Conflict(
+                "version workspace belongs to another project".into(),
+            ));
+        }
+        if workspace.environment_id != publication.environment_id {
+            return Err(PongError::Conflict(
+                "version environment does not match workspace".into(),
+            ));
+        }
+
+        let snapshot: SnapshotRecord = transaction
+            .query_row(
+                "SELECT snapshot_id, root_digest, workspace_id, project_id, environment_id,
+                        manifest_version, redaction_profile_id, redaction_profile_version,
+                        file_count, total_bytes, created_at, operation_id, event_id,
+                        generation_id, migration_id
+                 FROM snapshots WHERE snapshot_id = ?1",
+                [&publication.snapshot_id],
+                snapshot_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("snapshot does not exist".into()))?;
+        if snapshot.workspace_id != publication.workspace_id
+            || snapshot.project_id != publication.project_id
+            || snapshot.environment_id != publication.environment_id
+        {
+            return Err(PongError::Conflict(
+                "version snapshot binding does not match workspace".into(),
+            ));
+        }
+        if snapshot.generation_id != generation_id || snapshot.migration_id != migration_id {
+            return Err(PongError::Integrity(
+                "version snapshot is not bound to the active generation".into(),
+            ));
+        }
+
+        let operation: OperationRecord = transaction
+            .query_row(
+                &format!("{OPERATION_SELECT} WHERE operation_id = ?1"),
+                [&publication.creation_operation_id],
+                operation_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| {
+                PongError::NotFound("version creation operation does not exist".into())
+            })?;
+        if operation.project_id != publication.project_id
+            || operation.workspace_id.as_deref() != Some(publication.workspace_id.as_str())
+            || operation.environment_id != publication.environment_id
+            || operation.action != "version.create"
+        {
+            return Err(PongError::Conflict(
+                "version creation operation binding is inconsistent".into(),
+            ));
+        }
+        if !operation_references_snapshot(&operation, &publication.snapshot_id) {
+            return Err(PongError::Conflict(
+                "version creation operation does not reference the requested snapshot".into(),
+            ));
+        }
+        if let Some(parent_id) = publication.parent_version_id.as_deref() {
+            if !operation_references_parent(&operation, parent_id) {
+                return Err(PongError::Conflict(
+                    "version creation operation does not reference the requested parent".into(),
+                ));
+            }
+        }
+
+        if let Some(existing) = transaction
+            .query_row(
+                "SELECT version_id, workspace_id, project_id, snapshot_id,
+                        creation_operation_id, environment_id, generation_id,
+                        migration_id, created_at, parent_version_id
+                 FROM versions WHERE creation_operation_id = ?1",
+                [&publication.creation_operation_id],
+                version_from_row,
+            )
+            .optional()?
+        {
+            if existing.version_id != version_id
+                || existing.workspace_id != publication.workspace_id
+                || existing.project_id != publication.project_id
+                || existing.snapshot_id != publication.snapshot_id
+                || existing.environment_id != publication.environment_id
+                || existing.generation_id != generation_id
+                || existing.migration_id != migration_id
+                || existing.created_at != publication.created_at
+                || existing.parent_version_id != publication.parent_version_id
+            {
+                return Err(PongError::IdempotencyKeyReuse(
+                    publication.creation_operation_id,
+                ));
+            }
+            validate_version_row_transaction(&transaction, &existing, &snapshot, &operation)?;
+            transaction.commit()?;
+            return Ok(existing);
+        }
+
+        // The same-Snapshot/different-operation policy remains open in 010A.
+        // Refuse it deterministically instead of inventing convergence or
+        // graph semantics in this persistence slice.
+        let same_snapshot: Option<String> = transaction
+            .query_row(
+                "SELECT version_id FROM versions WHERE snapshot_id = ?1 LIMIT 1",
+                [&publication.snapshot_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if same_snapshot.is_some() {
+            return Err(PongError::Conflict(
+                "CONTRACT_OPEN_DECISION: multiple operations targeting one snapshot are not resolved"
+                    .into(),
+            ));
+        }
+
+        let version = VersionRecord {
+            version_id: version_id.clone(),
+            workspace_id: publication.workspace_id.clone(),
+            project_id: publication.project_id.clone(),
+            snapshot_id: publication.snapshot_id.clone(),
+            creation_operation_id: publication.creation_operation_id.clone(),
+            environment_id: publication.environment_id.clone(),
+            generation_id: generation_id.clone(),
+            migration_id: migration_id.clone(),
+            created_at: publication.created_at.clone(),
+            parent_version_id: publication.parent_version_id.clone(),
+        };
+        validate_parent_transaction(&transaction, &version)?;
+        transaction.execute(
+            "INSERT INTO versions
+             (version_id, workspace_id, project_id, snapshot_id, creation_operation_id,
+              environment_id, generation_id, migration_id, created_at, parent_version_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![
+                version.version_id,
+                version.workspace_id,
+                version.project_id,
+                version.snapshot_id,
+                version.creation_operation_id,
+                version.environment_id,
+                version.generation_id,
+                version.migration_id,
+                version.created_at,
+                version.parent_version_id,
+            ],
+        )?;
+
+        if operation.lifecycle_status == "started" {
+            inject_before_commit(
+                &mut self.failpoints,
+                MetadataFailpoint::BeforeOperationFinishCommit,
+            )?;
+            let mut output_refs = operation.output_refs.clone();
+            if !output_refs.iter().any(|reference| {
+                reference.kind == "snapshot" && reference.reference == snapshot.snapshot_id
+            }) {
+                output_refs.push(OperationRef {
+                    kind: "snapshot".into(),
+                    reference: snapshot.snapshot_id.clone(),
+                    media_type: Some("application/vnd.pong.snapshot".into()),
+                });
+            }
+            output_refs.push(OperationRef {
+                kind: "version".into(),
+                reference: version_id.clone(),
+                media_type: Some("application/vnd.pong.version".into()),
+            });
+            let result = json!({
+                "action": "version.create",
+                "snapshot_id": snapshot.snapshot_id,
+                "version_id": version_id,
+                "workspace_id": publication.workspace_id,
+                "parent_version_id": version.parent_version_id,
+            });
+            let outcome = OperationOutcome {
+                status: "completed".into(),
+                finished_at: publication.created_at.clone(),
+                output_refs: Some(output_refs.clone()),
+                after_state: None,
+                result: Some(result.clone()),
+                error: None,
+            };
+            let outcome_digest =
+                operation_value_digest(&serde_json::to_value(&outcome).map_err(|error| {
+                    PongError::Serialization(format!(
+                        "cannot encode version operation outcome: {error}"
+                    ))
+                })?)?;
+            let journal_payload = json!({
+                "operation_id": operation.operation_id,
+                "lifecycle_status": "completed",
+                "outcome_digest": outcome_digest,
+                "outcome": outcome,
+            });
+            transaction.execute(
+                "UPDATE operations SET output_refs_json = ?2, finished_at = ?3,
+                        result_json = ?4, lifecycle_status = 'completed', updated_at = ?3
+                 WHERE operation_id = ?1 AND lifecycle_status = 'started'",
+                params![
+                    operation.operation_id,
+                    canonical_json(&output_refs)?,
+                    publication.created_at,
+                    canonical_json_value(&result)?,
+                ],
+            )?;
+            let journal_changed = transaction.execute(
+                "UPDATE operation_journal SET phase = 'outcome_durable', payload_json = ?4
+                 WHERE project_id = ?1 AND actor_id = ?2 AND request_id = ?3",
+                params![
+                    operation.project_id,
+                    operation.agent_id,
+                    operation.request_id,
+                    canonical_json_value(&journal_payload)?,
+                ],
+            )?;
+            if journal_changed != 1 {
+                return Err(PongError::Integrity(
+                    "version operation journal row disappeared during completion".into(),
+                ));
+            }
+            let sequence = next_operation_event_sequence(&transaction, &operation.operation_id)?;
+            append_operation_event(
+                &transaction,
+                &operation.operation_id,
+                &operation.project_id,
+                &operation.agent_id,
+                &operation.request_id,
+                &operation.schema_version,
+                &publication.created_at,
+                sequence,
+                &json!({
+                    "operation_id": operation.operation_id,
+                    "lifecycle_status": "completed",
+                    "recording_status": operation.recording_status,
+                    "outcome_digest": outcome_digest,
+                }),
+            )?;
+        } else if operation.lifecycle_status != "completed" {
+            return Err(PongError::RecoveryRequired(
+                "version creation operation is not in a successful retryable state".into(),
+            ));
+        } else if !operation_result_matches_version(&operation, &version) {
+            return Err(PongError::Integrity(
+                "completed version creation operation has an inconsistent result".into(),
+            ));
+        }
+
+        inject_before_commit(&mut self.failpoints, MetadataFailpoint::BeforeSqliteCommit)?;
+        transaction.commit()?;
+        inject_after_commit(
+            &mut self.failpoints,
+            MetadataFailpoint::AfterOperationFinishCommit,
+        )?;
+        inject_after_commit(&mut self.failpoints, MetadataFailpoint::AfterSqliteCommit)?;
+        self.version_record(&version_id)?
+            .ok_or_else(|| PongError::Integrity("version disappeared after creation".into()))
+    }
+
+    /// Read one Version and re-check its durable workspace/Snapshot/Operation
+    /// relationships. A row is never reported as healthy when its references
+    /// have been removed or changed.
+    pub fn version_record(&self, version_id: &str) -> Result<Option<VersionRecord>, PongError> {
+        let version = self
+            .connection
+            .query_row(
+                "SELECT version_id, workspace_id, project_id, snapshot_id,
+                        creation_operation_id, environment_id, generation_id,
+                        migration_id, created_at, parent_version_id
+                 FROM versions WHERE version_id = ?1",
+                [version_id],
+                version_from_row,
+            )
+            .optional()?;
+        let Some(version) = version else {
+            return Ok(None);
+        };
+        let snapshot = self
+            .connection
+            .query_row(
+                "SELECT snapshot_id, root_digest, workspace_id, project_id, environment_id,
+                        manifest_version, redaction_profile_id, redaction_profile_version,
+                        file_count, total_bytes, created_at, operation_id, event_id,
+                        generation_id, migration_id
+                 FROM snapshots WHERE snapshot_id = ?1",
+                [&version.snapshot_id],
+                snapshot_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::Integrity("version references a missing snapshot".into()))?;
+        let operation = self
+            .connection
+            .query_row(
+                &format!("{OPERATION_SELECT} WHERE operation_id = ?1"),
+                [&version.creation_operation_id],
+                operation_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::Integrity("version references a missing operation".into()))?;
+        validate_version_row(
+            &version,
+            &snapshot,
+            &operation,
+            &self.projection_identity()?,
+        )?;
+        validate_parent_connection(&self.connection, &version)?;
+        Ok(Some(version))
+    }
+
+    pub fn list_versions(&self, workspace_id: &str) -> Result<Vec<VersionRecord>, PongError> {
+        let mut statement = self.connection.prepare(
+            "SELECT version_id, workspace_id, project_id, snapshot_id,
+                    creation_operation_id, environment_id, generation_id,
+                    migration_id, created_at, parent_version_id
+             FROM versions WHERE workspace_id = ?1
+             ORDER BY created_at ASC, version_id ASC",
+        )?;
+        let rows = statement.query_map([workspace_id], version_from_row)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(PongError::from)
+    }
+
+    pub fn get_parent(&self, version_id: &str) -> Result<Option<VersionRecord>, PongError> {
+        let version = self
+            .version_record(version_id)?
+            .ok_or_else(|| PongError::NotFound("version does not exist".into()))?;
+        match version.parent_version_id.as_deref() {
+            Some(parent_id) => self
+                .version_record(parent_id)?
+                .ok_or_else(|| PongError::Integrity("version parent disappeared".into()))
+                .map(Some),
+            None => Ok(None),
+        }
+    }
+
+    pub fn get_children(&self, version_id: &str) -> Result<Vec<VersionRecord>, PongError> {
+        let parent = self
+            .version_record(version_id)?
+            .ok_or_else(|| PongError::NotFound("version does not exist".into()))?;
+        let mut statement = self.connection.prepare(
+            "SELECT version_id, workspace_id, project_id, snapshot_id,
+                    creation_operation_id, environment_id, generation_id,
+                    migration_id, created_at, parent_version_id
+             FROM versions WHERE parent_version_id = ?1
+             ORDER BY version_id ASC",
+        )?;
+        let rows = statement.query_map([parent.version_id], version_from_row)?;
+        let children = rows.collect::<Result<Vec<_>, _>>()?;
+        for child in &children {
+            validate_parent_connection(&self.connection, child)?;
+        }
+        Ok(children)
     }
 
     pub fn snapshot_id_for_root(&self, root_digest: &str) -> Result<Option<String>, PongError> {
@@ -4064,6 +4473,139 @@ fn validate_additive_table_schema(
     Ok(())
 }
 
+fn table_columns(connection: &Connection, table: &str) -> Result<Option<Vec<String>>, PongError> {
+    let object_type: Option<String> = connection
+        .query_row(
+            "SELECT type FROM sqlite_master WHERE name = ?1",
+            [table],
+            |row| row.get(0),
+        )
+        .optional()?;
+    let Some(object_type) = object_type else {
+        return Ok(None);
+    };
+    if object_type != "table" {
+        return Err(PongError::Integrity(format!(
+            "{table} schema object is not a table"
+        )));
+    }
+    let mut statement = connection.prepare(&format!("PRAGMA table_info({table})"))?;
+    let columns = statement
+        .query_map([], |row| row.get::<_, String>(1))?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(Some(columns))
+}
+
+fn validate_versions_schema(connection: &Connection, allow_missing: bool) -> Result<(), PongError> {
+    let Some(columns) = table_columns(connection, "versions")? else {
+        return if allow_missing {
+            Ok(())
+        } else {
+            Err(PongError::Integrity(
+                "versions table is missing after schema initialization".into(),
+            ))
+        };
+    };
+    let matches = |expected: &[&str]| {
+        columns
+            .iter()
+            .map(String::as_str)
+            .eq(expected.iter().copied())
+    };
+    if !matches(VERSION_COLUMNS) && !matches(LEGACY_VERSION_COLUMNS) {
+        return Err(PongError::Integrity(
+            "versions table columns are incompatible".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_workspaces_schema(
+    connection: &Connection,
+    allow_missing: bool,
+) -> Result<(), PongError> {
+    let Some(columns) = table_columns(connection, "workspaces")? else {
+        return if allow_missing {
+            Ok(())
+        } else {
+            Err(PongError::Integrity(
+                "workspaces table is missing after schema initialization".into(),
+            ))
+        };
+    };
+    if columns
+        .iter()
+        .map(String::as_str)
+        .ne(WORKSPACE_COLUMNS.iter().copied())
+        && columns
+            .iter()
+            .map(String::as_str)
+            .ne(LEGACY_WORKSPACE_COLUMNS.iter().copied())
+    {
+        return Err(PongError::Integrity(
+            "workspaces table columns are incompatible".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn ensure_workspace_version_head_column(connection: &Connection) -> Result<(), PongError> {
+    let Some(columns) = table_columns(connection, "workspaces")? else {
+        return Err(PongError::Integrity(
+            "workspaces table is missing before Version Head migration".into(),
+        ));
+    };
+    if columns
+        .iter()
+        .map(String::as_str)
+        .eq(WORKSPACE_COLUMNS.iter().copied())
+    {
+        return Ok(());
+    }
+    if !columns
+        .iter()
+        .map(String::as_str)
+        .eq(LEGACY_WORKSPACE_COLUMNS.iter().copied())
+    {
+        return Err(PongError::Integrity(
+            "workspaces table columns are incompatible".into(),
+        ));
+    }
+    connection.execute("ALTER TABLE workspaces ADD COLUMN version_head_id TEXT", [])?;
+    Ok(())
+}
+
+fn ensure_versions_parent_column(connection: &Connection) -> Result<(), PongError> {
+    let Some(columns) = table_columns(connection, "versions")? else {
+        return Err(PongError::Integrity(
+            "versions table is missing before parent migration".into(),
+        ));
+    };
+    if columns.iter().any(|column| column == "parent_version_id") {
+        if columns
+            .iter()
+            .map(String::as_str)
+            .eq(VERSION_COLUMNS.iter().copied())
+        {
+            return Ok(());
+        }
+        return Err(PongError::Integrity(
+            "versions table columns are incompatible".into(),
+        ));
+    }
+    if !columns
+        .iter()
+        .map(String::as_str)
+        .eq(LEGACY_VERSION_COLUMNS.iter().copied())
+    {
+        return Err(PongError::Integrity(
+            "versions table columns are incompatible".into(),
+        ));
+    }
+    connection.execute("ALTER TABLE versions ADD COLUMN parent_version_id TEXT", [])?;
+    Ok(())
+}
+
 fn operation_value_digest(value: &Value) -> Result<String, PongError> {
     Ok(format!(
         "sha256:{}",
@@ -4900,6 +5442,55 @@ fn digest_text(value: &str) -> String {
     hex::encode(Sha256::digest(value.as_bytes()))
 }
 
+fn version_for_workspace_transaction(
+    transaction: &Transaction<'_>,
+    version_id: &str,
+    workspace: &WorkspaceRecord,
+) -> Result<VersionRecord, PongError> {
+    let version = transaction
+        .query_row(
+            "SELECT version_id, workspace_id, project_id, snapshot_id,
+                    creation_operation_id, environment_id, generation_id,
+                    migration_id, created_at, parent_version_id
+             FROM versions WHERE version_id = ?1",
+            [version_id],
+            version_from_row,
+        )
+        .optional()?
+        .ok_or_else(|| PongError::Integrity("workspace Version Head is missing".into()))?;
+    if version.workspace_id != workspace.workspace_id
+        || version.project_id != workspace.project_id
+        || version.environment_id != workspace.environment_id
+    {
+        return Err(PongError::Conflict(
+            "workspace Version Head scope does not match workspace".into(),
+        ));
+    }
+    let snapshot = transaction
+        .query_row(
+            "SELECT snapshot_id, root_digest, workspace_id, project_id, environment_id,
+                    manifest_version, redaction_profile_id, redaction_profile_version,
+                    file_count, total_bytes, created_at, operation_id, event_id,
+                    generation_id, migration_id
+             FROM snapshots WHERE snapshot_id = ?1",
+            [&version.snapshot_id],
+            snapshot_from_row,
+        )
+        .optional()?
+        .ok_or_else(|| PongError::Integrity("Version Head Snapshot is missing".into()))?;
+    let operation = transaction
+        .query_row(
+            &format!("{OPERATION_SELECT} WHERE operation_id = ?1"),
+            [&version.creation_operation_id],
+            operation_from_row,
+        )
+        .optional()?
+        .ok_or_else(|| PongError::Integrity("Version Head operation is missing".into()))?;
+    validate_version_row_transaction(transaction, &version, &snapshot, &operation)?;
+    validate_parent_transaction(transaction, &version)?;
+    Ok(version)
+}
+
 fn workspace_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<WorkspaceRecord> {
     Ok(WorkspaceRecord {
         workspace_id: row.get(0)?,
@@ -4908,11 +5499,12 @@ fn workspace_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<WorkspaceReco
         locator: row.get(3)?,
         branch_ref: row.get(4)?,
         head: row.get(5)?,
-        environment_id: row.get(6)?,
-        status: row.get(7)?,
-        revision: row.get(8)?,
-        created_at: row.get(9)?,
-        updated_at: row.get(10)?,
+        version_head_id: row.get(6)?,
+        environment_id: row.get(7)?,
+        status: row.get(8)?,
+        revision: row.get(9)?,
+        created_at: row.get(10)?,
+        updated_at: row.get(11)?,
     })
 }
 
@@ -4946,6 +5538,382 @@ fn snapshot_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<SnapshotRecord
         generation_id: row.get(13)?,
         migration_id: row.get(14)?,
     })
+}
+
+fn version_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<VersionRecord> {
+    Ok(VersionRecord {
+        version_id: row.get(0)?,
+        workspace_id: row.get(1)?,
+        project_id: row.get(2)?,
+        snapshot_id: row.get(3)?,
+        creation_operation_id: row.get(4)?,
+        environment_id: row.get(5)?,
+        generation_id: row.get(6)?,
+        migration_id: row.get(7)?,
+        created_at: row.get(8)?,
+        parent_version_id: row.get(9)?,
+    })
+}
+
+fn version_identity_id(
+    project_id: &str,
+    workspace_id: &str,
+    snapshot_id: &str,
+    operation_id: &str,
+) -> Result<String, PongError> {
+    let identity = json!({
+        "project_id": project_id,
+        "workspace_id": workspace_id,
+        "snapshot_id": snapshot_id,
+        "creation_operation_id": operation_id,
+    });
+    Ok(format!(
+        "ver-{}",
+        crate::canonical::canonical_digest("version/identity/v1", &identity)?.to_hex()
+    ))
+}
+
+fn operation_references_snapshot(operation: &OperationRecord, snapshot_id: &str) -> bool {
+    operation
+        .input_refs
+        .iter()
+        .chain(operation.output_refs.iter())
+        .any(|reference| reference.kind == "snapshot" && reference.reference == snapshot_id)
+        || operation
+            .result
+            .as_ref()
+            .and_then(|result| result.get("snapshot_id"))
+            .and_then(Value::as_str)
+            == Some(snapshot_id)
+}
+
+fn operation_references_parent(operation: &OperationRecord, parent_id: &str) -> bool {
+    operation
+        .input_refs
+        .iter()
+        .any(|reference| reference.kind == "version" && reference.reference == parent_id)
+}
+
+fn operation_result_matches_version(operation: &OperationRecord, version: &VersionRecord) -> bool {
+    let parent_matches = match operation
+        .result
+        .as_ref()
+        .and_then(|result| result.get("parent_version_id"))
+    {
+        Some(parent) => parent.as_str() == version.parent_version_id.as_deref(),
+        None => version.parent_version_id.is_none(),
+    };
+    operation
+        .result
+        .as_ref()
+        .and_then(|result| result.get("version_id"))
+        .and_then(Value::as_str)
+        == Some(version.version_id.as_str())
+        && operation_references_snapshot(operation, &version.snapshot_id)
+        && parent_matches
+}
+
+fn validate_version_publication(publication: &VersionPublication) -> Result<(), PongError> {
+    validate_non_empty(&publication.workspace_id, "version workspace id")?;
+    validate_non_empty(&publication.project_id, "version project id")?;
+    validate_non_empty(&publication.snapshot_id, "version snapshot id")?;
+    validate_non_empty(
+        &publication.creation_operation_id,
+        "version creation operation id",
+    )?;
+    validate_non_empty(&publication.created_at, "version created_at")?;
+    if !publication.snapshot_id.starts_with("snp-") {
+        return Err(PongError::InvalidInput(
+            "version snapshot id must use the snp- prefix".into(),
+        ));
+    }
+    if let Some(environment_id) = publication.environment_id.as_deref() {
+        validate_non_empty(environment_id, "version environment id")?;
+    }
+    Ok(())
+}
+
+fn validate_version_row_transaction(
+    transaction: &Transaction<'_>,
+    version: &VersionRecord,
+    snapshot: &SnapshotRecord,
+    operation: &OperationRecord,
+) -> Result<(), PongError> {
+    let generation_id: String = transaction
+        .query_row(
+            "SELECT value FROM repository_meta WHERE key = ?1",
+            [GENERATION_ID_KEY],
+            |row| row.get(0),
+        )
+        .optional()?
+        .unwrap_or_else(|| "legacy-v0.1".into());
+    let migration_id: String = transaction
+        .query_row(
+            "SELECT value FROM repository_meta WHERE key = ?1",
+            [MIGRATION_ID_KEY],
+            |row| row.get(0),
+        )
+        .optional()?
+        .unwrap_or_else(|| "legacy".into());
+    validate_version_row(version, snapshot, operation, &(generation_id, migration_id))
+}
+
+fn validate_version_row(
+    version: &VersionRecord,
+    snapshot: &SnapshotRecord,
+    operation: &OperationRecord,
+    identity: &(String, String),
+) -> Result<(), PongError> {
+    let expected_id = version_identity_id(
+        &version.project_id,
+        &version.workspace_id,
+        &version.snapshot_id,
+        &version.creation_operation_id,
+    )?;
+    if version.version_id != expected_id {
+        return Err(PongError::Integrity(
+            "version identity digest is invalid".into(),
+        ));
+    }
+    if snapshot.snapshot_id != version.snapshot_id
+        || snapshot.workspace_id != version.workspace_id
+        || snapshot.project_id != version.project_id
+        || snapshot.environment_id != version.environment_id
+        || snapshot.generation_id != version.generation_id
+        || snapshot.migration_id != version.migration_id
+    {
+        return Err(PongError::Integrity(
+            "version snapshot binding is invalid".into(),
+        ));
+    }
+    if version.generation_id != identity.0 || version.migration_id != identity.1 {
+        return Err(PongError::Integrity(
+            "version generation binding is invalid".into(),
+        ));
+    }
+    if operation.operation_id != version.creation_operation_id
+        || operation.project_id != version.project_id
+        || operation.workspace_id.as_deref() != Some(version.workspace_id.as_str())
+        || operation.environment_id != version.environment_id
+        || operation.action != "version.create"
+        || operation.lifecycle_status != "completed"
+        || !operation_result_matches_version(operation, version)
+        || version
+            .parent_version_id
+            .as_deref()
+            .is_some_and(|parent_id| !operation_references_parent(operation, parent_id))
+    {
+        return Err(PongError::Integrity(
+            "version operation binding is invalid".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_parent_transaction(
+    transaction: &Transaction<'_>,
+    child: &VersionRecord,
+) -> Result<(), PongError> {
+    let Some(parent_id) = child.parent_version_id.as_deref() else {
+        return Ok(());
+    };
+    if parent_id == child.version_id {
+        return Err(PongError::Conflict(
+            "version cannot be its own parent".into(),
+        ));
+    }
+    let identity = (
+        transaction
+            .query_row(
+                "SELECT value FROM repository_meta WHERE key = ?1",
+                [GENERATION_ID_KEY],
+                |row| row.get(0),
+            )
+            .optional()?
+            .unwrap_or_else(|| "legacy-v0.1".into()),
+        transaction
+            .query_row(
+                "SELECT value FROM repository_meta WHERE key = ?1",
+                [MIGRATION_ID_KEY],
+                |row| row.get(0),
+            )
+            .optional()?
+            .unwrap_or_else(|| "legacy".into()),
+    );
+    let mut seen = HashSet::new();
+    validate_parent_chain_transaction(transaction, child, parent_id, &identity, &mut seen)
+}
+
+fn validate_parent_chain_transaction(
+    transaction: &Transaction<'_>,
+    child: &VersionRecord,
+    parent_id: &str,
+    identity: &(String, String),
+    seen: &mut HashSet<String>,
+) -> Result<(), PongError> {
+    let mut current_parent_id = parent_id.to_owned();
+    loop {
+        if !seen.insert(current_parent_id.clone()) {
+            return Err(PongError::Integrity(
+                "version parent chain contains a cycle".into(),
+            ));
+        }
+        let parent = transaction
+            .query_row(
+                "SELECT version_id, workspace_id, project_id, snapshot_id,
+                        creation_operation_id, environment_id, generation_id,
+                        migration_id, created_at, parent_version_id
+                 FROM versions WHERE version_id = ?1",
+                [&current_parent_id],
+                version_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("version parent does not exist".into()))?;
+        if parent.workspace_id != child.workspace_id
+            || parent.project_id != child.project_id
+            || parent.environment_id != child.environment_id
+            || parent.generation_id != child.generation_id
+            || parent.migration_id != child.migration_id
+        {
+            return Err(PongError::Conflict(
+                "version parent scope does not match child".into(),
+            ));
+        }
+        let snapshot = transaction
+            .query_row(
+                "SELECT snapshot_id, root_digest, workspace_id, project_id, environment_id,
+                        manifest_version, redaction_profile_id, redaction_profile_version,
+                        file_count, total_bytes, created_at, operation_id, event_id,
+                        generation_id, migration_id
+                 FROM snapshots WHERE snapshot_id = ?1",
+                [&parent.snapshot_id],
+                snapshot_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::Integrity("version parent snapshot is missing".into()))?;
+        let operation = transaction
+            .query_row(
+                &format!("{OPERATION_SELECT} WHERE operation_id = ?1"),
+                [&parent.creation_operation_id],
+                operation_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::Integrity("version parent operation is missing".into()))?;
+        validate_version_row(&parent, &snapshot, &operation, identity)?;
+        let Some(next_parent_id) = parent.parent_version_id.as_deref() else {
+            break;
+        };
+        if next_parent_id == child.version_id {
+            return Err(PongError::Integrity(
+                "version parent chain would create a cycle".into(),
+            ));
+        }
+        current_parent_id = next_parent_id.to_owned();
+    }
+    Ok(())
+}
+
+fn validate_parent_connection(
+    connection: &Connection,
+    child: &VersionRecord,
+) -> Result<(), PongError> {
+    let Some(parent_id) = child.parent_version_id.as_deref() else {
+        return Ok(());
+    };
+    if parent_id == child.version_id {
+        return Err(PongError::Integrity(
+            "version cannot be its own parent".into(),
+        ));
+    }
+    let identity = (
+        connection
+            .query_row(
+                "SELECT value FROM repository_meta WHERE key = ?1",
+                [GENERATION_ID_KEY],
+                |row| row.get(0),
+            )
+            .optional()?
+            .unwrap_or_else(|| "legacy-v0.1".into()),
+        connection
+            .query_row(
+                "SELECT value FROM repository_meta WHERE key = ?1",
+                [MIGRATION_ID_KEY],
+                |row| row.get(0),
+            )
+            .optional()?
+            .unwrap_or_else(|| "legacy".into()),
+    );
+    let mut seen = HashSet::new();
+    validate_parent_chain_connection(connection, child, parent_id, &identity, &mut seen)
+}
+
+fn validate_parent_chain_connection(
+    connection: &Connection,
+    child: &VersionRecord,
+    parent_id: &str,
+    identity: &(String, String),
+    seen: &mut HashSet<String>,
+) -> Result<(), PongError> {
+    let mut current_parent_id = parent_id.to_owned();
+    loop {
+        if !seen.insert(current_parent_id.clone()) {
+            return Err(PongError::Integrity(
+                "version parent chain contains a cycle".into(),
+            ));
+        }
+        let parent = connection
+            .query_row(
+                "SELECT version_id, workspace_id, project_id, snapshot_id,
+                        creation_operation_id, environment_id, generation_id,
+                        migration_id, created_at, parent_version_id
+                 FROM versions WHERE version_id = ?1",
+                [&current_parent_id],
+                version_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::Integrity("version parent is missing".into()))?;
+        if parent.workspace_id != child.workspace_id
+            || parent.project_id != child.project_id
+            || parent.environment_id != child.environment_id
+            || parent.generation_id != child.generation_id
+            || parent.migration_id != child.migration_id
+        {
+            return Err(PongError::Integrity(
+                "version parent scope does not match child".into(),
+            ));
+        }
+        let snapshot = connection
+            .query_row(
+                "SELECT snapshot_id, root_digest, workspace_id, project_id, environment_id,
+                        manifest_version, redaction_profile_id, redaction_profile_version,
+                        file_count, total_bytes, created_at, operation_id, event_id,
+                        generation_id, migration_id
+                 FROM snapshots WHERE snapshot_id = ?1",
+                [&parent.snapshot_id],
+                snapshot_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::Integrity("version parent snapshot is missing".into()))?;
+        let operation = connection
+            .query_row(
+                &format!("{OPERATION_SELECT} WHERE operation_id = ?1"),
+                [&parent.creation_operation_id],
+                operation_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::Integrity("version parent operation is missing".into()))?;
+        validate_version_row(&parent, &snapshot, &operation, identity)?;
+        let Some(next_parent_id) = parent.parent_version_id.as_deref() else {
+            break;
+        };
+        if next_parent_id == child.version_id {
+            return Err(PongError::Integrity(
+                "version parent chain would create a cycle".into(),
+            ));
+        }
+        current_parent_id = next_parent_id.to_owned();
+    }
+    Ok(())
 }
 
 fn lease_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<LeaseRecord> {
@@ -5029,6 +5997,11 @@ fn validate_workspace_record(record: &WorkspaceRecord) -> Result<(), PongError> 
     validate_non_empty(&record.driver, "workspace driver")?;
     validate_non_empty(&record.locator, "workspace locator")?;
     validate_workspace_status(&record.status)?;
+    if record.version_head_id.is_some() {
+        return Err(PongError::InvalidInput(
+            "new workspace Version Head must be null".into(),
+        ));
+    }
     validate_workspace_ready_state(
         &record.status,
         record.head.as_deref(),

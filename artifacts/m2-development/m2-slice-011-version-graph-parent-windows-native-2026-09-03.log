@@ -1,0 +1,43 @@
+M2-SLICE-011B durable Version graph parent relation evidence
+Evidence class: LOCAL_NATIVE_DEVELOPMENT
+Platform: Windows 11 Home 10.0.26200, x86_64, NTFS (D:)
+Toolchain: rustc 1.95.0, cargo 1.95.0, x86_64-pc-windows-msvc, declared MSRV 1.78
+Base/current commit: e110ce61436319cc4b9c8af2dc8bd73e6d392b27
+Branch: dev
+Working tree: UNCOMMITTED_DEVELOPMENT_TREE
+Timestamp: 2026-09-05T23:40:45+08:00
+Available disk: 262932135936 bytes
+Available memory: 2258904 KiB
+
+Implementation evidence:
+- Added nullable parent_version_id and the versions_parent lookup index.
+- Legacy pre-graph versions table migration adds the column before the index; existing rows remain NULL roots.
+- Parent validation is iterative and fail-closed for missing, corrupt, out-of-scope, self-parent, and cyclic ancestry.
+- Non-root version.create operations require a typed parent Version input reference.
+- Version insert, operation completion, journal update, and operation event append remain one SQLite transaction.
+- Exact retry, wrong-parent retry, pre-commit rollback, post-commit cold reopen, and parent/children queries are covered.
+- Workspace.head and Version identity remain unchanged; different-operation/same-Snapshot remains CONTRACT_OPEN_DECISION.
+
+Commands and results:
+- cargo fmt --all -- --check: EXIT_CODE=0
+- cargo check --locked: EXIT_CODE=0
+- cargo test --locked --test version_persistence_contract: EXIT_CODE=0 (18 passed, 0 failed, 0 ignored)
+- cargo test --locked --test workspace_version: EXIT_CODE=0 (8 passed, 0 failed, 0 ignored)
+- cargo test --locked --test version_graph_contract: EXIT_CODE=0 (0 passed, 0 failed, 15 ignored; NOT_IMPLEMENTED_CONTRACT_TEST placeholders)
+- cargo test --locked --test version_graph: EXIT_CODE=0 (31 passed, 0 failed, 1 ignored)
+- cargo test --locked --test version_graph -- --ignored chain_depth_sanity_for_one_thousand_nodes --exact: EXIT_CODE=0 (1 passed, 0 failed, 10.12s)
+- cargo test --locked --test workspace_lifecycle_contract: EXIT_CODE=0 (15 passed, 0 failed, 0 ignored)
+- cargo test --locked --test workspace_lifecycle_integration: EXIT_CODE=0 (8 passed, 0 failed, 0 ignored)
+- cargo test --locked --test workspace_lifecycle_operation: EXIT_CODE=0 (8 passed, 0 failed, 0 ignored)
+- cargo test --all --locked: EXIT_CODE=0 (300 passed, 0 failed, 18 ignored)
+- cargo clippy --all-targets --all-features --locked -- -D warnings: EXIT_CODE=0
+- git diff --check: EXIT_CODE=0
+
+Regression: M1 and M2-SLICE-001 through M2-SLICE-010 PASS.
+The 1,000-node chain is an explicit development-only sanity and is not part
+of the default PASS count. The first pre-fix recursive run hit STATUS_STACK_OVERFLOW;
+the iterative rerun passed.
+M1 release artifacts modified: false.
+Release tag created: false.
+Push performed: false.
+Status: PASS / INTERNAL / TEST-GATED.

@@ -1,0 +1,718 @@
+M2-SLICE-012B durable Version Reference / Head verification
+Started: 2026-09-06T02:22:20.4431152+08:00
+
+>>> cargo fmt --all -- --check
+START: 2026-09-06T02:22:20.4554200+08:00
+END: 2026-09-06T02:22:20.7703419+08:00
+EXIT_CODE: 0
+DURATION_SECONDS: 0.315
+
+>>> cargo check --locked
+START: 2026-09-06T02:22:20.7802830+08:00
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+END: 2026-09-06T02:22:20.9149781+08:00
+EXIT_CODE: 0
+DURATION_SECONDS: 0.135
+
+>>> cargo test --locked --test version_reference
+START: 2026-09-06T02:22:20.9158002+08:00
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests\version_reference.rs (target\debug\deps\version_reference-8634d7f51eca6b44.exe)
+
+running 31 tests
+test r4_missing_version_fails_closed ... ok
+test additive_workspace_migration_defaults_version_head_to_null ... ok
+test same_snapshot_different_operation_remains_open_decision ... ok
+test r14_create_version_does_not_implicitly_select ... ok
+test r6_workspace_mismatch_fails_closed ... ok
+test r13_snapshot_head_is_independent ... ok
+test r7_project_mismatch_fails_closed ... ok
+test r3_durable_persistence_and_cold_reopen ... ok
+test r24_existing_version_remains_unselected ... ok
+test r17_stale_lease_is_rejected ... ok
+test r19_before_commit_failure_is_atomic ... ok
+test r2_version_head_read ... ok
+test r11_snapshot_integrity_mismatch_fails_closed ... ok
+test r25_workspace_head_keeps_snapshot_root_meaning ... ok
+test r26_version_identity_is_unchanged ... ok
+test r29_broken_head_never_auto_repairs ... ok
+test r8_environment_mismatch_fails_closed ... ok
+test r10_migration_mismatch_fails_closed ... ok
+test r5_broken_version_fails_closed ... ok
+test r22_exact_retry_returns_same_durable_result ... ok
+test r28_children_are_unchanged ... ok
+test r15_setting_version_head_does_not_change_snapshot_head ... ok
+test r27_parent_is_unchanged ... ok
+test r1_version_head_creation ... ok
+test r9_generation_mismatch_fails_closed ... ok
+test r16_stale_revision_is_deterministic ... ok
+test r18_reads_have_no_side_effects ... ok
+test r21_cold_reopen_preserves_head_and_snapshot ... ok
+test r20_post_commit_interruption_is_recoverable ... ok
+test r12_detached_version_can_be_selected ... ok
+test r23_legacy_migration_starts_with_null_version_head ... ok
+
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+END: 2026-09-06T02:22:21.5230854+08:00
+EXIT_CODE: 0
+DURATION_SECONDS: 0.607
+
+>>> cargo test --all --locked
+START: 2026-09-06T02:22:21.5244623+08:00
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src\lib.rs (target\debug\deps\pong_core-f0e66f9cd419f985.exe)
+
+running 50 tests
+test canonical::tests::strings_use_json_escaping ... ok
+test canonical::tests::object_keys_are_sorted_recursively ... ok
+test canonical::tests::domain_is_unambiguous ... ok
+test error::tests::permission_denied_io_has_a_stable_domain_code ... ok
+test canonical::tests::equivalent_object_order_has_identical_bytes_and_digest ... ok
+test cas::tests::digest_includes_domain_separator_and_exact_bytes ... ok
+test environment::tests::capture_is_allowlisted_and_deterministic ... ok
+test error::tests::protected_permission_retains_an_available_raw_os_error ... ok
+test error::tests::sqlite_read_only_has_a_stable_domain_code ... ok
+test error::tests::windows_sharing_violation_is_not_misreported_as_acl_denial ... ok
+test error::tests::sqlite_full_has_a_stable_domain_code ... ok
+test redaction::tests::secret_bearing_object_keys_are_replaced_without_collisions ... ok
+test redaction::tests::byte_scan_fails_closed_without_disclosing_secret ... ok
+test atomic_replace::tests::sync_directory_accepts_an_existing_directory ... ok
+test redaction::tests::short_registered_secrets_are_rejected ... ok
+test redaction::tests::debug_representation_does_not_expose_registered_secrets ... ok
+test redaction::tests::redaction_is_deterministic_and_recursive ... ok
+test metadata::tests::ref_compare_and_swap_rejects_stale_writer ... ok
+test metadata::tests::duplicate_intent_with_changed_content_is_rejected ... ok
+test metadata::tests::idempotency_returns_original_result_and_rejects_changed_digest ... ok
+test metadata::tests::duplicate_event_id_with_changed_metadata_is_rejected ... ok
+test atomic_replace::tests::atomic_replace_overwrites_existing_file ... ok
+test metadata::tests::repository_format_is_pinned ... ok
+test metadata::tests::unfinished_intent_is_visible_for_recovery ... ok
+test metadata::tests::events_have_monotonic_stream_sequences_and_deduplicate ... ok
+test cas::tests::injected_publication_failure_cleans_staging ... ok
+test cas::tests::injected_short_write_cleans_staging_and_publishes_nothing ... ok
+test cas::tests::malformed_digest_and_domain_are_rejected ... ok
+test cas::tests::wrong_expected_digest_is_rejected_before_publication ... ok
+test metadata::tests::opening_database_with_existing_secret_fails_closed ... ok
+test atomic_replace::tests::no_replace_directory_publish_preserves_an_existing_destination ... ok
+test cas::tests::configured_secret_is_rejected_before_cas_publication ... ok
+test cas::tests::injected_directory_sync_failure_leaves_a_retryable_published_object ... ok
+test cas::tests::tampering_is_integrity_error_and_quarantined ... ok
+test repository::tests::missing_marker_is_not_treated_as_an_initialized_repository ... ok
+test cas::tests::injected_quota_failure_cleans_partial_staging_bytes ... ok
+test cas::tests::injected_startup_scan_failure_does_not_disable_normal_reopen ... ok
+test cas::tests::injected_permission_failure_is_stable_without_changing_host_acl ... ok
+test cas::tests::existing_secret_bytes_block_cas_startup ... ok
+test cas::tests::put_get_and_repeat_are_verified ... ok
+test metadata::tests::legacy_repository_without_profile_metadata_fails_closed ... ok
+test environment::tests::persisted_environment_identity_is_immutable ... ok
+test metadata::tests::registered_secret_never_reaches_sqlite_or_wal_bytes ... ok
+test metadata::tests::redaction_profile_is_pinned_across_reopen ... ok
+test repository::tests::init_creates_durable_layout_and_marker ... ok
+test repository::tests::startup_does_not_recreate_missing_cas_directories ... ok
+test repository::tests::unsupported_marker_fails_before_metadata_open ... ok
+test repository::tests::init_is_idempotent_and_open_reuses_the_same_format ... ok
+test repository::tests::repository_wires_one_redaction_policy_into_metadata_and_cas ... ok
+test repository::tests::opening_repository_classifies_orphan_intents_as_unknown ... ok
+
+test result: ok. 50 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests\artifact_consistency.rs (target\debug\deps\artifact_consistency-28539f6412e2d194.exe)
+
+running 2 tests
+test retained_m1_raw_logs_and_fault_matrix_references_are_consistent ... ok
+test release_bundle_checksums_and_status_matrix_are_consistent ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests\cas_failpoints.rs (target\debug\deps\cas_failpoints-b87af8c34c28cb90.exe)
+
+running 1 test
+test fi08_directory_sync_fault_cold_reopen_verifies_object_and_retry_is_idempotent ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\compatibility_boundaries.rs (target\debug\deps\compatibility_boundaries-e8d9fd61e21e7ff8.exe)
+
+running 9 tests
+test previous_event_schema_is_read_without_rewriting_opaque_fields ... ok
+test legacy_metadata_without_profile_is_rejected_before_schema_mutation ... ok
+test incompatible_operations_object_fails_before_additive_schema_mutation ... ok
+test unsupported_metadata_format_is_rejected_before_schema_mutation ... ok
+test v01_database_cold_open_keeps_legacy_rows_and_adds_additive_tables ... ok
+test unsupported_marker_version_fails_before_repository_is_healthy ... ok
+test redaction_profile_mismatch_requires_explicit_compatibility_choice ... ok
+test current_marker_fixture_round_trips_with_additive_fields ... ok
+test migration_backs_up_raw_v01_without_mutating_source_schema ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests\deterministic_diff.rs (target\debug\deps\deterministic_diff-19e007aa18c8e16a.exe)
+
+running 12 tests
+test d1_identical_snapshots_have_empty_diff ... ok
+test d5_file_directory_replacement_is_type_changed ... ok
+test d3_removed_file_is_reported ... ok
+test d2_added_file_is_reported ... ok
+test d9_corrupt_manifest_fails_closed ... ok
+test d10_cold_reopen_preserves_diff_result ... ok
+test d6_multiple_changes_are_classified_without_unchanged_entries ... ok
+test d4_modified_file_includes_old_and_new_metadata ... ok
+test d7_repeated_diff_is_deterministically_serialized_and_ordered ... ok
+test d11_raw_v01_repository_remains_openable_and_diff_is_additive ... ok
+test d8_performance_sanity_scales_manifest_sizes ... ok
+test d8_ten_thousand_entries_have_linear_manifest_diff ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.00s
+
+     Running tests\durable_restore.rs (target\debug\deps\durable_restore-cf5ee6bf063fbbfe.exe)
+
+running 8 tests
+test existing_destination_is_rejected_without_overwrite ... ok
+test missing_blob_fails_closed_without_successful_restore ... ok
+test restore_new_destination_persists_operation_and_event ... ok
+test materialization_failure_is_durable_and_retry_can_converge ... ok
+test restore_result_payload_is_structured ... ok
+test parent_sync_failure_is_unknown_and_retry_is_safe ... ok
+test persistence_failure_after_materialization_reconciles_on_retry ... ok
+test restore_cold_reopen_and_retry_are_idempotent ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests\event_projection.rs (target\debug\deps\event_projection-a07552972a6f8c15.exe)
+
+running 3 tests
+test envelopes_have_project_cursor_and_legacy_event_compatibility ... ok
+test unknown_event_type_degrades_projection_without_dropping_source ... ok
+test projection_apply_is_idempotent_and_rebuild_is_stable ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\host_resource_faults.rs (target\debug\deps\host_resource_faults-69174d991ec60b92.exe)
+
+running 1 test
+test fi_13_real_windows_acl_read_revocation_fails_closed_and_recovers ... ignored, FI-13 host evidence: set PONG_HOST_FAULT_ROOT to an empty NTFS scratch directory
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\m1_primitives.rs (target\debug\deps\m1_primitives-78c1cdffea482624.exe)
+
+running 2 tests
+test event_and_idempotency_records_are_replay_safe ... ok
+test cas_and_metadata_ports_share_m1_identity_rules ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests\metadata_failpoints.rs (target\debug\deps\metadata_failpoints-1ec30cacb9753684.exe)
+
+running 6 tests
+test failpoints_are_disabled_by_default_and_one_shot ... ok
+test recovery_boundaries_never_fabricate_success_and_converge_to_unknown ... ok
+test outcome_boundaries_preserve_pre_state_or_post_state ... ok
+test intent_after_commit_returns_fault_but_survives_cold_reopen ... ok
+test sqlite_commit_failpoints_cover_wal_pre_and_post_visibility ... ok
+test fi01_before_intent_commit_cold_reopen_preserves_pre_state_and_retry_publishes_once ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+
+     Running tests\migration_fixtures.rs (target\debug\deps\migration_fixtures-a2e558644ee7b643.exe)
+
+running 2 tests
+test migration_interruption_fixture_requires_cold_reopen_and_forbids_mixed_state ... ok
+test previous_generation_fixture_preserves_identity_and_opaque_data ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\operation_ledger.rs (target\debug\deps\operation_ledger-13898ff3be777f79.exe)
+
+running 8 tests
+test operation_request_retry_is_idempotent_but_changed_content_is_rejected ... ok
+test operation_start_finish_is_durable_and_emits_ordered_events ... ok
+test cancelled_unknown_and_recording_quality_are_explicit_states ... ok
+test operation_bindings_require_existing_same_project_records ... ok
+test terminal_outcome_is_idempotent_and_cannot_be_rewritten ... ok
+test operation_finish_commit_faults_preserve_pre_or_post_state ... ok
+test operation_commit_faults_are_pre_or_post_state_after_cold_reopen ... ok
+test operation_redaction_applies_before_sqlite_and_event_persistence ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running tests\performance_measurements.rs (target\debug\deps\performance_measurements-6917ddceb46af410.exe)
+
+running 1 test
+test m1_performance_probe_writes_reproducible_record ... ignored, measurement-only; run explicitly with --ignored
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\process_kill_migration.rs (target\debug\deps\process_kill_migration-b166e3a60c526a33.exe)
+
+running 3 tests
+test child_migration_entrypoint ... ok
+
+running 1 test
+
+running 1 test
+test process_kill_before_selector_leaves_legacy_only ... ok
+test process_kill_after_selector_uses_new_generation_only ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running tests\process_kill_recovery.rs (target\debug\deps\process_kill_recovery-42b8643cce16bf9a.exe)
+
+running 3 tests
+test child_process_entrypoint ... ok
+
+running 1 test
+
+running 1 test
+test process_kill_after_outcome_keeps_republishable_outbox ... ok
+test process_kill_after_intent_never_becomes_success ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests\property_corpus.rs (target\debug\deps\property_corpus-451bb7636f091d28.exe)
+
+running 10 tests
+test pt08_key_reuse_is_rejected_and_scopes_do_not_alias ... ok
+test pt04_generated_ref_writer_order_has_one_cas_winner ... ok
+test pt07_same_key_and_digest_has_one_idempotency_transition ... ok
+test pt06_duplicate_event_permutations_converge_in_the_event_store ... ok
+test pt01_canonical_json_and_covered_bytes_have_one_identity ... ok
+test pt05_event_sequences_are_contiguous_per_stream_and_duplicates_converge ... ok
+test pt12_redaction_is_deterministic_and_uses_an_opaque_fixed_marker ... ok
+test pt02_concurrent_identical_cas_puts_converge ... ok
+test pt11_registered_secrets_are_closed_over_persisted_metadata_and_cas ... ok
+test pt03_metadata_commit_boundary_is_pre_or_post_state ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.73s
+
+     Running tests\property_recovery_migration.rs (target\debug\deps\property_recovery_migration-232da1aaf019057e.exe)
+
+running 4 tests
+test pt14_retry_does_not_retry_terminal_protected_denial ... ok
+test pt10_crash_schedules_never_turn_an_unresolved_intent_into_success ... ok
+test pt14_migration_failpoints_are_old_or_verified_new_and_retry_idempotently ... ok
+test pt09_recovery_converges_across_interleavings_and_commit_boundaries ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.72s
+
+     Running tests\pt13_fi10.rs (target\debug\deps\pt13_fi10-54d3da31c969b7d2.exe)
+
+running 8 tests
+test fi10_repeated_crash_reopen_is_idempotent ... ok
+test pt13_generation_assertions_fail_closed_and_matching_identity_succeeds ... ok
+test pt13_source_generation_remains_available_for_audit_after_b_is_active ... ok
+test pt13_migration_a_to_b_preserves_projection_semantics_and_source_events ... ok
+test pt13_malformed_envelope_and_corrupted_projection_fail_closed ... ok
+test pt13_duplicate_event_identity_and_stale_cursor_fail_closed ... ok
+test fi10_projection_failpoint_schedule_converges_to_clean_replay_after_reopen ... ok
+test fi10_migration_interruption_keeps_generation_and_projection_aligned ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.81s
+
+     Running tests\recovery_boundaries.rs (target\debug\deps\recovery_boundaries-b0d53a643756d333.exe)
+
+running 7 tests
+test outcome_durable_rows_remain_available_for_publication_recovery ... ok
+test orphan_intents_are_marked_unknown_once_and_keep_the_intent_payload ... ok
+test corrupt_cas_object_is_quarantined_and_never_read_as_success ... ok
+test unsupported_repository_format_is_rejected_before_open ... ok
+test outcome_and_published_transitions_are_idempotent ... ok
+test idempotency_record_survives_restart_without_second_mutation ... ok
+test committed_metadata_survives_reopen_and_uses_full_wal_durability ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\repository_failpoints.rs (target\debug\deps\repository_failpoints-c3e1c6ba435942c4.exe)
+
+running 2 tests
+test repository_cas_quota_fixture_is_one_shot_and_cleans_staging ... ok
+test startup_recovery_fault_is_retried_after_cold_reopen_and_converges ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests\repository_migration.rs (target\debug\deps\repository_migration-258c370d825b9ea3.exe)
+
+running 8 tests
+test invalid_migration_paths_are_rejected_before_the_repository_is_touched ... ok
+test legacy_v01_reader_boundary_rejects_the_generation_selector_before_mutation ... ok
+test changed_source_rejects_retry_and_does_not_reuse_an_unpublished_target ... ok
+test legacy_migration_builds_a_generation_and_preserves_durable_state ... ok
+test foreign_valid_generation_database_cannot_replace_the_active_identity ... ok
+test migration_preserves_the_redaction_profile_and_full_tree_secret_boundary ... ok
+test corrupted_selector_or_active_manifest_fails_closed ... ok
+test migration_failpoints_expose_only_legacy_or_active_generation_after_cold_restart ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s
+
+     Running tests\security_boundaries.rs (target\debug\deps\security_boundaries-84d9975bdc0b3e25.exe)
+
+running 1 test
+test full_pong_tree_is_secret_free_and_unknown_files_fail_closed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running tests\snapshot_publication.rs (target\debug\deps\snapshot_publication-530f52d44902b8e1.exe)
+
+running 4 tests
+test snapshot_publication_persists_metadata_head_and_linked_event ... ok
+test snapshot_publication_cold_reopen_keeps_metadata_and_head_atomic ... ok
+test snapshot_publication_retry_after_post_commit_fault_is_idempotent ... ok
+test snapshot_publication_precommit_metadata_and_head_failures_leave_old_state ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running tests\version_graph.rs (target\debug\deps\version_graph-e14eafc727877735.exe)
+
+running 32 tests
+test chain_depth_sanity_for_one_thousand_nodes ... ignored, development-only 1000-node chain sanity; not part of the default regression gate
+test corrupt_parent_is_never_reported_as_healthy ... ok
+test self_parent_is_rejected_by_domain_and_schema_guard ... ok
+test v01_migration_starts_with_empty_graph_table ... ok
+test root_version_has_null_parent_and_parent_lookup_is_empty ... ok
+test cold_reopen_preserves_parent_edge_and_children ... ok
+test missing_parent_fails_before_insert_or_operation_completion ... ok
+test parent_project_mismatch_fails_closed ... ok
+test pre_graph_version_row_migrates_to_explicit_root_without_identity_change ... ok
+test parent_environment_mismatch_fails_closed ... ok
+test workspace_head_remains_snapshot_root_after_version_graph_writes ... ok
+test parent_generation_mismatch_fails_closed ... ok
+test version_identity_does_not_include_parent ... ok
+test operation_result_retains_parent_binding ... ok
+test transaction_failure_rolls_back_parent_version_and_operation_completion ... ok
+test failed_parent_validation_does_not_complete_operation ... ok
+test existing_version_is_a_root_after_additive_column_migration ... ok
+test child_version_binds_one_existing_parent ... ok
+test parent_workspace_mismatch_fails_closed ... ok
+test wrong_parent_retry_fails_deterministically_without_rewrite ... ok
+test parent_migration_mismatch_fails_closed ... ok
+test parent_operation_reference_is_required_for_non_root ... ok
+test cycle_in_existing_parent_chain_is_rejected ... ok
+test duplicate_protection_keeps_one_child_for_one_operation ... ok
+test three_level_chain_and_children_are_deterministic ... ok
+test parent_binding_is_immutable_after_creation ... ok
+test different_operation_same_snapshot_remains_open_decision ... ok
+test parent_child_lookup_validates_missing_child_parent ... ok
+test exact_retry_with_parent_returns_same_version_and_operation_result ... ok
+test post_commit_interruption_is_old_or_new_and_exact_retry_is_stable ... ok
+test chain_depth_sanity_for_ten_nodes ... ok
+test chain_depth_sanity_for_one_hundred_nodes ... ok
+
+test result: ok. 31 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.30s
+
+     Running tests\version_graph_contract.rs (target\debug\deps\version_graph_contract-1c6721aaec0bde0b.exe)
+
+running 15 tests
+test g10_exact_retry ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: graph-aware retry is not implemented
+test g11_same_snapshot_different_operation ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: same-Snapshot lineage is not implemented
+test g12_cold_reopen ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: graph cold-reopen validation is not implemented
+test g13_migration_compatibility ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: graph migration is not implemented
+test g14_deletion_semantics ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: graph deletion constraints are not implemented
+test g15_transaction_atomicity ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: atomic parent binding is not implemented
+test g1_root_version ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: nullable root parent is not implemented
+test g2_one_parent ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: one-parent persistence is not implemented
+test g3_missing_parent ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: missing-parent rejection is not implemented
+test g4_self_parent ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: self-parent rejection is not implemented
+test g5_cross_workspace_parent ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: workspace-scope validation is not implemented
+test g6_cross_project_parent ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: project-scope validation is not implemented
+test g7_parent_immutable ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: immutable parent validation is not implemented
+test g8_duplicate_parent_assignment ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: duplicate assignment handling is not implemented
+test g9_cycle_prevention ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST: cycle validation is not implemented
+
+test result: ok. 0 passed; 0 failed; 15 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\version_persistence_contract.rs (target\debug\deps\version_persistence_contract-5041cb0f46355422.exe)
+
+running 18 tests
+test v11_different_operations_same_snapshot_hit_open_decision ... ok
+test v10_same_operation_different_snapshot_fails_closed ... ok
+test v12_broken_snapshot_reference_fails_closed_on_read ... ok
+test v9_exact_retry_returns_original_version ... ok
+test v16_cold_reopen_preserves_version_integrity ... ok
+test v18_m1_workspace_head_semantics_are_unchanged ... ok
+test v15_interrupted_creation_is_old_or_new_after_cold_reopen ... ok
+test v5_project_binding_must_match ... ok
+test v3_snapshot_reference_requires_existing_snapshot ... ok
+test v13_snapshot_deletion_does_not_report_a_healthy_version ... ok
+test v8_operation_identity_binds_one_version ... ok
+test v4_workspace_binding_must_match ... ok
+test v14_transaction_atomicity_rolls_back_version_and_operation ... ok
+test v2_immutable_fields_cannot_be_corrupted_silently ... ok
+test v7_environment_binding_is_verified ... ok
+test v6_generation_binding_is_verified ... ok
+test v1_identity_is_durable_and_deterministic ... ok
+test v17_legacy_v01_migration_starts_versions_empty ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.68s
+
+     Running tests\version_reference.rs (target\debug\deps\version_reference-8634d7f51eca6b44.exe)
+
+running 31 tests
+test r11_snapshot_integrity_mismatch_fails_closed ... ok
+test r10_migration_mismatch_fails_closed ... ok
+test additive_workspace_migration_defaults_version_head_to_null ... ok
+test r3_durable_persistence_and_cold_reopen ... ok
+test r5_broken_version_fails_closed ... ok
+test r2_version_head_read ... ok
+test r4_missing_version_fails_closed ... ok
+test r26_version_identity_is_unchanged ... ok
+test r17_stale_lease_is_rejected ... ok
+test r6_workspace_mismatch_fails_closed ... ok
+test same_snapshot_different_operation_remains_open_decision ... ok
+test r16_stale_revision_is_deterministic ... ok
+test r14_create_version_does_not_implicitly_select ... ok
+test r9_generation_mismatch_fails_closed ... ok
+test r1_version_head_creation ... ok
+test r25_workspace_head_keeps_snapshot_root_meaning ... ok
+test r22_exact_retry_returns_same_durable_result ... ok
+test r29_broken_head_never_auto_repairs ... ok
+test r24_existing_version_remains_unselected ... ok
+test r7_project_mismatch_fails_closed ... ok
+test r19_before_commit_failure_is_atomic ... ok
+test r8_environment_mismatch_fails_closed ... ok
+test r20_post_commit_interruption_is_recoverable ... ok
+test r15_setting_version_head_does_not_change_snapshot_head ... ok
+test r13_snapshot_head_is_independent ... ok
+test r18_reads_have_no_side_effects ... ok
+test r28_children_are_unchanged ... ok
+test r27_parent_is_unchanged ... ok
+test r21_cold_reopen_preserves_head_and_snapshot ... ok
+test r12_detached_version_can_be_selected ... ok
+test r23_legacy_migration_starts_with_null_version_head ... ok
+
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+
+     Running tests\version_reference_contract.rs (target\debug\deps\version_reference_contract-58edda52d11b0c06.exe)
+
+running 15 tests
+test r10_version_head_deletion_constraint ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r11_legacy_v01_compatibility ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r12_version_id_is_unchanged ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r13_workspace_head_keeps_snapshot_meaning ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r14_parent_is_not_version_head ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r15_human_label_does_not_change_identity ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r1_snapshot_head_is_distinct_from_version_head ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r2_version_head_points_to_durable_version ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r3_version_head_snapshot_consistency ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r4_detached_version_remains_durable ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r5_same_snapshot_multiple_version_policy ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r6_current_version_selection_is_explicit ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r7_version_head_workspace_scope ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r8_version_head_generation_scope ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+test r9_version_head_crash_recovery ... ignored, NOT_IMPLEMENTED_CONTRACT_TEST
+
+test result: ok. 0 passed; 0 failed; 15 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\wal_tail_recovery.rs (target\debug\deps\wal_tail_recovery-c51572a3d5df52cd.exe)
+
+running 1 test
+test truncated_wal_tail_never_fabricates_an_event_after_cold_restart ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests\workspace_diff.rs (target\debug\deps\workspace_diff-9ccdb311b16936e2.exe)
+
+running 15 tests
+test w15_current_tree_secret_bytes_fail_closed ... ok
+test w7_repeated_scan_of_the_same_tree_has_identical_result ... ok
+test w13_head_identity_corruption_fails_closed_before_current_tree_scan ... ok
+test w10_missing_head_snapshot_is_integrity_error ... ok
+test w12_mutation_between_observations_is_explicitly_point_in_time ... ok
+test w2_added_file_is_reported ... ok
+test w9_corrupt_reference_manifest_fails_closed ... ok
+test w4_modified_file_is_reported ... ok
+test w3_deleted_file_is_reported ... ok
+test w1_clean_workspace_matches_head_snapshot ... ok
+test w6_multiple_changes_are_deterministic_and_omit_unchanged_paths ... ok
+test w11_cold_reopen_preserves_workspace_diff ... ok
+test w5_file_to_directory_and_directory_to_file_are_type_changes ... ok
+test w8_ten_thousand_files_are_classified_correctly ... ok
+test w14_performance_samples_cover_documented_tree_sizes ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.95s
+
+     Running tests\workspace_diff_reconciliation.rs (target\debug\deps\workspace_diff_reconciliation-4df0f4302724e463.exe)
+
+running 11 tests
+test environment_binding_mismatch_fails_closed ... ok
+test cold_reopen_preserves_observation_semantics ... ok
+test observation_records_revision_environment_and_stability ... ok
+test repeated_observations_are_deterministic_and_read_only ... ok
+test snapshot_publication_reconciles_head_and_next_diff_is_empty ... ok
+test restore_materialization_can_be_diffed_and_modification_is_visible ... ok
+test head_change_is_observed_from_the_new_durable_reference ... ok
+test legacy_repository_remains_readable_without_diff_mutation ... ok
+test head_change_during_scan_returns_unstable_observation ... ok
+test revision_change_during_scan_returns_unstable_observation ... ok
+test reconciliation_performance_samples_cover_1k_and_10k_entries ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.46s
+
+     Running tests\workspace_faults.rs (target\debug\deps\workspace_faults-0182a3d5e5cdaabb.exe)
+
+running 8 tests
+test orphan_materialization_cleanup_is_explicit_and_reopen_safe ... ok
+test cas_blob_and_manifest_publication_faults_leave_no_partial_object ... ok
+test manager_head_update_commit_failure_leaves_head_and_revision_unchanged ... ok
+test manager_cas_failure_does_not_advance_workspace_head_or_revision ... ok
+test parent_sync_failure_is_outcome_unknown_and_preserves_published_destination ... ok
+test materialization_cleanup_failure_reports_recovery_required_and_retains_orphan ... ok
+test materialization_write_sync_tree_sync_and_rename_failures_clean_temporary_only ... ok
+test materialization_fault_actions_have_stable_domain_codes ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests\workspace_lifecycle_contract.rs (target\debug\deps\workspace_lifecycle_contract-53828858373a2f83.exe)
+
+running 15 tests
+test l13_provider_specific_metadata_does_not_leak_into_context ... ok
+test l1_create_to_open_is_idempotent ... ok
+test l3_invalid_transition_is_rejected ... ok
+test l4_same_transition_retry_is_deterministic ... ok
+test l5_provider_success_remains_within_capability_boundary ... ok
+test l7_core_persistence_failure_cannot_be_reported_as_provider_success ... ok
+test l8_interrupted_transition_reopens_as_reconciling ... ok
+test l9_unsupported_capability_is_explicit ... ok
+test l2_open_to_close_archives_logically ... ok
+test l6_provider_failure_is_not_core_success ... ok
+test l10_status_is_read_only ... ok
+test l15_provider_boundary_cannot_change_generation_or_event_order ... ok
+test l14_same_operation_retry_returns_deterministic_record ... ok
+test l11_diff_is_read_only ... ok
+test l12_legacy_v01_repository_remains_readable ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests\workspace_lifecycle_integration.rs (target\debug\deps\workspace_lifecycle_integration-0d176d292dffd2fa.exe)
+
+running 8 tests
+test invalid_transition_stale_revision_and_stale_lease_fail_closed ... ok
+test no_lifecycle_transition_event_is_created_for_workspace_update ... ok
+test provider_failure_leaves_durable_state_unchanged_and_status_diff_are_read_only ... ok
+test exact_retry_does_not_increment_revision_twice ... ok
+test create_open_and_legal_transitions_are_durable_and_monotonic ... ok
+test persistence_failures_leave_pre_or_post_state_and_retries_are_deterministic ... ok
+test interrupted_transition_reopens_and_recovers_without_phantom_success ... ok
+test legacy_v01_fixture_opens_reads_and_rejects_missing_lifecycle_without_mutation ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests\workspace_lifecycle_operation.rs (target\debug\deps\workspace_lifecycle_operation-bc01f3f202f59589.exe)
+
+running 8 tests
+test provider_failure_does_not_create_completed_operation_or_advance_core ... ok
+test same_operation_different_action_and_stale_callers_fail_closed ... ok
+test read_like_open_status_and_diff_do_not_create_operations_or_events ... ok
+test operation_identity_binds_one_durable_lifecycle_mutation_and_exact_retry ... ok
+test precommit_failure_rolls_back_operation_and_workspace_together ... ok
+test close_transition_records_terminal_operation_without_new_event_taxonomy ... ok
+test postcommit_interruption_leaves_matching_completed_operation_and_retry_is_safe ... ok
+test legacy_v01_remains_readable_without_lifecycle_operation_writeback ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests\workspace_snapshot.rs (target\debug\deps\workspace_snapshot-9230ea85d06101b8.exe)
+
+running 11 tests
+test environment_facts_never_persist_sensitive_allowlist_keys ... ok
+test local_snapshot_enforces_file_count_and_single_file_size_limits ... ok
+test lease_epoch_and_workspace_revision_reject_stale_writers ... ok
+test local_snapshot_is_canonical_and_materializes_without_partial_destination ... ok
+test workspace_update_rejects_missing_and_wrong_project_environment_bindings ... ok
+test post_commit_workspace_creation_error_keeps_the_committed_materialization ... ok
+test workspace_creation_rejects_missing_or_wrong_project_environment_without_leaking_directory ... ok
+test workspace_manager_keeps_physical_path_outside_pong_and_advances_head_under_lease ... ok
+test expired_lease_takeover_and_workspace_records_survive_cold_reopen ... ok
+test registered_secret_blocks_manager_snapshot_without_advancing_workspace ... ok
+test malformed_tree_paths_fail_closed_before_materialization ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests\workspace_status.rs (target\debug\deps\workspace_status-bd27cf5f0eebbb71.exe)
+
+running 13 tests
+test status_before_snapshot_has_no_comparison_baseline_and_is_read_only ... ok
+test status_unknown_workspace_is_not_found ... ok
+test status_does_not_require_a_snapshot_for_a_legacy_style_workspace ... ok
+test status_lease_takeover_reports_the_new_epoch_and_owner ... ok
+test status_fails_closed_for_cross_project_environment ... ok
+test status_reports_latest_operation_and_unresolved_state ... ok
+test status_lease_expiry_is_not_active_and_does_not_mutate ... ok
+test status_fails_closed_for_missing_head_snapshot ... ok
+test status_opens_a_raw_v01_repository_without_a_snapshot_head ... ok
+test status_compares_filesystem_to_published_head ... ok
+test status_survives_cold_reopen_with_same_authoritative_state ... ok
+test status_after_restore_keeps_head_and_reports_completed_restore ... ok
+test status_serializes_as_a_stable_json_view ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests\workspace_version.rs (target\debug\deps\workspace_version-138159cd0ac86430.exe)
+
+running 8 tests
+test migration_creates_empty_versions_table_without_synthetic_rows ... ok
+test different_operation_same_snapshot_hits_open_decision_boundary ... ok
+test creates_deterministic_immutable_version_with_bindings ... ok
+test exact_retry_returns_same_row_and_does_not_duplicate ... ok
+test same_operation_changed_snapshot_fails_closed ... ok
+test missing_operation_and_snapshot_are_rejected_without_rows ... ok
+test precommit_failure_rolls_back_version_and_operation ... ok
+test postcommit_failure_is_recoverable_after_cold_reopen ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+   Doc-tests pong_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+END: 2026-09-06T02:22:56.5559301+08:00
+EXIT_CODE: 0
+DURATION_SECONDS: 35.031
+
+>>> cargo clippy --all-targets --all-features --locked -- -D warnings
+START: 2026-09-06T02:22:56.5567642+08:00
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+END: 2026-09-06T02:22:56.8364581+08:00
+EXIT_CODE: 0
+DURATION_SECONDS: 0.28
+
+>>> git diff --check
+START: 2026-09-06T02:22:56.8369954+08:00
+warning: in the working copy of 'docs/architecture/M2_DATA_MODEL.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/development/M2_ENTRY_AUDIT.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/development/M2_TEST_PLAN.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/roadmap/CHANGELOG.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/roadmap/NEXT_TASK.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/metadata.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/workspace.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/compatibility_boundaries.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/operation_ledger.rs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/workspace_snapshot.rs', LF will be replaced by CRLF the next time Git touches it
+END: 2026-09-06T02:22:56.8830714+08:00
+EXIT_CODE: 0
+DURATION_SECONDS: 0.046
+
+Completed: 2026-09-06T02:22:56.8839372+08:00
+SUMMARY: cargo fmt --all -- --check | exit=0 | duration=0.315s
+SUMMARY: cargo check --locked | exit=0 | duration=0.135s
+SUMMARY: cargo test --locked --test version_reference | exit=0 | duration=0.607s
+SUMMARY: cargo test --all --locked | exit=0 | duration=35.031s
+SUMMARY: cargo clippy --all-targets --all-features --locked -- -D warnings | exit=0 | duration=0.28s
+SUMMARY: git diff --check | exit=0 | duration=0.046s
+
+>>> cargo test --locked --test m2_slice_012_sanity -- --nocapture (temporary development-only harness)
+EXIT_CODE: 0
+RESULT: 1 passed, 0 failed, 0 ignored
+M2_012B_SANITY operation=read count=10 elapsed_ns=1122200
+M2_012B_SANITY operation=read count=100 elapsed_ns=11147700
+M2_012B_SANITY operation=read count=1000 elapsed_ns=113266400
+M2_012B_SANITY operation=head_write count=10 elapsed_ns=3539100
+NOTE: temporary harness was removed after execution; no permanent test or production file remains.
+
+Verification history note:
+- An initial cargo test --all --locked run exited 101 because the pre-012B compatibility test still expected the legacy 11-column workspaces schema. The source v0.1 table remained unchanged; the test expectation was updated to assert the additive target column version_head_id.
+- An initial cargo clippy --all-targets --all-features --locked -- -D warnings run exited 1 because the version_reference test helper had eight scalar arguments. The helper was changed to use VersionPublication input; no production lint was suppressed.
+- The final verification run above was executed after those test-only corrections and exited zero for every required command.

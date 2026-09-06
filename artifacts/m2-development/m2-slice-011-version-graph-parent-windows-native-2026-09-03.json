@@ -1,0 +1,105 @@
+{
+  "evidence_id": "m2-slice-011-version-graph-parent-windows-native-2026-09-03",
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "scope": "M2-SLICE-011B durable Version graph parent relation",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "timestamp": "2026-09-05T23:40:45+08:00",
+  "platform": {
+    "os": "Windows 11 Home 10.0.26200",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "runner": "local Windows native development",
+    "drive": "D:",
+    "available_disk_bytes": 262932135936,
+    "available_memory_kib": 2258904
+  },
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "target": "x86_64-pc-windows-msvc",
+    "declared_msrv": "1.78"
+  },
+  "source": {
+    "base_commit": "e110ce61436319cc4b9c8af2dc8bd73e6d392b27",
+    "current_commit": "e110ce61436319cc4b9c8af2dc8bd73e6d392b27",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE"
+  },
+  "implementation": {
+    "schema": "nullable parent_version_id and versions_parent(parent_version_id, version_id); legacy column migration runs before index creation",
+    "parent_contract": "one immutable existing parent or NULL root; workspace/project/environment/generation/migration scope must match",
+    "identity": "parent_version_id is excluded from the frozen ver-<sha256> identity digest",
+    "operation_binding": "non-root version.create operations require a typed parent Version input reference and persist parent_version_id in the terminal result",
+    "transaction": "Version insert, started-operation completion, journal update, and operation event append use the existing SQLite transaction/failpoint boundary",
+    "integrity": "iterative parent-chain validation rejects missing, corrupt, out-of-scope, self-parent, and cyclic ancestry on create/read",
+    "compatibility": "v0.1 migration remains empty; pre-graph Version rows gain NULL parent without identity or Snapshot-head changes",
+    "open_decision": "different operations targeting one Snapshot remain CONTRACT_OPEN_DECISION"
+  },
+  "coverage": {
+    "durable_test_file": "tests/version_graph.rs",
+    "durable_cases": 32,
+    "durable_passed": 31,
+    "durable_failed": 0,
+    "durable_ignored": 1,
+    "contract_placeholder_file": "tests/version_graph_contract.rs",
+    "contract_placeholder_passed": 0,
+    "contract_placeholder_failed": 0,
+    "contract_placeholder_ignored": 15,
+    "chain_depth": {
+      "depth_10": "passed",
+      "depth_100": "passed",
+      "depth_1000": "passed with --ignored development-only retained-chain check"
+    },
+    "full_regression_passed": 300,
+    "full_regression_failed": 0,
+    "full_regression_ignored": 18,
+    "ignored_tests": [
+      "FI-13 host ACL evidence requires PONG_HOST_FAULT_ROOT",
+      "measurement-only performance probe requires explicit --ignored",
+      "15 historical version_graph_contract.rs NOT_IMPLEMENTED_CONTRACT_TEST placeholders",
+      "development-only 1,000-node Version graph chain sanity"
+    ]
+  },
+  "commands": [
+    { "command": "cargo fmt --all -- --check", "exit_code": 0 },
+    { "command": "cargo check --locked", "exit_code": 0 },
+    { "command": "cargo test --locked --test version_persistence_contract", "exit_code": 0, "passed": 18, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --locked --test workspace_version", "exit_code": 0, "passed": 8, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --locked --test version_graph_contract", "exit_code": 0, "passed": 0, "failed": 0, "ignored": 15 },
+    { "command": "cargo test --locked --test version_graph", "exit_code": 0, "passed": 31, "failed": 0, "ignored": 1 },
+    { "command": "cargo test --locked --test version_graph -- --ignored chain_depth_sanity_for_one_thousand_nodes --exact", "exit_code": 0, "passed": 1, "failed": 0, "ignored": 0, "duration_seconds": 10.12 },
+    { "command": "cargo test --locked --test workspace_lifecycle_contract", "exit_code": 0, "passed": 15, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --locked --test workspace_lifecycle_integration", "exit_code": 0, "passed": 8, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --locked --test workspace_lifecycle_operation", "exit_code": 0, "passed": 8, "failed": 0, "ignored": 0 },
+    { "command": "cargo test --all --locked", "exit_code": 0, "passed": 300, "failed": 0, "ignored": 18 },
+    { "command": "cargo clippy --all-targets --all-features --locked -- -D warnings", "exit_code": 0 },
+    { "command": "git diff --check", "exit_code": 0 }
+  ],
+  "regression": {
+    "m1": "PASS",
+    "m2_slice_001": "PASS",
+    "m2_slice_002": "PASS",
+    "m2_slice_003": "PASS",
+    "m2_slice_004": "PASS",
+    "m2_slice_005": "PASS",
+    "m2_slice_006": "PASS",
+    "m2_slice_007": "PASS",
+    "m2_slice_008": "PASS",
+    "m2_slice_009": "PASS",
+    "m2_slice_010": "PASS"
+  },
+  "artifacts": {
+    "evidence_json": "artifacts/m2-development/m2-slice-011-version-graph-parent-windows-native-2026-09-03.json",
+    "log": "artifacts/m2-development/m2-slice-011-version-graph-parent-windows-native-2026-09-03.log",
+    "m1_release_artifacts_modified": false,
+    "release_tag_created": false,
+    "pushed": false
+  },
+  "notes": [
+    "This is Windows local native development evidence only; it is not M2 release qualification.",
+    "The working tree is intentionally uncommitted and the record is bound to the base/current commit above.",
+    "The first pre-fix 1,000-node execution terminated with Windows STATUS_STACK_OVERFLOW; the equivalent iterative-chain rerun passed and the failure motivated the bounded production fix.",
+    "No M1 contract, ADR-0016, Version identity semantics, Workspace.head semantics, branch, merge, provider, public API, release tag, or push was added.",
+    "Ignored tests are not counted as PASS."
+  ]
+}

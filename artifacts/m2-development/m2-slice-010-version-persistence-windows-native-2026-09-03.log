@@ -1,0 +1,50 @@
+M2-SLICE-010B durable Version persistence evidence
+Evidence class: LOCAL_NATIVE_DEVELOPMENT
+Platform: Windows 11 Home 10.0.26200, x86_64, NTFS (D:)
+Toolchain: rustc 1.95.0, cargo 1.95.0, x86_64-pc-windows-msvc, declared MSRV 1.78
+Base commit: e110ce61436319cc4b9c8af2dc8bd73e6d392b27
+Current commit: e110ce61436319cc4b9c8af2dc8bd73e6d392b27
+Branch: dev
+Working tree: UNCOMMITTED_DEVELOPMENT_TREE
+Timestamp: 2026-09-04T19:04:04+08:00
+
+Implementation evidence:
+- Additive versions table and indexes are present after migration.
+- v0.1.0 migration leaves versions empty and preserves legacy rows/semantics.
+- VersionRecord uses deterministic ver-<sha256> identity and immutable bindings.
+- Workspace/project/snapshot/environment/generation/migration/operation bindings are validated.
+- Exact retry is idempotent; same operation with a different Snapshot fails closed.
+- Different operations targeting one Snapshot remain CONTRACT_OPEN_DECISION.
+- Before-commit failure rolls back Version and operation completion together.
+- After-commit interruption is old-or-new after cold reopen; retry returns the durable Version.
+- Broken Snapshot references fail closed on read.
+
+Commands:
+1. cargo fmt --all -- --check                 EXIT_CODE=0  DURATION=1.549s
+2. cargo check --locked                       EXIT_CODE=0  DURATION=1.252s
+3. cargo test --locked --test version_persistence_contract
+   EXIT_CODE=0  18 passed, 0 failed, 0 ignored  DURATION=1.537s
+4. cargo test --locked --test workspace_version
+   EXIT_CODE=0  8 passed, 0 failed, 0 ignored   DURATION=1.391s
+5. cargo test --locked --test workspace_lifecycle_contract
+   EXIT_CODE=0  15 passed, 0 failed, 0 ignored  DURATION=1.365s
+6. cargo test --locked --test workspace_lifecycle_integration
+   EXIT_CODE=0  8 passed, 0 failed, 0 ignored   DURATION=1.419s
+7. cargo test --locked --test workspace_lifecycle_operation
+   EXIT_CODE=0  8 passed, 0 failed, 0 ignored   DURATION=1.432s
+8. cargo test --all --locked
+   EXIT_CODE=0  269 passed, 0 failed, 2 ignored  DURATION=42.6s
+9. cargo clippy --all-targets --all-features --locked -- -D warnings
+   EXIT_CODE=0  DURATION=0.425s
+10. git diff --check
+    EXIT_CODE=0  DURATION=0.194s
+
+Ignored tests (not counted as PASS):
+- FI-13 host ACL evidence requires PONG_HOST_FAULT_ROOT.
+- Measurement-only performance probe requires explicit --ignored.
+
+Regression: M1 and M2-SLICE-001 through M2-SLICE-009 PASS.
+M1 release artifacts modified: false.
+Release tag created: false.
+Push performed: false.
+Status: PASS / INTERNAL / TEST-GATED.

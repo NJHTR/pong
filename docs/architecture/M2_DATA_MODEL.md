@@ -1,6 +1,6 @@
 # M2 Data Model
 
-**Status:** internal model; publication, durable restore, and workspace status portions implemented by M2-SLICE-001/002/003.
+**Status:** internal model through M2-SLICE-012B implementation.
 **Baseline:** M1 `v0.1.0` / `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`
 
 This model describes relationships that already exist or are required by the
@@ -17,6 +17,8 @@ Project
   |       |
   |       +-- head --> Snapshot metadata --> Tree Manifest (CAS)
   |                                      \\--> File Blobs (CAS)
+  |       |
+  |       +-- version_head_id --> Version --> Snapshot
   |
   +-- Operation --(events)--> Event Envelope / project stream
           |
@@ -31,6 +33,7 @@ The current `WorkspaceRecord` contains:
 - driver and canonical locator metadata;
 - optional branch reference (reserved for later versioning);
 - optional head digest;
+- optional `version_head_id` logical Version reference;
 - optional environment ID;
 - guarded lifecycle status;
 - monotonic revision and timestamps.
@@ -39,6 +42,12 @@ The physical path is never the identity. A workspace mutation is valid only
 with a matching lease token, epoch, expiry, and expected revision. The current
 local driver materializes regular files/directories outside `.pong` and rejects
 unsafe paths, links/reparse points, and configured secrets.
+
+`head` and `version_head_id` are independent nullable references. `head` is
+always the Snapshot root digest used by M1 and snapshot/status/diff semantics;
+`version_head_id` is an explicit durable Version selection. A missing or
+corrupt Version Head fails closed and is never inferred, cleared, or replaced
+automatically.
 
 ## Provider-Neutral Lifecycle Contract
 
@@ -177,10 +186,44 @@ from wall-clock timestamps.
 
 ## Version
 
-No M2 version entity exists. `branch_ref` is already a reserved workspace field
-but is not a branch implementation. Commits, parent relations, refs with
-version semantics, immutable history projections, and replay belong to later
-phases. A snapshot must not be called a commit, checkpoint, or version.
+M2-SLICE-010A defines the contract for an independent Version entity, and
+M2-SLICE-010B implements its bounded internal persistence. A Version is an
+immutable durable logical node that
+references one existing Snapshot. It is not a Snapshot alias, an Operation
+result, a ref value, a commit, or a branch. The proposed additive record is
+specified in [`M2_VERSION_SCHEMA.md`](M2_VERSION_SCHEMA.md) and includes the
+workspace/project binding, Snapshot reference, unique creation operation,
+optional environment identity, generation/migration identity, and creation
+metadata. It does not copy CAS/tree content or change `workspaces.head`, which
+remains a Snapshot root digest.
+
+The creation operation and Version are a 1:1 durable binding; exact retries
+resolve the same Version and changed Snapshot semantics fail closed.
+Snapshot/CAS, workspace/project/environment, generation/migration, and
+operation/event checks remain domain integrity requirements.
+
+M2-SLICE-011B implements the nullable `parent_version_id` relation additively.
+A null parent is a root; a non-null parent is an immutable logical `based on` /
+`derived from` edge. Parent and child must share workspace, project,
+environment, generation, and migration, and the parent chain is validated
+iteratively as existing and acyclic before insertion and on graph reads.
+Parent is not Git ancestry, a replacement pointer, a Snapshot delta, or a
+Version head. Distinct Operations targeting one Snapshot remain the explicit
+010B `CONTRACT_OPEN_DECISION` rejection. `get_parent` and `get_children` are
+internal durable queries; no public graph API is promised.
+
+Branches, merge/rebase, candidate/review/approval, labels, graph traversal,
+cross-generation lineage, and deletion/GC remain separate or open contracts.
+M2-SLICE-012B implements only the workspace-local Version Head reference,
+`get_current_version`, and lease/revision-guarded `set_version_head`.
+
+The schema and migration are additive across 010B and 011B. A v0.1 repository
+migrates to a target generation with an empty `versions` table; no synthetic
+legacy Version is created and no M1 table meaning changes. Opening a pre-graph
+Version table adds a nullable parent column and makes existing rows explicit
+roots. Creation, exact retry, operation linkage, failpoint recovery, and
+cold-reopen integrity are internal/test-gated behavior, not a public API
+promise.
 
 ## Restore Relationship
 
@@ -261,6 +304,7 @@ repeated results remain deterministic.
 - Project 1--N Workspace.
 - Workspace 0..1 current Environment binding.
 - Workspace 0..1 current Snapshot head.
+- Workspace 0..1 current Version Head (independent of Snapshot head).
 - Snapshot 1--1 canonical manifest; manifest 1--N immutable file blobs.
 - Workspace 1--N Operations over time.
 - Operation 1--N lifecycle Events.

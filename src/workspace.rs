@@ -1298,6 +1298,7 @@ impl<'a> WorkspaceManager<'a> {
             locator,
             branch_ref: branch_ref.map(str::to_owned),
             head: None,
+            version_head_id: None,
             environment_id: environment_id.map(str::to_owned),
             status: "created".into(),
             revision: 0,

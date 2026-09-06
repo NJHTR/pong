@@ -1,36 +1,36 @@
 # Next Task
 
-**Current Phase:** Phase 2 - M2 local workspace and snapshot
+**Current Phase:** Phase 3 - M3 agent execution layer
 
-**Current Milestone:** M2-SLICE-009 Lifecycle Operation Identity Integration
+**Current Milestone:** M3-SLICE-001A Agent / Task / Execution Contract
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** M2-SLICE-009 is implemented as an internal, test-gated
-operation identity integration. `WorkspaceManager::transition_lifecycle_operation`
-reuses the existing operation ledger and atomically binds operation intent,
-workspace lifecycle revision/status, terminal result, journal phase, and
-operation events. Exact retries return the same durable result; changed action,
-request, or expected revision fails closed. `Open`, status, and diff remain
-read-only. No lifecycle event taxonomy, SQLite schema, M1 contract, ADR-0016,
-provider, public API, version, branch, commit, merge, CLI, or SDK is introduced.
+**Current Task:** M3-SLICE-001A defines the proposal-only Agent Execution
+Layer. It separates Agent Identity, Provider, Task, Execution, Operation,
+Workspace, and Version; freezes only the acyclic parent-child Execution edge;
+and defines proposed Task/Execution states, Workspace lease enforcement,
+Version and Operation references, Handoff, Checkpoint, Rollback, Resume,
+failure, recovery, and context-transfer semantics. No production code, SQLite
+DDL, provider integration, CLI, SDK, UI, Branch, Merge, Candidate, Approval,
+or Agent State implementation is included.
 
-**Verification:** Windows local NTFS development evidence records the eight
-operation identity integration tests, the eight durable lifecycle integration
-tests, the 15 S007 contract tests, and the full regression. Evidence is under
-[`artifacts/m2-development/m2-slice-009-workspace-lifecycle-operation-windows-native-2026-09-02.json`](../../artifacts/m2-development/m2-slice-009-workspace-lifecycle-operation-windows-native-2026-09-02.json)
-and must not be interpreted as M2 release or cross-platform qualification.
+**Contract materials:** [`M3_AGENT_EXECUTION.md`](../architecture/M3_AGENT_EXECUTION.md),
+[`M3_EXECUTION_GRAPH.md`](../architecture/M3_EXECUTION_GRAPH.md),
+[`ADR-M3-001`](../decisions/ADR-M3-001-agent-execution-model.md), and
+[`agent_execution_contract.rs`](../../tests/agent_execution_contract.rs).
 
-**Checkpoint:** M2-SLICE-009 and the accumulated bounded M2 internal changes are
-committed locally as `be44fab`. The working tree is clean at this checkpoint;
-the retained local evidence remains historical Windows development evidence
-bound to the pre-commit execution tree and is not M2 release qualification.
+**Checkpoint:** M3-SLICE-001A is `CONTRACT_READY`. The contract suite contains
+35 explicitly ignored `NOT_IMPLEMENTED_CONTRACT_TEST` placeholders; none is
+runtime evidence or PASS. M1 v0.1.0 and M2-SLICE-001 through M2-SLICE-012
+remain unchanged and test-gated.
 
-**Next Action:** Await explicit authorization for the next bounded M2 task. Do
-not start provider integration, Version, Branch, Merge, CLI, or SDK work from
-this task.
+**Next Action:** Approve the proposed contract and scope before beginning the
+single implementation slice: `IMPLEMENT AGENT EXECUTION CORE`. Do not begin
+001B, provider integrations, CLI, SDK, UI, Branch, Merge, Candidate,
+Approval, or Agent State work in this design task.
 
 ## M1 Historical Handoff
 
