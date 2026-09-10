@@ -1,0 +1,34 @@
+M3-SLICE-001B WINDOWS LOCAL NATIVE DEVELOPMENT EVIDENCE
+Evidence timestamp: 2026-09-07T00:29:29.8651916+08:00
+Evidence class: LOCAL_NATIVE_DEVELOPMENT
+Platform: Windows 11 x86_64
+Filesystem: NTFS (D: volume)
+Toolchain: rustc 1.95.0 (59807616 2026-04-14); cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+Branch: dev
+Base commit: c44e727d30478575f682cafc0b8c52a657e86043
+Working tree: UNCOMMITTED_DEVELOPMENT_TREE
+
+Commands and exit codes:
+  cargo fmt --all -- --check                                      exit=0
+  cargo check --locked                                           exit=0
+  cargo test --locked --test agent_execution                      exit=0 (37 passed, 0 failed, 6 ignored)
+  cargo test --locked --test agent_execution_contract             exit=0 (0 passed, 0 failed, 6 ignored)
+  cargo test --all --locked --no-fail-fast                        exit=0 (368 passed, 0 failed, 45 ignored)
+  cargo clippy --all-targets --all-features --locked -- -D warnings exit=0
+  git diff --check                                               exit=0 (line-ending warnings only)
+
+Development-only scale sanity:
+  command: cargo test --locked --test agent_execution development_performance_sanity_counts_and_depth -- --nocapture
+  exit=0; duration=194.31s
+  Agent/Task/Execution counts: 1, 100, 1000
+  Execution graph depths: 10, 100, 1000
+  maximum depth: 1000
+  result: completed without recursion overflow
+
+Scope statement:
+  M3-SLICE-001B = PASS / INTERNAL / TEST-GATED
+  M1 and M2 contracts remain unchanged.
+  Handoff, Checkpoint, Rollback, and Resume are OPEN / FUTURE CONTRACT;
+  ignored tests are not counted as PASS.
+  This evidence is development-only and is not M1/M2 release evidence.
+  No M3-SLICE-002B implementation, release tag, or push was performed.

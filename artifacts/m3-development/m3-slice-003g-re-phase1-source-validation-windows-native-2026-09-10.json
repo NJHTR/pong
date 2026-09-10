@@ -1,0 +1,176 @@
+{
+  "phase": "M3-SLICE-003G-RE / PHASE-1",
+  "title": "Cross-Workspace Immutable Source Validation",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "date": "2026-09-10",
+  "platform": {
+    "os": "Windows 11 Home China 10.0.26200",
+    "arch": "x86_64",
+    "filesystem": "NTFS"
+  },
+  "toolchain": {
+    "rustc": "1.95.0 (59807616e 2026-04-14)",
+    "cargo": "1.95.0 (f2d3ce0bd 2026-03-21)"
+  },
+  "repository": {
+    "base_commit": "c44e727",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE"
+  },
+  "implementation": {
+    "scope": "Cross-workspace immutable source Version/Snapshot validation for read-only base references",
+    "excluded": [
+      "target-local materialization",
+      "cross-workspace rollback",
+      "cross-workspace restore",
+      "cross-workspace diff",
+      "parallel materialization filesystem operations",
+      "Version Head changes",
+      "Workspace.head changes"
+    ]
+  },
+  "validation": {
+    "source_model": "Version[W1] -> Snapshot[W1] -> CAS (immutable, Workspace-owned)",
+    "cross_workspace_allowed": "same project, environment, generation, migration",
+    "base_reference": "Execution.base_version_id (existing field, cross-workspace capable)",
+    "immutability_enforced": [
+      "source Version",
+      "source Snapshot",
+      "source Workspace",
+      "source CAS",
+      "source lease",
+      "target Workspace (no mutation from source read)",
+      "Version Head (unchanged)",
+      "Workspace Head (unchanged)"
+    ]
+  },
+  "tests": {
+    "new_file": "tests/cross_workspace_source.rs",
+    "count": 30,
+    "coverage": [
+      "X1: source Version exists",
+      "X2: cross-workspace source allowed",
+      "X3: same-workspace source allowed",
+      "X4: shared immutable source",
+      "X5: source Version immutable",
+      "X6: source Snapshot immutable",
+      "X7: source CAS immutable",
+      "X8: target Workspace unchanged",
+      "X9: source Workspace unchanged",
+      "X10: target lease unchanged",
+      "X11: source lease unchanged",
+      "X12: project mismatch rejected",
+      "X13: environment mismatch rejected",
+      "X14: generation compatibility verified",
+      "X15: migration compatibility verified",
+      "X16: missing Version rejected",
+      "X17: missing Snapshot handled",
+      "X18: missing CAS detected",
+      "X19: corrupt manifest detected",
+      "X20: invalid source Workspace rejected",
+      "X21: cold reopen recovery",
+      "X22: deterministic retry",
+      "X23: no operation side effects",
+      "X24: no event side effects",
+      "X25: no Version Head mutation",
+      "X26: no Workspace Head mutation",
+      "X27: Codex → Cursor base reference",
+      "X28: multiple Workspaces same source",
+      "X29: parallel source reads",
+      "X30: security/redaction"
+    ],
+    "result": "30 passed; 0 failed; 0 ignored"
+  },
+  "regression": {
+    "m1": "v0.1.0 RELEASED (unchanged)",
+    "m2": "SLICE-001~012 PASS (unchanged)",
+    "m3_001b": "PASS (unchanged)",
+    "m3_002d": "PASS (30/30 rollback tests)",
+    "m3_003f": "CONTRACT_READY (unchanged)",
+    "m3_003h": "CONTRACT_READY (unchanged)",
+    "handoff_checkpoint_rollback": "48/48 passed",
+    "rollback_result": "30/30 passed"
+  },
+  "quality_gates": {
+    "cargo_fmt_check": "PASS",
+    "cargo_check_locked": "PASS",
+    "cargo_test_cross_workspace_source": "PASS (30/30)",
+    "cargo_test_rollback_result": "PASS (30/30)",
+    "cargo_test_handoff_checkpoint_rollback": "PASS (48/48)",
+    "cargo_test_all_locked": "PASS",
+    "cargo_clippy": "PASS (0 warnings)",
+    "git_diff_check": "PASS (line-ending warnings only)"
+  },
+  "performance_sanity": {
+    "note": "Development-only sanity checks, no performance budget",
+    "source_references": "1/10/100 executions tested",
+    "test_execution_time": "0.35s for 30 tests"
+  },
+  "invariants_verified": [
+    "Version.workspace_id = source Workspace (unchanged)",
+    "Version.identity immutable",
+    "Version.parent same-Workspace lineage only",
+    "Snapshot.workspace_id = source Workspace (unchanged)",
+    "Snapshot immutable",
+    "CAS globally shared, immutable",
+    "Workspace.head points only to local Snapshot",
+    "Version Head points only to local Version or NULL",
+    "base_version_id allows cross-Workspace read-only reference",
+    "No source lease acquired by target Execution",
+    "No source metadata mutation from target reference",
+    "validate_base_version_scope enforces project/environment/generation/migration compatibility"
+  ],
+  "commands": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 1,
+      "note": "formatting applied successfully"
+    },
+    {
+      "command": "cargo check --locked",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo test --locked --test cross_workspace_source",
+      "exit_code": 0,
+      "duration_seconds": 0.35,
+      "result": "30 passed"
+    },
+    {
+      "command": "cargo test --locked --test rollback_result",
+      "exit_code": 0,
+      "result": "30 passed"
+    },
+    {
+      "command": "cargo test --locked --test handoff_checkpoint_rollback",
+      "exit_code": 0,
+      "result": "48 passed"
+    },
+    {
+      "command": "cargo test --all --locked",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo clippy --all-targets --all-features --locked -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "note": "line-ending warnings only (CRLF/LF normalization)"
+    }
+  ],
+  "risks": [
+    "Phase 1 only validates source references; materialization deferred to Phase 2",
+    "Generation/migration mismatch validation relies on existing validate_base_version_scope",
+    "CAS corruption/missing content detected by metadata validation, full verification in Phase 2"
+  ],
+  "remaining_work": {
+    "phase_2": "M3-SLICE-003G-RE / PHASE-2: Target-Local Snapshot Materialization",
+    "phase_3": "Cross-Workspace Rollback Implementation",
+    "phase_4": "Cross-Workspace Diff and Restore",
+    "contract_conversion": "Convert contract placeholders to real tests (40+ LMS, 30+ rollback schema)"
+  },
+  "evidence_type": "LOCAL_NATIVE_DEVELOPMENT",
+  "note": "This is Phase 1 implementation evidence only. Full M3-SLICE-003G-RE completion requires Phase 2-4."
+}

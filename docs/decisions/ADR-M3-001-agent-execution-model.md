@@ -1,9 +1,10 @@
 # ADR-M3-001: Agent / Task / Execution Model
 
-- Status: Proposed / Internal M3
+- Status: Internal M3 / Implemented / Test-Gated
 - Date: 2026-09-06
-- Scope: M3-SLICE-001A contract design only
-- Implementation: None; `PROPOSAL ONLY`
+- Scope: M3-SLICE-001A contract and M3-SLICE-001B bounded implementation
+- Implementation: Agent/Task/Execution core is implemented in `MetadataStore`;
+  public API and provider integrations remain out of scope.
 
 ## Context
 
@@ -177,19 +178,45 @@ Branch, Merge, Candidate, Approval, or Agent State implementation.
 
 ## Open Decisions
 
-- exact durable entities, fields, indexes, and migration strategy;
-- project versus broader scope for Agent and Task registries;
-- nullable Workspace/Version attachment rules by Execution kind;
-- concrete Operation ownership and event representation;
+- retention and deletion policy for the bounded durable entities;
+- broader-than-project Agent registry policy;
+- additional Workspace/Version attachment rules by future Execution kind;
 - Handoff, resume, dependency, and Checkpoint storage relations;
-- transition authorization and owner takeover policy;
+- transition authorization and owner takeover policy beyond the conservative
+  fail-closed matrix;
 - provider capability and external secret-reference vocabulary; and
-- retention, deletion, and external-effect compensation rules.
+- external-effect compensation rules.
 
 ## Decision
 
-Adopt this document as the proposed internal contract for M3-SLICE-001A.
-Only the parent-child Execution relation is frozen. All implementation and
-schema choices remain subject to a later bounded slice.
+Adopt this document as the internal contract for M3-SLICE-001A and the
+bounded M3-SLICE-001B implementation. Only the parent-child Execution relation
+is frozen as a graph edge; the implementation adds no other graph relation.
 
-`M3-SLICE-001A = CONTRACT_READY`.
+## Implementation Status
+
+M3-SLICE-001B implements only the four additive entities
+`agent_identities`, `tasks`, `executions`, and `execution_operations`. Durable
+identity, Task and Execution lifecycle, parent-child ancestry, explicit
+Workspace/Version references, operation ownership, redaction, lease/revision
+CAS, failpoint recovery, exact retry, concurrency, and legacy additive
+migration are covered by SQLite integration tests on Windows native
+development. Existing M1/M2 meanings, Operation identity, Workspace.head,
+Version identity/parent/Head, and ADR-0016 are unchanged.
+
+## Decision Applicability
+
+This ADR governs the internal Core persistence boundary. Provider is
+descriptive metadata; no Provider Registry, Remote/Git Provider, CLI, SDK, or
+UI behavior is implied. Graph membership never grants Workspace write
+authority. A writable current-Version update must use the existing Workspace
+lease and revision CAS.
+
+## Known Limitations
+
+Handoff, Checkpoint, Rollback, Resume API, dependency edges, Candidate,
+Approval, Agent State, Memory, Skill, Automation, and external provider
+execution remain future contracts. The six corresponding contract tests are
+marked `OPEN / FUTURE CONTRACT`; they are not PASS evidence.
+
+`M3-SLICE-001B = PASS / INTERNAL / TEST-GATED`.

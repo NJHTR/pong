@@ -1,0 +1,76 @@
+{
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "evidence_timestamp": "2026-09-07T23:20:20+08:00",
+  "status": "IN_PROGRESS / INTERNAL / TEST-GATED",
+  "slice": "M3-SLICE-002B",
+  "scope": "Durable Handoff, Checkpoint, Rollback record/validation, Resume, redaction, retry, failpoints, stale lease/revision rejection, cold reopen, and additive legacy initialization",
+  "platform": {
+    "os": "Windows 11 Home Chinese Edition 10.0.26200",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "filesystem_source": "D: volume",
+    "resources_observed": {
+      "logical_processors": 32,
+      "page_size_bytes": 4096,
+      "free_memory_mb": 3480.8,
+      "total_memory_mb": 16088.1,
+      "free_disk_bytes": 262625574912,
+      "disk_size_bytes": 511425114112
+    },
+    "toolchain": {
+      "rustc": "rustc 1.95.0 (59807616 2026-04-14)",
+      "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)"
+    }
+  },
+  "repository": {
+    "branch": "dev",
+    "base_commit": "c44e727d30478575f682cafc0b8c52a657e86043",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "release_evidence": false,
+    "release_tag_created": false,
+    "push_performed": false
+  },
+  "commands": [
+    {"command": "cargo fmt --all -- --check", "exit_code": 0},
+    {"command": "cargo check --locked", "exit_code": 0},
+    {"command": "cargo test --locked --test handoff_checkpoint_rollback", "exit_code": 0, "passed": 48, "failed": 0, "ignored": 0, "duration_seconds": 0.54},
+    {"command": "cargo test --locked --test handoff_checkpoint_rollback_contract -- --nocapture", "exit_code": 0, "passed": 0, "failed": 0, "ignored": 42},
+    {"command": "cargo test --all --locked --no-fail-fast", "exit_code": 0, "passed": 433, "failed": 0, "ignored": 87, "duration_seconds": 60.79},
+    {"command": "cargo clippy --all-targets --all-features --locked -- -D warnings", "exit_code": 0},
+    {"command": "git diff --check", "exit_code": 0, "notes": "line-ending warnings only"}
+  ],
+  "focused_runtime_counts": {
+    "named_handoff_scenarios": 10,
+    "named_checkpoint_scenarios": 7,
+    "named_rollback_scenarios": 8,
+    "named_resume_scenarios": 7,
+    "named_multi_agent_scenarios": 10,
+    "additional_boundary_tests": 6,
+    "total": 48,
+    "failed": 0,
+    "ignored": 0
+  },
+  "implemented_boundaries": [
+    "durable additive relation tables",
+    "canonical request digest and exact retry",
+    "redaction and generation/migration binding",
+    "SQLite pre-commit and post-commit failpoints",
+    "stale workspace lease and revision rejection",
+    "missing parent execution fail-closed behavior",
+    "cold reopen and legacy-compatible initialization"
+  ],
+  "remaining_open_decisions": [
+    "rollback materialization through the existing restore path",
+    "new Snapshot/Version result semantics after rollback",
+    "Version Head selection after rollback",
+    "Task baseline storage and task-scoped rollback",
+    "selective or cross-workspace rollback policy",
+    "handoff authorization and event taxonomy"
+  ],
+  "limitations": [
+    "Rollback is a durable validated recovery record; it does not mutate Workspace.head or Version Head.",
+    "No provider, CLI, SDK, UI, Branch, Merge, Candidate, Approval, or Agent State behavior was added.",
+    "This is Windows local-native development evidence, not release qualification or M1 evidence.",
+    "Ignored contract tests are not counted as PASS evidence."
+  ]
+}

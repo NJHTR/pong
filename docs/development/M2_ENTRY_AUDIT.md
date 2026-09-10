@@ -393,6 +393,16 @@ abstractions beyond the existing local driver. It must preserve the existing
 workspace-head compare-and-swap rule and make any post-publication uncertainty
 explicit.
 
+## M3-SLICE-001B Cross-Milestone Regression Note (2026-09-06)
+
+The M3 Agent/Task/Execution implementation remains outside the M2 release
+scope. Its additive SQLite tables and durable integration tests preserve the
+M1/M2 compatibility boundary. The Windows local-native development run reports
+37 passed and 6 explicitly ignored future-contract cases; the ignored cases
+are not counted as passing evidence. The development scale sanity exercised
+entity counts 1/100/1,000 and graph depths 10/100/1,000. No M2 schema meaning,
+provider qualification, or release evidence was changed.
+
 ## Entry Decision
 
 `M2_ENTRY = READY FOR DESIGN; M2-SLICE-001/002/003/004/005/006/007/008/009/010B/011B = PASS (INTERNAL); M2-SLICE-010A/011A = CONTRACT_READY predecessors; M2 = NOT READY FOR PUBLIC RELEASE`.

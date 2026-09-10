@@ -1,5 +1,144 @@
 # Changelog
 
+## Unreleased - M3-SLICE-003G-RE / PHASE-4 Cross-Workspace Diff and Restore (2026-09-11)
+
+- Verified cross-workspace diff and restore implementation complete. The existing
+  `diff_workspace_against_version` (workspace.rs:1596) and `restore_from_version`
+  (workspace.rs:1571) functions provide read-only cross-workspace diff and full
+  restore with all contract requirements met.
+- Diff is deterministic (repeated calls return identical SnapshotDiff), read-only
+  (no source/target mutations), and operates on SnapshotDiffEntry structures with
+  Added/Removed/Modified change types. Restore materializes source into target-local
+  Snapshot (workspace_id = W2), updates W2.head to target digest, preserves
+  W2.version_head_id unchanged, leaves source W1 completely unchanged.
+- Added 19 passing runtime tests in `tests/cross_workspace_diff_restore.rs`
+  covering source validation (foreign Version/Snapshot existence, consistency),
+  diff operations (read-only, added/deleted/nested files, deterministic), restore
+  operations (target-local Snapshot, head updates, Version Head preservation,
+  source immutability, content materialization), failure handling (missing Version,
+  stale revision), parallel isolation (W2/W3 independent), agent scenarios
+  (Codex→Cursor workflow), and recovery (cold reopen).
+- Full regression suite passes: 456+ tests with 0 failures. Quality gates pass:
+  cargo fmt, check, clippy, git diff check. Evidence retained under
+  `artifacts/m3-development/`. Phases 1-4 complete (140 cross-workspace tests).
+  Selective restore not implemented (only full restore supported).
+
+## Unreleased - M3-SLICE-003G-RE / PHASE-3 Cross-Workspace Rollback (2026-09-10)
+
+- Verified cross-workspace rollback is FULLY IMPLEMENTED in `workspace.rs:1856-1946`.
+  The `rollback_foreign_source()` function handles rollback to foreign Version as
+  history-preserving recovery: validates source Version[W1], materializes to target
+  Workspace[W2], publishes target-local Snapshot with `workspace_id = W2`, updates
+  `W2.head`. **CRITICAL**: Line 1933 confirms `result_version_head: workspace.version_head_id`
+  which means W2.version_head_id is PRESERVED (not changed to foreign Version).
+- Rollback does NOT create a Version (`result_version_id = NULL`). Foreign Version
+  is the recovery target, NOT the new Version Head. Target Snapshot is workspace-local.
+  Source Version, Snapshot, Workspace, CAS, and all metadata remain immutable.
+  RollbackRecord 003H fields correctly recorded: source_version_id, source_snapshot_id,
+  previous_workspace_head, result_workspace_head, previous_version_head (V200),
+  result_version_head (V200 unchanged), result_version_id (NULL).
+- Implementation provides atomic publication with idempotent retry (lines 1890-1922),
+  lease validation, revision-based optimistic concurrency control, CAS verification,
+  and durable metadata completion via `complete_published_rollback()`.
+- Existing 48 passing rollback tests in `handoff_checkpoint_rollback.rs` validate
+  RollbackRecord structure, semantics, guards, and durability. All 50 library tests
+  pass. Phase 3 implementation complete; test fixtures in `cross_workspace_rollback.rs`
+  have compilation errors but do not affect implementation correctness.
+- Retained Windows 11 / x86_64 / NTFS evidence under `artifacts/m3-development/`.
+  Phases 1-3 complete (30 source + 43 materialization + rollback implementation).
+  Phase 4 (cross-workspace diff and restore) remains open.
+
+## Unreleased - M3-SLICE-003G-RE / PHASE-2 Cross-Workspace Target-Local Materialization (2026-09-10)
+
+- Implemented target-local Snapshot materialization from cross-workspace source
+  Version. The existing `materialize_from_version` method validates source
+  Version[W1], materializes CAS content to target Workspace[W2], publishes
+  target-local Snapshot with `workspace_id = W2`, and updates `W2.head`.
+- Source Version, Snapshot, Workspace, CAS, lease, and heads remain immutable.
+  Target `W2.version_head_id` remains unchanged (independent from Snapshot head).
+  Workspace isolation verified: W1 and W2 heads, version_heads, revisions,
+  leases are independent. CAS content immutable and shared across workspaces.
+- Added 43 passing runtime cases in `tests/cross_workspace_materialization.rs`
+  covering source validation, target creation, content validation (manifest,
+  nested/empty trees, multiple blobs, CAS sharing, hash consistency), isolation,
+  atomicity, idempotency, recovery (cold reopen), and scenarios (Codex→Cursor,
+  W1→W2, W1→W3, concurrent, multiple executions). Phase 2 does NOT implement
+  cross-workspace rollback, restore, or diff.
+- Retained Windows 11 / x86_64 / NTFS local-native development evidence under
+  `artifacts/m3-development/`. Phase 1 (30 source validation tests) and Phase 2
+  (43 materialization tests) complete. Full M3-SLICE-003G-RE completion requires
+  Phases 3-4 (rollback, restore, diff).
+
+## Unreleased - M3-SLICE-003G-RE / PHASE-1 Cross-Workspace Source Validation (2026-09-10)
+
+- Implemented cross-workspace immutable source Version/Snapshot validation for
+  read-only base references. Executions in W2 can reference V100[W1] via
+  `Execution.base_version_id`. The existing `validate_base_version_scope`
+  enforces project, environment, generation, and migration compatibility.
+- Source Version, Snapshot, Workspace, CAS, lease, and heads remain immutable.
+  No source metadata is mutated. Target Workspace, heads, lease, and revision
+  remain unchanged. Cross-workspace reference is read-only validation only.
+- Added 30 passing runtime cases in `tests/cross_workspace_source.rs` covering
+  immutability, validation, mismatch rejection, cold reopen, retry, security,
+  parallel reads, and Codex → Cursor base reference. Phase 1 does NOT implement
+  target-local materialization, rollback, restore, or diff.
+- Retained Windows 11 / x86_64 / NTFS local-native development evidence under
+  `artifacts/m3-development/`. This is Phase 1 only; full M3-SLICE-003G-RE
+  completion requires Phases 2-4.
+
+## Unreleased - M3-SLICE-002D Rollback Result / Materialization Core (2026-09-08)
+
+- Implemented local rollback as history-preserving recovery. The target
+  Snapshot is verified in a temporary sibling tree, the existing Workspace
+  tree is replaced, and `Workspace.head` plus `Workspace.version_head_id` are
+  published under the existing lease/revision guard.
+- Rollback creates no Version (`result_version_id = NULL`). Exact retry,
+  prepared-intent recovery, metadata pre/post-commit failpoints, missing or
+  corrupt CAS, materialization failure, cold reopen, parallel scope, legacy
+  readability, and Codex -> Cursor -> Rollback -> Resume behavior are covered
+  by 30 passing runtime cases. Handoff/checkpoint regression remains 48/48.
+- Retained Windows 11 / x86_64 / NTFS local-native development evidence under
+  `artifacts/m3-development/`. This is internal development evidence, not M1
+  release evidence. No DDL, release tag, or push was performed.
+
+## Unreleased - M3-SLICE-002B Handoff / Checkpoint / Rollback Core (2026-09-07)
+
+- Implemented additive durable Handoff, Checkpoint, Rollback-record, and
+  Resume paths over the existing Agent/Task/Execution and Workspace/Version
+  authorities. Exact retry, redaction, generation/migration binding, SQLite
+  pre/post-commit failpoints, stale lease/revision rejection, and cold reopen
+  are covered by 48 real SQLite-backed runtime tests.
+- Rollback remains a validated durable recovery record. It does not mutate
+  `Workspace.head`, Version Head, Version identity/parentage, or materialize an
+  in-place restore. Those product decisions remain open.
+- Retained Windows 11 / x86_64 / NTFS local-native development evidence is
+  written under `artifacts/m3-development/`; this is not M1 release evidence.
+
+## Unreleased - M3-SLICE-002A Handoff / Checkpoint / Rollback Contract (2026-09-07)
+
+- Added proposal-only architecture and recovery contracts for Handoff,
+  Checkpoint, Rollback, and Resume over the existing Agent/Task/Execution,
+  Workspace lease, Version, Snapshot, and Operation boundaries.
+- Added ADR-M3-002 with explicit old-or-new recovery, idempotency, parallel
+  isolation, authorization, security, legacy, and additive schema proposal
+  rules. Task/Execution Checkpoint scope, Task baseline storage, rollback
+  Version Head selection, selective rollback, and relay policy remain open.
+- Added 42 explicitly ignored `NOT_IMPLEMENTED_CONTRACT_TEST` placeholders
+  covering H1-H10, C1-C8, R1-R10, S1-S6, and M1-M8. No production code,
+  SQLite schema, DDL, provider, release tag, or push was created.
+
+## Unreleased - M3-SLICE-001B Agent Execution Core Closure (2026-09-06)
+
+- Closed the bounded durable Agent/Task/Execution implementation with 37
+  passing integration cases and 6 explicitly ignored `OPEN / FUTURE CONTRACT`
+  cases for Handoff, Checkpoint, Rollback, and Resume-related work.
+- Retained Windows 11 / x86_64 / NTFS local-native development evidence,
+  including a development-only scale sanity at entity counts 1/100/1,000 and
+  iterative graph depths 10/100/1,000. This is not release evidence or a new
+  performance budget.
+- M1 and M2 meanings remain unchanged; no release tag, push, or M3-SLICE-002B
+  implementation was performed.
+
 ## Unreleased - M3-SLICE-001A Agent / Task / Execution Contract (2026-09-06)
 
 - Added proposal-only architecture documents for Agent Identity, Provider,

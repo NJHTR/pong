@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Execute",
+      "Create",
+      "Update",
+      "Edit",
+      "Bash(*)",
+      "Web Search",
+      "WebSearch",
+      "WebFetch",
+      "Search",
+      "Mcp",
+      "Skill",
+      "mcp__read-media-mcp__analyze_image",
+      "mcp__read-media-mcp__read_media",
+      "mcp__read-media-mcp__analyze_media"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf /*)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git checkout --orphan *)",
+      "Bash(git filter-branch *)",
+      "Bash(git filter-repo *)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | bash)",
+      "Bash(chmod -R 777 /)",
+      "Bash(sudo rm *)",
+      "Bash(mkfs.*)",
+      "Bash(dd if=/dev/*)"
+    ]
+  }
+}

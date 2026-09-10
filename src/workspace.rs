@@ -12,7 +12,8 @@ use crate::cas::{digest_for, Cas, Digest};
 use crate::error::PongError;
 use crate::metadata::{
     LeaseRecord, LeaseToken, NewEventEnvelope, OperationEnvelope, OperationError, OperationOutcome,
-    OperationRef, SnapshotPublication, WorkspaceLifecycleOperationInput, WorkspaceRecord,
+    OperationRef, PublishedRollbackCompletionInput, RollbackCompletionInput, RollbackCreation,
+    RollbackRecord, SnapshotPublication, WorkspaceLifecycleOperationInput, WorkspaceRecord,
     WorkspaceUpdate,
 };
 use crate::redaction::Redactor;
@@ -746,6 +747,19 @@ impl LocalWorkspace {
     }
 
     pub fn read_manifest(&self, cas: &Cas, digest: Digest) -> Result<TreeManifest, PongError> {
+        self.read_manifest_for_identity(cas, digest, &self.workspace_id, &self.project_id)
+    }
+
+    /// Read a canonical manifest owned by another Workspace without treating
+    /// that Workspace as the current driver's identity. This is the narrow
+    /// read-only source boundary used by cross-Workspace materialization.
+    pub fn read_manifest_for_identity(
+        &self,
+        cas: &Cas,
+        digest: Digest,
+        workspace_id: &str,
+        project_id: &str,
+    ) -> Result<TreeManifest, PongError> {
         let bytes = cas.get(TREE_DOMAIN, digest)?;
         let value: Value = serde_json::from_slice(&bytes)
             .map_err(|_| PongError::Integrity("workspace tree manifest is invalid JSON".into()))?;
@@ -758,13 +772,43 @@ impl LocalWorkspace {
         let manifest: TreeManifest = serde_json::from_value(value).map_err(|_| {
             PongError::Integrity("workspace tree manifest fields are invalid".into())
         })?;
+        validate_manifest(&manifest, workspace_id, project_id, &self.redactor)?;
+        Ok(manifest)
+    }
+
+    /// Rebind a verified immutable source manifest to the target Workspace's
+    /// local Snapshot identity. File blob digests remain shared; only the
+    /// canonical manifest metadata changes, so the source CAS object is never
+    /// modified or reassigned.
+    pub fn rebind_manifest_for_workspace(
+        &self,
+        cas: &Cas,
+        source_digest: Digest,
+        source_workspace_id: &str,
+        source_project_id: &str,
+        target_workspace_id: &str,
+        target_project_id: &str,
+    ) -> Result<(Digest, TreeManifest), PongError> {
+        let mut manifest = self.read_manifest_for_identity(
+            cas,
+            source_digest,
+            source_workspace_id,
+            source_project_id,
+        )?;
+        manifest.workspace_id = target_workspace_id.to_owned();
+        manifest.project_id = target_project_id.to_owned();
         validate_manifest(
             &manifest,
-            &self.workspace_id,
-            &self.project_id,
+            target_workspace_id,
+            target_project_id,
             &self.redactor,
         )?;
-        Ok(manifest)
+        let value = serde_json::to_value(&manifest).map_err(|error| {
+            PongError::Serialization(format!("cannot encode rebound workspace manifest: {error}"))
+        })?;
+        let bytes = canonical_bytes(&value)?;
+        let digest = cas.put(TREE_DOMAIN, &bytes)?;
+        Ok((digest, manifest))
     }
 
     /// Compare two verified snapshot manifests without reading their file
@@ -803,6 +847,23 @@ impl LocalWorkspace {
             old_snapshot_id: format!("snp-{reference_digest}"),
             new_snapshot_id: current_tree_id,
             entries: diff,
+        })
+    }
+
+    /// Compare the current tree with a source manifest whose Workspace
+    /// identity has already been validated by the metadata layer. This keeps
+    /// source reads read-only while reusing the deterministic M2 diff shape.
+    pub fn diff_against_manifest(
+        &self,
+        source_snapshot_id: &str,
+        source_manifest: &TreeManifest,
+    ) -> Result<SnapshotDiff, PongError> {
+        let current = self.current_tree_manifest()?;
+        let current_digest = manifest_digest(&current)?;
+        Ok(SnapshotDiff {
+            old_snapshot_id: source_snapshot_id.to_owned(),
+            new_snapshot_id: format!("workspace-current-{current_digest}"),
+            entries: diff_manifests(source_manifest, &current),
         })
     }
 
@@ -896,6 +957,86 @@ impl LocalWorkspace {
         }
         sync_directory(parent)?;
         Ok(destination)
+    }
+
+    /// Replace this workspace's existing physical tree with a verified
+    /// Snapshot.  The replacement is staged in a sibling directory and the
+    /// old tree is retained as a short-lived sibling while the new tree is
+    /// published.  This is intentionally local-driver machinery; durable
+    /// Workspace heads are published by the metadata transaction after this
+    /// method returns successfully.
+    pub fn replace_with_snapshot(&self, cas: &Cas, digest: Digest) -> Result<(), PongError> {
+        let manifest = self.read_manifest(cas, digest)?;
+        let parent = self
+            .root
+            .parent()
+            .ok_or_else(|| PongError::InvalidInput("workspace path has no parent".into()))?;
+        ensure_no_reparse_ancestors(parent)?;
+
+        recover_rollback_layout(parent, self.root.file_name(), &self.root)?;
+
+        // A retry after the filesystem publication boundary may already have
+        // the target tree.  Treat that as a deterministic completed physical
+        // step instead of attempting a second swap.
+        if self.verify_materialized(cas, digest, &self.root).is_ok() {
+            cleanup_rollback_backups(parent, self.root.file_name())?;
+            return Ok(());
+        }
+
+        let name = self
+            .root
+            .file_name()
+            .and_then(|value| value.to_str())
+            .ok_or_else(|| PongError::InvalidInput("workspace path is not valid UTF-8".into()))?;
+        let temporary = parent.join(format!(".{name}.rollback-{}", unique_suffix()));
+        fs::create_dir(&temporary)?;
+        if let Err(error) = self.materialize_into(cas, &manifest, &temporary) {
+            return Err(self.cleanup_after_failure(&temporary, error));
+        }
+        if let Err(error) = self.sync_tree_directory(&temporary) {
+            return Err(self.cleanup_after_failure(&temporary, error));
+        }
+        self.verify_materialized(cas, digest, &temporary)
+            .map_err(|error| self.cleanup_after_failure(&temporary, error))?;
+
+        if let Some(action) = self.take_fault(WorkspaceFailPoint::MaterializeRename) {
+            if !matches!(action, WorkspaceFaultAction::Continue) {
+                return Err(self.cleanup_after_failure(
+                    &temporary,
+                    workspace_fault_error(WorkspaceFailPoint::MaterializeRename, action),
+                ));
+            }
+        }
+
+        let backup = parent.join(format!(".{name}.rollback-old-{}", unique_suffix()));
+        if let Err(error) = fs::rename(&self.root, &backup) {
+            return Err(self.cleanup_after_failure(&temporary, PongError::from(error)));
+        }
+        if let Err(error) = fs::rename(&temporary, &self.root) {
+            let restore = fs::rename(&backup, &self.root);
+            let original = PongError::from(error);
+            return match restore {
+                Ok(()) => Err(self.cleanup_after_failure(&temporary, original)),
+                Err(restore_error) => Err(PongError::RecoveryRequired(format!(
+                    "rollback replacement failed ({original}); restoring old workspace failed ({restore_error})"
+                ))),
+            };
+        }
+
+        // The new tree is now visible.  A parent-sync fault deliberately leaves
+        // the replacement in place so a caller can verify/retry deterministically.
+        if let Some(action) = self.take_fault(WorkspaceFailPoint::MaterializeParentDirectorySync) {
+            if !matches!(action, WorkspaceFaultAction::Continue) {
+                return Err(workspace_fault_error(
+                    WorkspaceFailPoint::MaterializeParentDirectorySync,
+                    action,
+                ));
+            }
+        }
+        sync_directory(parent)?;
+        fs::remove_dir_all(&backup).map_err(PongError::from)?;
+        sync_directory(parent)?;
+        Ok(())
     }
 
     /// Verify a previously published materialization against the immutable
@@ -1357,6 +1498,451 @@ impl<'a> WorkspaceManager<'a> {
         self.repository
             .metadata_mut()
             .release_workspace_lease(token, now_ms)
+    }
+
+    /// Materialize an immutable Version owned by any compatible Workspace
+    /// into the explicitly authorized target Workspace.  The source manifest
+    /// is rebound to the target identity before the existing local replacement
+    /// and snapshot-publication paths are used; source metadata and CAS blobs
+    /// remain immutable and shared.
+    pub fn materialize_from_version(
+        &mut self,
+        target_workspace_id: &str,
+        source_version_id: &str,
+        lease: &LeaseToken,
+        expected_revision: i64,
+        now_ms: i64,
+        now: &str,
+    ) -> Result<Snapshot, PongError> {
+        let target = self
+            .repository
+            .metadata()
+            .workspace(target_workspace_id)?
+            .ok_or_else(|| PongError::NotFound("target workspace does not exist".into()))?;
+        if target.driver != "local" {
+            return Err(PongError::Unsupported(
+                "workspace is only materializable through the local driver".into(),
+            ));
+        }
+        if target.revision != expected_revision {
+            return Err(PongError::Conflict("workspace revision is stale".into()));
+        }
+        self.validate_workspace_lease(target_workspace_id, lease, now_ms)?;
+        let (source_version, source_snapshot, source_digest, source_manifest) =
+            self.source_manifest_for_target(&target, source_version_id)?;
+        let local = LocalWorkspace::open_with_failpoint_state(
+            &target.workspace_id,
+            &target.project_id,
+            PathBuf::from(&target.locator),
+            self.redactor.clone(),
+            Arc::clone(&self.failpoints),
+        )?;
+        let (target_digest, target_manifest) = local.rebind_manifest_for_workspace(
+            self.repository.cas(),
+            source_digest,
+            &source_version.workspace_id,
+            &source_version.project_id,
+            &target.workspace_id,
+            &target.project_id,
+        )?;
+        verify_manifest_blobs(self.repository.cas(), &source_manifest)?;
+        local.replace_with_snapshot(self.repository.cas(), target_digest)?;
+        local.verify_materialized(self.repository.cas(), target_digest, local.root())?;
+        let published = self.snapshot_local(
+            target_workspace_id,
+            lease,
+            SnapshotOptions::default(),
+            now_ms,
+            now,
+        )?;
+        let published_manifest = local.read_manifest(self.repository.cas(), published.digest)?;
+        if published_manifest != target_manifest
+            || published.workspace_id != target.workspace_id
+            || published.project_id != target.project_id
+            || source_snapshot.project_id != target.project_id
+        {
+            return Err(PongError::Integrity(
+                "target Snapshot publication does not match source materialization".into(),
+            ));
+        }
+        Ok(published)
+    }
+
+    /// Restore an immutable Version into a target Workspace.  This is the
+    /// cross-Workspace counterpart to `restore_local`: unlike the legacy
+    /// destination restore API it publishes a target-local Workspace Head.
+    pub fn restore_from_version(
+        &mut self,
+        target_workspace_id: &str,
+        source_version_id: &str,
+        lease: &LeaseToken,
+        expected_revision: i64,
+        now_ms: i64,
+        now: &str,
+    ) -> Result<Snapshot, PongError> {
+        self.materialize_from_version(
+            target_workspace_id,
+            source_version_id,
+            lease,
+            expected_revision,
+            now_ms,
+            now,
+        )
+    }
+
+    /// Read-only diff of the target physical tree against a compatible
+    /// immutable source Version.  No lease, revision, operation, event, CAS,
+    /// or Workspace Head is mutated.
+    pub fn diff_workspace_against_version(
+        &self,
+        target_workspace_id: &str,
+        source_version_id: &str,
+    ) -> Result<SnapshotDiff, PongError> {
+        let target = self
+            .repository
+            .metadata()
+            .workspace(target_workspace_id)?
+            .ok_or_else(|| PongError::NotFound("target workspace does not exist".into()))?;
+        if target.driver != "local" {
+            return Err(PongError::Unsupported(
+                "workspace diff is only implemented for the local driver".into(),
+            ));
+        }
+        let (_version, snapshot, source_digest, manifest) =
+            self.source_manifest_for_target(&target, source_version_id)?;
+        let local = LocalWorkspace::open_with_failpoint_state(
+            &target.workspace_id,
+            &target.project_id,
+            PathBuf::from(&target.locator),
+            self.redactor.clone(),
+            Arc::clone(&self.failpoints),
+        )?;
+        let result = local.diff_against_manifest(&snapshot.snapshot_id, &manifest)?;
+        if result.old_snapshot_id != snapshot.snapshot_id {
+            return Err(PongError::Integrity(
+                "source diff reference is inconsistent".into(),
+            ));
+        }
+        let _ = source_digest;
+        Ok(result)
+    }
+
+    fn validate_workspace_lease(
+        &self,
+        workspace_id: &str,
+        lease: &LeaseToken,
+        now_ms: i64,
+    ) -> Result<(), PongError> {
+        if lease.workspace_id != workspace_id {
+            return Err(PongError::Conflict(
+                "lease belongs to another workspace".into(),
+            ));
+        }
+        let current = self
+            .repository
+            .metadata()
+            .workspace_lease(workspace_id)?
+            .ok_or_else(|| PongError::Conflict("workspace lease is missing".into()))?;
+        if current.agent_id.as_deref() != Some(lease.agent_id.as_str())
+            || current.epoch != lease.epoch
+            || current.expires_at_ms <= now_ms
+        {
+            return Err(PongError::Conflict(
+                "workspace lease is stale or expired".into(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn source_manifest_for_target(
+        &self,
+        target: &WorkspaceRecord,
+        source_version_id: &str,
+    ) -> Result<
+        (
+            crate::metadata::VersionRecord,
+            crate::metadata::SnapshotRecord,
+            Digest,
+            TreeManifest,
+        ),
+        PongError,
+    > {
+        let version = self
+            .repository
+            .metadata()
+            .version_record(source_version_id)?
+            .ok_or_else(|| PongError::NotFound("source Version does not exist".into()))?;
+        if version.project_id != target.project_id
+            || version.environment_id != target.environment_id
+        {
+            return Err(PongError::Conflict(
+                "source Version is incompatible with target workspace".into(),
+            ));
+        }
+        let source_workspace = self
+            .repository
+            .metadata()
+            .workspace(&version.workspace_id)?
+            .ok_or_else(|| PongError::Integrity("source Workspace does not exist".into()))?;
+        if source_workspace.project_id != version.project_id
+            || source_workspace.environment_id != version.environment_id
+        {
+            return Err(PongError::Integrity(
+                "source Version Workspace binding is inconsistent".into(),
+            ));
+        }
+        let snapshot = self
+            .repository
+            .metadata()
+            .snapshot_record(&version.snapshot_id)?
+            .ok_or_else(|| PongError::Integrity("source Snapshot does not exist".into()))?;
+        if snapshot.workspace_id != version.workspace_id
+            || snapshot.project_id != version.project_id
+            || snapshot.environment_id != version.environment_id
+            || snapshot.generation_id != version.generation_id
+            || snapshot.migration_id != version.migration_id
+        {
+            return Err(PongError::Integrity(
+                "source Snapshot binding is inconsistent".into(),
+            ));
+        }
+        let digest_text = snapshot
+            .root_digest
+            .strip_prefix("sha256:")
+            .ok_or_else(|| PongError::Integrity("source Snapshot digest is not prefixed".into()))?;
+        let digest = Digest::from_hex(digest_text)?;
+        if snapshot.snapshot_id != format!("snp-{digest}") {
+            return Err(PongError::Integrity(
+                "source Snapshot identity does not match its digest".into(),
+            ));
+        }
+        let target_local = LocalWorkspace::open_with_failpoint_state(
+            &target.workspace_id,
+            &target.project_id,
+            PathBuf::from(&target.locator),
+            self.redactor.clone(),
+            Arc::clone(&self.failpoints),
+        )?;
+        let manifest = target_local.read_manifest_for_identity(
+            self.repository.cas(),
+            digest,
+            &version.workspace_id,
+            &version.project_id,
+        )?;
+        if snapshot.manifest_version != TREE_MANIFEST_VERSION {
+            return Err(PongError::Integrity(
+                "source Snapshot manifest is incompatible".into(),
+            ));
+        }
+        Ok((version, snapshot, digest, manifest))
+    }
+
+    /// Restore one immutable Version/Checkpoint into the existing local
+    /// Workspace and publish the resulting Snapshot Head and Version Head in
+    /// one guarded metadata transaction.  The rollback record is prepared
+    /// before filesystem mutation and remains retryable until both authorities
+    /// agree on the target.
+    pub fn rollback_local(
+        &mut self,
+        request: &RollbackCreation,
+    ) -> Result<RollbackRecord, PongError> {
+        let expected_revision = request.expected_workspace_revision.ok_or_else(|| {
+            PongError::InvalidInput("rollback requires an expected workspace revision".into())
+        })?;
+        let prepared = self.repository.metadata_mut().prepare_rollback(request)?;
+        let workspace = self
+            .repository
+            .metadata()
+            .workspace(&prepared.workspace_id)?
+            .ok_or_else(|| PongError::NotFound("rollback workspace does not exist".into()))?;
+        if workspace.driver != "local" {
+            return Err(PongError::Unsupported(
+                "rollback is only implemented for the local workspace driver".into(),
+            ));
+        }
+        if prepared.status == "prepared" {
+            let lease = request.lease.as_ref().ok_or_else(|| {
+                PongError::Conflict("rollback requires a current workspace lease".into())
+            })?;
+            let lease_record = self
+                .repository
+                .metadata()
+                .workspace_lease(&prepared.workspace_id)?
+                .ok_or_else(|| PongError::Conflict("workspace lease is missing".into()))?;
+            if lease_record.agent_id.as_deref() != Some(lease.agent_id.as_str())
+                || lease_record.epoch != lease.epoch
+                || lease_record.expires_at_ms <= request.now_ms.unwrap_or(i64::MAX)
+            {
+                return Err(PongError::Conflict(
+                    "workspace lease is stale or expired".into(),
+                ));
+            }
+        }
+        let target_version = self
+            .repository
+            .metadata()
+            .version_record(&prepared.target_version_id)?
+            .ok_or_else(|| PongError::Integrity("rollback target Version disappeared".into()))?;
+        if target_version.workspace_id != workspace.workspace_id {
+            return self.rollback_foreign_source(
+                request,
+                prepared,
+                workspace,
+                target_version,
+                expected_revision,
+            );
+        }
+        let snapshot = self
+            .repository
+            .metadata()
+            .snapshot_record(&target_version.snapshot_id)?
+            .ok_or_else(|| PongError::Integrity("rollback target Snapshot disappeared".into()))?;
+        let digest_text = snapshot
+            .root_digest
+            .strip_prefix("sha256:")
+            .ok_or_else(|| {
+                PongError::Integrity("rollback Snapshot digest is not prefixed".into())
+            })?;
+        let digest = Digest::from_hex(digest_text)?;
+        if snapshot.snapshot_id != format!("snp-{digest}")
+            || snapshot.workspace_id != workspace.workspace_id
+            || snapshot.project_id != workspace.project_id
+        {
+            return Err(PongError::Integrity(
+                "rollback target Snapshot binding is inconsistent".into(),
+            ));
+        }
+        let local = LocalWorkspace::open_with_failpoint_state(
+            &workspace.workspace_id,
+            &workspace.project_id,
+            PathBuf::from(&workspace.locator),
+            self.redactor.clone(),
+            Arc::clone(&self.failpoints),
+        )?;
+        local.replace_with_snapshot(self.repository.cas(), digest)?;
+        local.verify_materialized(self.repository.cas(), digest, local.root())?;
+        let result_version_head = if target_version.workspace_id == workspace.workspace_id {
+            Some(target_version.version_id.as_str())
+        } else {
+            workspace.version_head_id.as_deref()
+        };
+        self.repository
+            .metadata_mut()
+            .complete_rollback(RollbackCompletionInput {
+                rollback_id: &prepared.rollback_id,
+                workspace_id: &prepared.workspace_id,
+                target_version_id: &prepared.target_version_id,
+                target_workspace_head: &snapshot.root_digest,
+                source_version_id: Some(&target_version.version_id),
+                source_snapshot_id: Some(&snapshot.snapshot_id),
+                previous_workspace_head: workspace.head.as_deref(),
+                previous_version_head: workspace.version_head_id.as_deref(),
+                result_version_head,
+                lease: request.lease.as_ref().ok_or_else(|| {
+                    PongError::Conflict("rollback requires a current workspace lease".into())
+                })?,
+                expected_revision,
+                updated_at: &request.created_at,
+                now_ms: request.now_ms.unwrap_or(i64::MAX),
+            })?;
+        self.repository
+            .metadata()
+            .rollback_record(&prepared.rollback_id)?
+            .ok_or_else(|| {
+                PongError::Integrity("rollback record disappeared after completion".into())
+            })
+    }
+
+    fn rollback_foreign_source(
+        &mut self,
+        request: &RollbackCreation,
+        prepared: RollbackRecord,
+        workspace: WorkspaceRecord,
+        source_version: crate::metadata::VersionRecord,
+        expected_revision: i64,
+    ) -> Result<RollbackRecord, PongError> {
+        let lease = request.lease.as_ref().ok_or_else(|| {
+            PongError::Conflict("rollback requires a current workspace lease".into())
+        })?;
+        let (_version, source_snapshot, source_digest, source_manifest) =
+            self.source_manifest_for_target(&workspace, &source_version.version_id)?;
+        let local = LocalWorkspace::open_with_failpoint_state(
+            &workspace.workspace_id,
+            &workspace.project_id,
+            PathBuf::from(&workspace.locator),
+            self.redactor.clone(),
+            Arc::clone(&self.failpoints),
+        )?;
+        let (target_digest, target_manifest) = local.rebind_manifest_for_workspace(
+            self.repository.cas(),
+            source_digest,
+            &source_version.workspace_id,
+            &source_version.project_id,
+            &workspace.workspace_id,
+            &workspace.project_id,
+        )?;
+        verify_manifest_blobs(self.repository.cas(), &source_manifest)?;
+        let target_head = format!("sha256:{target_digest}");
+        let target_snapshot_id = format!("snp-{target_digest}");
+
+        // A retry after local Snapshot publication must not repeat the
+        // filesystem replacement or increment the target revision again.
+        let already_published = workspace.revision == expected_revision + 1
+            && workspace.head.as_deref() == Some(target_head.as_str())
+            && self
+                .repository
+                .metadata()
+                .snapshot_record(&target_snapshot_id)?
+                .is_some();
+        let publication_revision = if already_published {
+            expected_revision + 1
+        } else {
+            if workspace.revision != expected_revision {
+                return Err(PongError::Conflict("workspace revision is stale".into()));
+            }
+            local.replace_with_snapshot(self.repository.cas(), target_digest)?;
+            local.verify_materialized(self.repository.cas(), target_digest, local.root())?;
+            let snapshot = self.snapshot_local(
+                &workspace.workspace_id,
+                lease,
+                SnapshotOptions::default(),
+                request.now_ms.unwrap_or(i64::MAX),
+                &request.created_at,
+            )?;
+            let published_manifest = local.read_manifest(self.repository.cas(), snapshot.digest)?;
+            if published_manifest != target_manifest
+                || snapshot.snapshot_id != target_snapshot_id
+                || snapshot.workspace_id != workspace.workspace_id
+            {
+                return Err(PongError::Integrity(
+                    "foreign rollback Snapshot publication is inconsistent".into(),
+                ));
+            }
+            expected_revision + 1
+        };
+        self.repository.metadata_mut().complete_published_rollback(
+            PublishedRollbackCompletionInput {
+                rollback_id: &prepared.rollback_id,
+                workspace_id: &workspace.workspace_id,
+                target_version_id: &source_version.version_id,
+                target_workspace_head: &target_head,
+                source_version_id: Some(&source_version.version_id),
+                source_snapshot_id: Some(&source_snapshot.snapshot_id),
+                previous_workspace_head: workspace.head.as_deref(),
+                previous_version_head: workspace.version_head_id.as_deref(),
+                result_version_head: workspace.version_head_id.as_deref(),
+                lease,
+                expected_revision: publication_revision,
+                updated_at: &request.created_at,
+                now_ms: request.now_ms.unwrap_or(i64::MAX),
+            },
+        )?;
+        self.repository
+            .metadata()
+            .rollback_record(&prepared.rollback_id)?
+            .ok_or_else(|| {
+                PongError::Integrity("rollback record disappeared after completion".into())
+            })
     }
 
     /// Apply one provider-neutral lifecycle action through the existing
@@ -3166,6 +3752,71 @@ fn workspace_fault_error(point: WorkspaceFailPoint, action: WorkspaceFaultAction
             PongError::ResourceExhausted(format!("{label}:resource_exhausted"))
         }
     }
+}
+
+fn cleanup_rollback_backups(
+    parent: &Path,
+    workspace_name: Option<&std::ffi::OsStr>,
+) -> Result<(), PongError> {
+    let Some(workspace_name) = workspace_name.and_then(|name| name.to_str()) else {
+        return Ok(());
+    };
+    let prefix = format!(".{workspace_name}.rollback-old-");
+    for entry in fs::read_dir(parent).map_err(PongError::from_protected_io)? {
+        let entry = entry.map_err(PongError::from_protected_io)?;
+        let name = entry.file_name();
+        if !name.to_str().is_some_and(|name| name.starts_with(&prefix)) {
+            continue;
+        }
+        let metadata = fs::symlink_metadata(entry.path()).map_err(PongError::from_protected_io)?;
+        if is_reparse_point(&metadata) || !metadata.is_dir() {
+            return Err(PongError::Integrity(
+                "rollback backup is not a regular directory".into(),
+            ));
+        }
+        fs::remove_dir_all(entry.path()).map_err(PongError::from_protected_io)?;
+    }
+    sync_directory(parent)?;
+    Ok(())
+}
+
+fn recover_rollback_layout(
+    parent: &Path,
+    workspace_name: Option<&std::ffi::OsStr>,
+    workspace_root: &Path,
+) -> Result<(), PongError> {
+    let Some(workspace_name) = workspace_name.and_then(|name| name.to_str()) else {
+        return Ok(());
+    };
+    if fs::symlink_metadata(workspace_root).is_ok() {
+        return Ok(());
+    }
+    let prefix = format!(".{workspace_name}.rollback-old-");
+    let mut backups = fs::read_dir(parent)
+        .map_err(PongError::from_protected_io)?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry
+                .file_name()
+                .to_str()
+                .is_some_and(|name| name.starts_with(&prefix))
+        })
+        .collect::<Vec<_>>();
+    backups.sort_by_key(|entry| entry.file_name());
+    let Some(backup) = backups.pop() else {
+        return Err(PongError::RecoveryRequired(
+            "rollback workspace tree is missing and no old complete backup exists".into(),
+        ));
+    };
+    let metadata = fs::symlink_metadata(backup.path()).map_err(PongError::from_protected_io)?;
+    if is_reparse_point(&metadata) || !metadata.is_dir() {
+        return Err(PongError::Integrity(
+            "rollback backup is not a regular directory".into(),
+        ));
+    }
+    fs::rename(backup.path(), workspace_root).map_err(PongError::from_protected_io)?;
+    sync_directory(parent)?;
+    Ok(())
 }
 
 #[cfg(windows)]

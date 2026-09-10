@@ -1,9 +1,11 @@
 # M3 Execution Graph
 
-**Status:** `PROPOSAL ONLY` / Internal M3
-**Slice:** M3-SLICE-001A - Agent / Task / Execution Contract
-**Implementation:** None. The graph described here is a logical contract; no
-SQLite schema, migration, graph index, or runtime graph service is implemented.
+**Status:** `IMPLEMENTED` / `INTERNAL` / `TEST-GATED`
+**Slice:** M3-SLICE-001B - Agent Execution Core
+**Implementation:** The parent Execution graph and its Agent/Task/Execution
+nodes are durable in SQLite. The graph is bounded to the four additive
+entities implemented by `MetadataStore`; future relation types remain out of
+scope.
 
 ## Graph Boundary
 
@@ -158,7 +160,7 @@ callback must still satisfy the existing project binding and Workspace lease
 and revision checks. Agent capabilities are declarations interpreted by the
 integration boundary, not credentials or automatic permission grants.
 
-## Schema Proposal
+## Implemented Schema Boundary
 
 The logical entities are:
 
@@ -175,9 +177,11 @@ Handoff(handoff_id, task_id, from_execution_id, to_execution_id, reason,
 ExecutionOperation(execution_id, operation_id)
 ```
 
-This is a proposal, not a DDL prescription. Nullable fields, project scope,
-uniqueness, indexes, migration, retention, and event representation remain
-open. M3-SLICE-001A performs no schema mutation.
+The implemented tables are `agent_identities`, `tasks`, `executions`, and
+`execution_operations`. They are created additively for new and legacy-opened
+databases, while the v0.1 source database is opened read-only during
+generation migration. Operation ownership is separate from the existing
+Operation identity. No Checkpoint or Handoff table is created in this slice.
 
 ## Compatibility
 
@@ -188,8 +192,13 @@ Merge, Candidate, Approval, or Agent State implementation.
 
 ## Status
 
-`M3-SLICE-001A = CONTRACT_READY`.
+`M3-SLICE-001B = PASS / INTERNAL / TEST-GATED`.
 
-All executable tests for this slice are intentionally marked
-`NOT_IMPLEMENTED_CONTRACT_TEST`; they are placeholders and do not count as
-runtime evidence or PASS.
+A development-only scale sanity completed entity counts of 1, 100, and 1,000
+and iterative graph depths of 10, 100, and 1,000. This is implementation
+evidence only and does not establish a release performance budget.
+
+The graph implementation is covered by durable integration tests, including
+multi-level ancestry, cycle rejection, parallel children, ownership,
+recovery, retry, and scope validation. Handoff, dependency, Checkpoint,
+Rollback, and Resume remain `OPEN / FUTURE CONTRACT`.

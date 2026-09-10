@@ -1,0 +1,49 @@
+M3-SLICE-002B WINDOWS LOCAL NATIVE DEVELOPMENT EVIDENCE
+Evidence timestamp: 2026-09-07T23:20:20+08:00
+Evidence class: LOCAL_NATIVE_DEVELOPMENT
+Platform: Windows 11 Home Chinese Edition 10.0.26200 x86_64
+Filesystem: NTFS (D: volume)
+Resources observed: 32 logical processors; 16,088.1 MB total memory;
+  3,480.8 MB free memory; 511,425,114,112 bytes volume size;
+  262,625,574,912 bytes free
+Toolchain: rustc 1.95.0 (59807616 2026-04-14); cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+Branch: dev
+Base commit: c44e727d30478575f682cafc0b8c52a657e86043
+Working tree: UNCOMMITTED_DEVELOPMENT_TREE
+
+Commands and exit codes:
+  cargo fmt --all -- --check                                      exit=0
+  cargo check --locked                                           exit=0
+  cargo test --locked --test handoff_checkpoint_rollback          exit=0 (48 passed, 0 failed, 0 ignored; 0.54s)
+  cargo test --locked --test handoff_checkpoint_rollback_contract -- --nocapture
+                                                                  exit=0 (0 passed, 0 failed, 42 ignored)
+  cargo test --all --locked --no-fail-fast                        exit=0 (433 passed, 0 failed, 87 ignored; 60.79s)
+  cargo clippy --all-targets --all-features --locked -- -D warnings exit=0
+  git diff --check                                               exit=0 (line-ending warnings only)
+
+Focused runtime counts (scenario names overlap across the multi-agent cases):
+  Named Handoff scenarios: 10
+  Named Checkpoint scenarios: 7
+  Named Rollback scenarios: 8
+  Named Resume scenarios: 7
+  Named multi-agent scenarios: 10
+  Additional boundary tests: 6
+  Total: 48 passed, 0 failed, 0 ignored
+
+Implemented boundary:
+  Durable additive relation rows, exact retry, redaction,
+  generation/migration binding, pre/post-commit SQLite failpoints,
+  stale lease/revision rejection, missing-parent fail-closed behavior,
+  cold reopen, and legacy-compatible additive initialization.
+
+Remaining open decisions:
+  Rollback materialization through the existing restore path, resulting
+  Snapshot/Version semantics, Version Head selection, Task baseline storage,
+  selective/cross-workspace rollback, handoff authorization, and event taxonomy.
+
+Scope:
+  M3-SLICE-002B = IN_PROGRESS / INTERNAL / TEST-GATED.
+  Rollback is a durable validated recovery record only. It does not mutate
+  Workspace.head or Version Head and does not claim materialized restore.
+  This evidence is development-only and is not M1 release evidence.
+  No release tag was created and nothing was pushed.

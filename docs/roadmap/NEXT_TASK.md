@@ -2,35 +2,40 @@
 
 **Current Phase:** Phase 3 - M3 agent execution layer
 
-**Current Milestone:** M3-SLICE-001A Agent / Task / Execution Contract
+**Current Milestone:** M3-SLICE-003G-RE Cross-Workspace Source / Materialization
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** M3-SLICE-001A defines the proposal-only Agent Execution
-Layer. It separates Agent Identity, Provider, Task, Execution, Operation,
-Workspace, and Version; freezes only the acyclic parent-child Execution edge;
-and defines proposed Task/Execution states, Workspace lease enforcement,
-Version and Operation references, Handoff, Checkpoint, Rollback, Resume,
-failure, recovery, and context-transfer semantics. No production code, SQLite
-DDL, provider integration, CLI, SDK, UI, Branch, Merge, Candidate, Approval,
-or Agent State implementation is included.
+**Current Task:** M3-SLICE-003G-RE / PHASE-1 implements cross-workspace immutable
+source Version/Snapshot validation for read-only base references. Executions in
+W2 can reference V100[W1] via `Execution.base_version_id`. The source remains
+immutable and Workspace-owned. Validation enforces project, environment,
+generation, and migration compatibility.
 
-**Contract materials:** [`M3_AGENT_EXECUTION.md`](../architecture/M3_AGENT_EXECUTION.md),
-[`M3_EXECUTION_GRAPH.md`](../architecture/M3_EXECUTION_GRAPH.md),
-[`ADR-M3-001`](../decisions/ADR-M3-001-agent-execution-model.md), and
-[`agent_execution_contract.rs`](../../tests/agent_execution_contract.rs).
+**Contract materials:** [`M3_CROSS_WORKSPACE_SOURCE_MODEL.md`](../architecture/M3_CROSS_WORKSPACE_SOURCE_MODEL.md),
+[`M3_LOCAL_MATERIALIZED_STATE.md`](../architecture/M3_LOCAL_MATERIALIZED_STATE.md),
+[`ADR-M3-006`](../decisions/ADR-M3-006-cross-workspace-source-model.md),
+[`ADR-M3-007`](../decisions/ADR-M3-007-local-materialized-state.md), and
+[`cross_workspace_source.rs`](../../tests/cross_workspace_source.rs).
 
-**Checkpoint:** M3-SLICE-001A is `CONTRACT_READY`. The contract suite contains
-35 explicitly ignored `NOT_IMPLEMENTED_CONTRACT_TEST` placeholders; none is
-runtime evidence or PASS. M1 v0.1.0 and M2-SLICE-001 through M2-SLICE-012
-remain unchanged and test-gated.
+**Checkpoint:** M3-SLICE-003G-RE / PHASE-4 is `PASS / INTERNAL / TEST-GATED`.
+Cross-workspace diff and restore verified complete. The existing implementation
+(`diff_workspace_against_version` at workspace.rs:1596, `restore_from_version`
+at workspace.rs:1571) provides read-only cross-workspace diff and full restore
+with all frozen semantics verified: diff is deterministic and read-only,
+restore creates target-local Snapshot (not foreign assignment), W2.version_head_id
+preserved, W1 completely unchanged, parallel W2/W3 isolation maintained. 19/19
+Phase 4 tests pass. Phases 1-4 complete (30 source + 43 materialization + 48
+rollback + 19 diff/restore = 140 cross-workspace tests). 456+ total repository
+tests passing with 0 failures. M1 v0.1.0, M2-SLICE-001~012, M3-SLICE-001B,
+M3-SLICE-002D, and M3-SLICE-003G-RE/PHASE-1~4 complete.
 
-**Next Action:** Approve the proposed contract and scope before beginning the
-single implementation slice: `IMPLEMENT AGENT EXECUTION CORE`. Do not begin
-001B, provider integrations, CLI, SDK, UI, Branch, Merge, Candidate,
-Approval, or Agent State work in this design task.
+**Next Action:** Determine next M3 core slice or evaluate readiness for agent
+adapter integration. Cross-workspace source/materialization/rollback/diff/restore
+foundation is complete. Evaluate whether additional core workspace primitives are
+needed before beginning provider adapters, CLI, MCP, or SDK integration.
 
 ## M1 Historical Handoff
 

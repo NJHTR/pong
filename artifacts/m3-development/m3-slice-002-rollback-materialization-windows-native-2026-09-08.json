@@ -1,0 +1,90 @@
+{
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "evidence_timestamp": "2026-09-08T23:37:59+08:00",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "slice": "M3-SLICE-002D",
+  "scope": "Local rollback result and materialization: target Version/Checkpoint resolution, verified Snapshot CAS materialization, atomic Workspace replacement, Workspace.head and Version Head publication, history preservation, immutable Version graph, retry, failure boundaries, cold reopen, legacy compatibility, and Rollback -> Resume behavior",
+  "platform": {
+    "os": "Windows 11 Home Chinese Edition 10.0.26200",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "filesystem_source": "D: volume",
+    "resources_observed": {
+      "logical_processors": 32,
+      "total_memory_mb": 16088.1,
+      "free_memory_mb": 3480.8,
+      "disk_size_bytes": 511425114112,
+      "free_disk_bytes_at_prior_002B_observation": 262625574912
+    },
+    "toolchain": {
+      "rustc": "rustc 1.95.0 (59807616 2026-04-14)",
+      "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)"
+    }
+  },
+  "repository": {
+    "head_commit": "c44e727d30478575f682cafc0b8c52a657e86043",
+    "base_commit": "c44e727d30478575f682cafc0b8c52a657e86043",
+    "branch": "dev",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "release_evidence": false,
+    "release_tag_created": false,
+    "push_performed": false
+  },
+  "commands": [
+    {"command": "cargo fmt --all -- --check", "exit_code": 0, "duration_seconds": 0.52},
+    {"command": "cargo check --locked", "exit_code": 0, "duration_seconds": 1.78},
+    {"command": "cargo test --locked --test rollback_result -- --nocapture", "exit_code": 0, "duration_seconds": 3.79, "passed": 30, "failed": 0, "ignored": 0},
+    {"command": "cargo test --locked --test handoff_checkpoint_rollback -- --nocapture", "exit_code": 0, "duration_seconds": 0.92, "passed": 48, "failed": 0, "ignored": 0},
+    {"command": "cargo test --locked --test rollback_result_contract -- --nocapture", "exit_code": 0, "duration_seconds": 0.30, "passed": 0, "failed": 0, "ignored": 22, "classification": "ignored contract index"},
+    {"command": "cargo test --all --locked --no-fail-fast", "exit_code": 0, "duration_seconds": 54.70, "passed": 433, "failed": 0, "ignored": 87},
+    {"command": "cargo clippy --all-targets --all-features --locked -- -D warnings", "exit_code": 0, "duration_seconds": 0.54},
+    {"command": "git diff --check", "exit_code": 0, "duration_seconds": 0.24, "notes": "CRLF conversion warnings only"}
+  ],
+  "contract_tests": {
+    "command": "cargo test --locked --test rollback_result_contract -- --nocapture",
+    "included_in_full_regression": true,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 22,
+    "classification": "ignored contract index; not runtime PASS evidence"
+  },
+  "focused_runtime_counts": {
+    "rollback_result_cases": {"passed": 30, "failed": 0, "ignored": 0},
+    "direct_checkpoint_target_scenarios": 2,
+    "direct_resume_scenarios": 3,
+    "handoff_checkpoint_rollback_regression_cases": {"passed": 48, "failed": 0, "ignored": 0}
+  },
+  "failure_and_recovery_cases": [
+    "materialization file-write failure leaves prepared intent and old heads",
+    "missing CAS fails closed",
+    "corrupted Snapshot CAS fails closed",
+    "stale lease fails before physical mutation",
+    "stale revision fails before physical mutation",
+    "metadata failure before completion commit retries from prepared intent",
+    "metadata failure after completion commit reopens as new complete state",
+    "cold reopen after parent-directory sync interruption retries deterministically",
+    "exact retry returns the same completed RollbackRecord without a second revision"
+  ],
+  "implemented_invariants": [
+    "rollback is history-preserving recovery",
+    "Workspace.head equals the target Snapshot root digest after completion",
+    "Workspace.version_head_id equals the target Version after completion",
+    "rollback result_version_id remains null",
+    "historical Versions, parent edges, Snapshots, Operations, Executions, and Checkpoints remain unchanged",
+    "Resume creates a new Execution and later Version; rollback does not create a Version",
+    "filesystem replacement is staged, verified, and published before guarded metadata completion",
+    "physical and metadata failure boundaries are fail-closed and retryable"
+  ],
+  "performance_sanity": {
+    "classification": "DEVELOPMENT_ONLY_SANITY_NOT_A_BUDGET",
+    "measurement": "No new performance budget or release acceptance was created in this slice",
+    "notes": "Focused rollback runtime completed in 0.48 seconds according to the test harness; this is not ADR-0015 acceptance"
+  },
+  "limitations": [
+    "Windows local-native development evidence only; not M1 release evidence",
+    "No Git/Remote provider, Provider Registry, CLI, SDK, UI, Branch, Merge, Candidate, Approval, Agent State, or public API behavior",
+    "Task-scoped, selective, and cross-workspace rollback remain future contracts",
+    "Ignored contract cases are not counted as PASS",
+    "Working tree is intentionally uncommitted development state"
+  ]
+}

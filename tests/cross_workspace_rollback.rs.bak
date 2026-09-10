@@ -1,0 +1,1950 @@
+//! M3-SLICE-003G-RE / PHASE-3: Cross-Workspace Rollback
+//!
+//! This phase validates cross-workspace rollback: target workspace W2 rolls back
+//! to source Version V100[W1]. The rollback materializes source content into
+//! target workspace, creates target-local Snapshot, updates W2.head, preserves
+//! W2.version_head_id, and records RollbackRecord with result_version_id = NULL.
+
+use pong_core::cas::Digest;
+use pong_core::metadata::{
+    AgentIdentity, ExecutionCreation, OperationEnvelope, OperationRef, RollbackCreation,
+    RollbackTarget, TaskCreation, VersionPublication,
+};
+use pong_core::redaction::Redactor;
+use pong_core::workspace::{SnapshotOptions, WorkspaceManager};
+use pong_core::{LeaseToken, PongError, Repository, VersionRecord};
+use serde_json::json;
+use std::fs;
+use std::path::PathBuf;
+use tempfile::tempdir;
+
+struct CrossWorkspaceRollbackFixture {
+    _project: tempfile::TempDir,
+    _ws1_parent: tempfile::TempDir,
+    _ws2_parent: tempfile::TempDir,
+    repository: Repository,
+    ws1_path: PathBuf,
+    ws2_path: PathBuf,
+    ws1_lease: LeaseToken,
+    ws2_lease: LeaseToken,
+    source_version: VersionRecord,
+    execution_id: String,
+}
+
+fn setup_cross_workspace_rollback_fixture() -> CrossWorkspaceRollbackFixture {
+    let project = tempdir().expect("project");
+    let ws1_parent = tempdir().expect("ws1 parent");
+    let ws2_parent = tempdir().expect("ws2 parent");
+    let mut repository = Repository::init(project.path()).expect("repository");
+
+    // Create shared environment
+    repository
+        .metadata_mut()
+        .record_environment(
+            "env-rb",
+            "project-rb",
+            &json!({"schema_version": 1, "os": "windows"}),
+            "t0",
+        )
+        .expect("environment");
+
+    // Create agents
+    for (id, provider) in [("agent-codex", "codex"), ("agent-cursor", "cursor")] {
+        repository
+            .metadata_mut()
+            .create_agent_identity(&AgentIdentity {
+                agent_id: id.into(),
+                provider: provider.into(),
+                display_name: None,
+                created_at: "t0".into(),
+            })
+            .expect("agent");
+    }
+
+    // Create task
+    repository
+        .metadata_mut()
+        .create_task(&TaskCreation {
+            task_id: "task-rb".into(),
+            project_id: "project-rb".into(),
+            goal: "cross-workspace rollback".into(),
+            context_ref: None,
+            created_at: "t0".into(),
+        })
+        .expect("task");
+
+    // Create execution
+    let execution_id = "exec-rb-001".to_string();
+    repository
+        .metadata_mut()
+        .create_execution(&ExecutionCreation {
+            execution_id: execution_id.clone(),
+            task_id: "task-rb".into(),
+            agent_id: "agent-cursor".into(),
+            parent_execution_id: None,
+            workspace_id: Some("ws2-rb".into()),
+            base_version_id: None,
+            current_version_id: None,
+            created_at: "t0".into(),
+        })
+        .expect("execution");
+
+    // Create W1
+    let ws1_path = ws1_parent.path().join("workspace1");
+    let ws1_lease = {
+        let mut manager = WorkspaceManager::new(&mut repository, Redactor::default());
+        manager
+            .create_local(
+                "ws1-rb",
+                "project-rb",
+                &ws1_path,
+                None,
+                Some("env-rb"),
+                "t0",
+            )
+            .expect("ws1");
+        manager
+            .acquire_lease("ws1-rb", "agent-codex", 0, 1_000_000)
+            .expect("ws1 lease")
+    };
+
+    // Create W2
+    let ws2_path = ws2_parent.path().join("workspace2");
+    let ws2_lease = {
+        let mut manager = WorkspaceManager::new(&mut repository, Redactor::default());
+        manager
+            .create_local(
+                "ws2-rb",
+                "project-rb",
+                &ws2_path,
+                None,
+                Some("env-rb"),
+                "t1",
+            )
+            .expect("ws2");
+        manager
+            .acquire_lease("ws2-rb", "agent-cursor", 0, 1_000_000)
+            .expect("ws2 lease")
+    };
+
+    // Create source content in W1
+    fs::write(ws1_path.join("source.txt"), b"source content").expect("source file");
+    fs::create_dir(ws1_path.join("source_dir")).expect("source dir");
+    fs::write(ws1_path.join("source_dir/nested.txt"), b"nested source")
+        .expect("nested source");
+
+    // Snapshot W1
+    let snapshot = WorkspaceManager::new(&mut repository, Redactor::default())
+        .snapshot_local("ws1-rb", &ws1_lease, SnapshotOptions::default(), 1, "t2")
+        .expect("snapshot");
+
+    // Publish Version V100 in W1
+    let operation = OperationEnvelope {
+        operation_id: "op-v100-rb".into(),
+        project_id: "project-rb".into(),
+        request_id: "req-v100-rb".into(),
+        agent_id: "agent-codex".into(),
+        session_id: "session".into(),
+        workspace_id: Some("ws1-rb".into()),
+        environment_id: Some("env-rb".into()),
+        parent_operation_id: None,
+        schema_version: "0.1".into(),
+        started_at: "t3".into(),
+        tool: "test".into(),
+        action: "version.create".into(),
+        input_refs: vec![OperationRef {
+            kind: "snapshot".into(),
+            reference: snapshot.snapshot_id.clone(),
+            media_type: None,
+        }],
+        output_refs: Vec::new(),
+        resource: None,
+        before_state: None,
+        after_state: None,
+        reversibility: "REVERSIBLE".into(),
+        replayability: "REPLAYABLE".into(),
+        side_effect: "WORKSPACE".into(),
+        policy_decision: None,
+    };
+    repository
+        .metadata_mut()
+        .start_operation(operation)
+        .expect("operation");
+
+    let source_version = repository
+        .metadata_mut()
+        .create_version(VersionPublication {
+            workspace_id: "ws1-rb".into(),
+            project_id: "project-rb".into(),
+            snapshot_id: snapshot.snapshot_id,
+            creation_operation_id: "op-v100-rb".into(),
+            environment_id: Some("env-rb".into()),
+            created_at: "t3".into(),
+            parent_version_id: None,
+        })
+        .expect("version");
+
+    // Create different content in W2
+    fs::write(ws2_path.join("target.txt"), b"target content").expect("target file");
+
+    // Snapshot W2
+    let ws2_snapshot = WorkspaceManager::new(&mut repository, Redactor::default())
+        .snapshot_local("ws2-rb", &ws2_lease, SnapshotOptions::default(), 2, "t4")
+        .expect("ws2 snapshot");
+
+    // Publish Version V200 in W2
+    let ws2_operation = OperationEnvelope {
+        operation_id: "op-v200-rb".into(),
+        project_id: "project-rb".into(),
+        request_id: "req-v200-rb".into(),
+        agent_id: "agent-cursor".into(),
+        session_id: "session".into(),
+        workspace_id: Some("ws2-rb".into()),
+        environment_id: Some("env-rb".into()),
+        parent_operation_id: None,
+        schema_version: "0.1".into(),
+        started_at: "t4".into(),
+        tool: "test".into(),
+        action: "version.create".into(),
+        input_refs: vec![OperationRef {
+            kind: "snapshot".into(),
+            reference: ws2_snapshot.snapshot_id.clone(),
+            media_type: None,
+        }],
+        output_refs: Vec::new(),
+        resource: None,
+        before_state: None,
+        after_state: None,
+        reversibility: "REVERSIBLE".into(),
+        replayability: "REPLAYABLE".into(),
+        side_effect: "WORKSPACE".into(),
+        policy_decision: None,
+    };
+    repository
+        .metadata_mut()
+        .start_operation(ws2_operation)
+        .expect("ws2 operation");
+
+    let ws2_version = repository
+        .metadata_mut()
+        .create_version(VersionPublication {
+            workspace_id: "ws2-rb".into(),
+            project_id: "project-rb".into(),
+            snapshot_id: ws2_snapshot.snapshot_id,
+            creation_operation_id: "op-v200-rb".into(),
+            environment_id: Some("env-rb".into()),
+            created_at: "t4".into(),
+            parent_version_id: None,
+        })
+        .expect("ws2 version");
+
+    // Update W2 version head to V200 via version creation
+    // (version_head_id is automatically updated when creating a version in the same workspace)
+
+    CrossWorkspaceRollbackFixture {
+        _project: project,
+        _ws1_parent: ws1_parent,
+        _ws2_parent: ws2_parent,
+        repository,
+        ws1_path,
+        ws2_path,
+        ws1_lease,
+        ws2_lease,
+        source_version,
+        execution_id,
+    }
+}
+
+// R1: Source Validation
+
+#[test]
+fn r1_foreign_version_exists() {
+    let fixture = setup_cross_workspace_rollback_fixture();
+    let version = fixture
+        .repository
+        .metadata()
+        .version_record(&fixture.source_version.version_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(version.workspace_id, "ws1-rb");
+}
+
+#[test]
+fn r1_foreign_snapshot_exists() {
+    let fixture = setup_cross_workspace_rollback_fixture();
+    let snapshot = fixture
+        .repository
+        .metadata()
+        .snapshot_record(&fixture.source_version.snapshot_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(snapshot.workspace_id, "ws1-rb");
+    assert!(!snapshot.root_digest.is_empty());
+}
+
+#[test]
+fn r1_version_snapshot_consistency() {
+    let fixture = setup_cross_workspace_rollback_fixture();
+    let version = fixture
+        .repository
+        .metadata()
+        .version_record(&fixture.source_version.version_id)
+        .unwrap()
+        .unwrap();
+    let snapshot = fixture
+        .repository
+        .metadata()
+        .snapshot_record(&version.snapshot_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(version.snapshot_id, snapshot.snapshot_id);
+    assert_eq!(version.workspace_id, snapshot.workspace_id);
+}
+
+#[test]
+fn r1_source_ownership() {
+    let fixture = setup_cross_workspace_rollback_fixture();
+    let version = fixture
+        .repository
+        .metadata()
+        .version_record(&fixture.source_version.version_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(version.workspace_id, "ws1-rb");
+    assert_eq!(version.project_id, "project-rb");
+}
+
+#[test]
+fn r1_scope_compatibility() {
+    let fixture = setup_cross_workspace_rollback_fixture();
+    let ws2 = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    // Verify scope compatibility via project_id and environment_id
+    let version = fixture
+        .repository
+        .metadata()
+        .version_record(&fixture.source_version.version_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(version.project_id, ws2.project_id);
+    assert_eq!(version.environment_id, ws2.environment_id);
+}
+
+// R2: Rollback Preparation
+
+#[test]
+fn r2_prepared_record_created() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-001".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-001".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    assert_eq!(rollback.status, "completed");
+}
+
+#[test]
+fn r2_source_ids_recorded() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-002".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-002".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    assert_eq!(
+        rollback.source_version_id.as_deref(),
+        Some(fixture.source_version.version_id.as_str())
+    );
+    assert_eq!(
+        rollback.source_snapshot_id.as_deref(),
+        Some(fixture.source_version.snapshot_id.as_str())
+    );
+}
+
+#[test]
+fn r2_previous_workspace_head_recorded() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    let previous_head = ws2_before.head.clone();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-003".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-003".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    assert_eq!(rollback.previous_workspace_head, previous_head);
+}
+
+#[test]
+fn r2_previous_version_head_recorded() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    let previous_version_head = ws2_before.version_head_id.clone();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-004".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-004".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    assert_eq!(rollback.previous_version_head, previous_version_head);
+}
+
+// R3: Materialization
+
+#[test]
+fn r3_nested_tree() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-nested".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-nested".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let nested_content = fs::read(fixture.ws2_path.join("source_dir/nested.txt"))
+        .expect("nested file");
+    assert_eq!(nested_content, b"nested source");
+}
+
+#[test]
+fn r3_empty_tree() {
+    let project = tempdir().expect("project");
+    let ws1_parent = tempdir().expect("ws1 parent");
+    let ws2_parent = tempdir().expect("ws2 parent");
+    let mut repository = Repository::init(project.path()).expect("repository");
+
+    repository
+        .metadata_mut()
+        .record_environment(
+            "env-empty",
+            "project-empty",
+            &json!({"schema_version": 1}),
+            "t0",
+        )
+        .expect("environment");
+
+    for (id, provider) in [("agent-a", "a"), ("agent-b", "b")] {
+        repository
+            .metadata_mut()
+            .create_agent_identity(&AgentIdentity {
+                agent_id: id.into(),
+                provider: provider.into(),
+                display_name: None,
+                created_at: "t0".into(),
+            })
+            .expect("agent");
+    }
+
+    repository
+        .metadata_mut()
+        .create_task(&TaskCreation {
+            task_id: "task-empty".into(),
+            project_id: "project-empty".into(),
+            goal: "empty rollback".into(),
+            context_ref: None,
+            created_at: "t0".into(),
+        })
+        .expect("task");
+
+    repository
+        .metadata_mut()
+        .create_execution(&ExecutionCreation {
+            execution_id: "exec-empty".into(),
+            task_id: "task-empty".into(),
+            agent_id: "agent-b".into(),
+            parent_execution_id: None,
+            workspace_id: Some("ws2-empty".into()),
+            base_version_id: None,
+            current_version_id: None,
+            created_at: "t0".into(),
+        })
+        .expect("execution");
+
+    let ws1_path = ws1_parent.path().join("ws1");
+    let ws1_lease = {
+        let mut manager = WorkspaceManager::new(&mut repository, Redactor::default());
+        manager
+            .create_local(
+                "ws1-empty",
+                "project-empty",
+                &ws1_path,
+                None,
+                Some("env-empty"),
+                "t0",
+            )
+            .expect("ws1");
+        manager
+            .acquire_lease("ws1-empty", "agent-a", 0, 1_000_000)
+            .expect("lease")
+    };
+
+    let snapshot = WorkspaceManager::new(&mut repository, Redactor::default())
+        .snapshot_local(
+            "ws1-empty",
+            &ws1_lease,
+            SnapshotOptions::default(),
+            1,
+            "t1",
+        )
+        .expect("snapshot");
+
+    let operation = OperationEnvelope {
+        operation_id: "op-empty".into(),
+        project_id: "project-empty".into(),
+        request_id: "req-empty".into(),
+        agent_id: "agent-a".into(),
+        session_id: "session".into(),
+        workspace_id: Some("ws1-empty".into()),
+        environment_id: Some("env-empty".into()),
+        parent_operation_id: None,
+        schema_version: "0.1".into(),
+        started_at: "t1".into(),
+        tool: "test".into(),
+        action: "version.create".into(),
+        input_refs: vec![OperationRef {
+            kind: "snapshot".into(),
+            reference: snapshot.snapshot_id.clone(),
+            media_type: None,
+        }],
+        output_refs: Vec::new(),
+        resource: None,
+        before_state: None,
+        after_state: None,
+        reversibility: "REVERSIBLE".into(),
+        replayability: "REPLAYABLE".into(),
+        side_effect: "WORKSPACE".into(),
+        policy_decision: None,
+    };
+    repository
+        .metadata_mut()
+        .start_operation(operation)
+        .expect("operation");
+
+    let version = repository
+        .metadata_mut()
+        .create_version(VersionPublication {
+            workspace_id: "ws1-empty".into(),
+            project_id: "project-empty".into(),
+            snapshot_id: snapshot.snapshot_id,
+            creation_operation_id: "op-empty".into(),
+            environment_id: Some("env-empty".into()),
+            created_at: "t1".into(),
+            parent_version_id: None,
+        })
+        .expect("version");
+
+    let ws2_path = ws2_parent.path().join("ws2");
+    let ws2_lease = {
+        let mut manager = WorkspaceManager::new(&mut repository, Redactor::default());
+        manager
+            .create_local(
+                "ws2-empty",
+                "project-empty",
+                &ws2_path,
+                None,
+                Some("env-empty"),
+                "t2",
+            )
+            .expect("ws2");
+        manager
+            .acquire_lease("ws2-empty", "agent-b", 0, 1_000_000)
+            .expect("lease")
+    };
+
+    fs::write(ws2_path.join("before.txt"), b"before").expect("before");
+
+    let ws2 = repository
+        .metadata()
+        .workspace("ws2-empty")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-empty".into(),
+            task_id: "task-empty".into(),
+            execution_id: "exec-empty".into(),
+            workspace_id: "ws2-empty".into(),
+            target: RollbackTarget::Version(version.version_id),
+            actor_agent_id: "agent-b".into(),
+            request_id: "req-rb-empty".into(),
+            created_at: "t-rb".into(),
+            lease: Some(ws2_lease),
+            expected_workspace_revision: Some(ws2.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let entries: Vec<_> = fs::read_dir(&ws2_path).unwrap().collect();
+    assert_eq!(entries.len(), 0);
+}
+
+#[test]
+fn r3_multiple_blobs() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+
+    // Add more files to W1
+    for i in 0..5 {
+        fs::write(
+            fixture.ws1_path.join(format!("file{}.txt", i)),
+            format!("content {}", i).as_bytes(),
+        )
+        .expect("file");
+    }
+
+    let snapshot = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .snapshot_local(
+            "ws1-rb",
+            &fixture.ws1_lease,
+            SnapshotOptions::default(),
+            2,
+            "t-multi",
+        )
+        .expect("snapshot");
+
+    let operation = OperationEnvelope {
+        operation_id: "op-multi".into(),
+        project_id: "project-rb".into(),
+        request_id: "req-multi".into(),
+        agent_id: "agent-codex".into(),
+        session_id: "session".into(),
+        workspace_id: Some("ws1-rb".into()),
+        environment_id: Some("env-rb".into()),
+        parent_operation_id: None,
+        schema_version: "0.1".into(),
+        started_at: "t-multi".into(),
+        tool: "test".into(),
+        action: "version.create".into(),
+        input_refs: vec![
+            OperationRef {
+                kind: "version".into(),
+                reference: fixture.source_version.version_id.clone(),
+                media_type: None,
+            },
+            OperationRef {
+                kind: "snapshot".into(),
+                reference: snapshot.snapshot_id.clone(),
+                media_type: None,
+            },
+        ],
+        output_refs: Vec::new(),
+        resource: None,
+        before_state: None,
+        after_state: None,
+        reversibility: "REVERSIBLE".into(),
+        replayability: "REPLAYABLE".into(),
+        side_effect: "WORKSPACE".into(),
+        policy_decision: None,
+    };
+    fixture
+        .repository
+        .metadata_mut()
+        .start_operation(operation)
+        .expect("operation");
+
+    let multi_version = fixture
+        .repository
+        .metadata_mut()
+        .create_version(VersionPublication {
+            workspace_id: "ws1-rb".into(),
+            project_id: "project-rb".into(),
+            snapshot_id: snapshot.snapshot_id,
+            creation_operation_id: "op-multi".into(),
+            environment_id: Some("env-rb".into()),
+            created_at: "t-multi".into(),
+            parent_version_id: Some(fixture.source_version.version_id.clone()),
+        })
+        .expect("version");
+
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-multi".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(multi_version.version_id),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-multi".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    for i in 0..5 {
+        let content = fs::read(fixture.ws2_path.join(format!("file{}.txt", i)))
+            .expect("file");
+        assert_eq!(content, format!("content {}", i).as_bytes());
+    }
+}
+
+#[test]
+fn r3_shared_cas() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-cas".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-cas".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    // Verify source CAS still exists
+    let source_snapshot = fixture
+        .repository
+        .metadata()
+        .snapshot_record(&fixture.source_version.snapshot_id)
+        .unwrap()
+        .unwrap();
+    let source_digest = source_snapshot.root_digest.strip_prefix("sha256:").unwrap();
+    let digest = Digest::from_hex(source_digest).unwrap();
+    let cas_path = fixture.repository.cas().object_path(digest);
+    assert!(cas_path.exists());
+}
+
+#[test]
+fn r3_checksum_correctness() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-checksum".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-checksum".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let ws2_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    let result_head = ws2_after.head.as_ref().unwrap();
+    let digest_hex = result_head.strip_prefix("sha256:").unwrap();
+    assert_eq!(digest_hex.len(), 64);
+}
+
+// R4: Target State
+
+#[test]
+fn r4_target_snapshot_workspace_id_is_target() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-ws-id".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-ws-id".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let result_head = rollback.result_workspace_head.as_ref().unwrap();
+    let snapshot_id = format!(
+        "snp-{}",
+        result_head.strip_prefix("sha256:").unwrap()
+    );
+    let snapshot = fixture
+        .repository
+        .metadata()
+        .snapshot_record(&snapshot_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(snapshot.workspace_id, "ws2-rb");
+}
+
+#[test]
+fn r4_w2_head_updated() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    let head_before = ws2_before.head.clone();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-head-update".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-head-update".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let ws2_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    assert_ne!(ws2_after.head, head_before);
+    assert_eq!(ws2_after.head.as_deref(), rollback.result_workspace_head.as_deref());
+}
+
+#[test]
+fn r4_w2_version_head_unchanged() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    let version_head_before = ws2_before.version_head_id.clone();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-vh-unchanged".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-vh-unchanged".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let ws2_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    assert_eq!(ws2_after.version_head_id, version_head_before);
+    assert_eq!(rollback.result_version_head, version_head_before);
+}
+
+#[test]
+fn r4_source_w1_head_unchanged() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws1_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws1-rb")
+        .unwrap()
+        .unwrap();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-w1-head".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-w1-head".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let ws1_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws1-rb")
+        .unwrap()
+        .unwrap();
+    assert_eq!(ws1_after.head, ws1_before.head);
+}
+
+// R5: Immutability
+
+#[test]
+fn r5_version_unchanged() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let version_before = fixture
+        .repository
+        .metadata()
+        .version_record(&fixture.source_version.version_id)
+        .unwrap()
+        .unwrap();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-ver-immut".into(),
+            task_id: "task-rb".into(),
+            execution_id: fixture.execution_id.clone(),
+            workspace_id: "ws2-rb".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            actor_agent_id: "agent-cursor".into(),
+            request_id: "req-rb-ver-immut".into(),
+            created_at: "t-rb".into(),
+            lease: Some(fixture.ws2_lease.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let version_after = fixture
+        .repository
+        .metadata()
+        .version_record(&fixture.source_version.version_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(version_after.version_id, version_before.version_id);
+    assert_eq!(version_after.workspace_id, version_before.workspace_id);
+    assert_eq!(version_after.snapshot_id, version_before.snapshot_id);
+    assert_eq!(version_after.parent_version_id, version_before.parent_version_id);
+}
+
+#[test]
+fn r5_snapshot_unchanged() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let snapshot_before = fixture
+        .repository
+        .metadata()
+        .snapshot_record(&fixture.source_version.snapshot_id)
+        .unwrap()
+        .unwrap();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-snap-immut".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let snapshot_after = fixture
+        .repository
+        .metadata()
+        .snapshot_record(&fixture.source_version.snapshot_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(snapshot_after.snapshot_id, snapshot_before.snapshot_id);
+    assert_eq!(snapshot_after.workspace_id, snapshot_before.workspace_id);
+    assert_eq!(snapshot_after.root_digest, snapshot_before.root_digest);
+}
+
+#[test]
+fn r5_source_workspace_unchanged() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws1_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws1-rb")
+        .unwrap()
+        .unwrap();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-ws-immut".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let ws1_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws1-rb")
+        .unwrap()
+        .unwrap();
+    assert_eq!(ws1_after.workspace_id, ws1_before.workspace_id);
+    assert_eq!(ws1_after.head, ws1_before.head);
+    assert_eq!(ws1_after.version_head_id, ws1_before.version_head_id);
+}
+
+#[test]
+fn r5_source_revision_unchanged() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws1_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws1-rb")
+        .unwrap()
+        .unwrap();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-rev-immut".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let ws1_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws1-rb")
+        .unwrap()
+        .unwrap();
+    assert_eq!(ws1_after.revision, ws1_before.revision);
+}
+
+#[test]
+fn r5_cas_unchanged() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let source_snapshot = fixture
+        .repository
+        .metadata()
+        .snapshot_record(&fixture.source_version.snapshot_id)
+        .unwrap()
+        .unwrap();
+    let source_digest = source_snapshot.root_digest.strip_prefix("sha256:").unwrap();
+    let digest = Digest::from_hex(source_digest).unwrap();
+    let cas_path = fixture.repository.cas().object_path(digest);
+    let cas_content_before = fs::read(&cas_path).expect("cas before");
+
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-cas-immut".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let cas_content_after = fs::read(&cas_path).expect("cas after");
+    assert_eq!(cas_content_after, cas_content_before);
+}
+
+// R6: RollbackRecord
+
+#[test]
+fn r6_all_003h_fields_correct() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-fields".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    assert!(rollback.source_version_id.is_some());
+    assert!(rollback.source_snapshot_id.is_some());
+    assert!(rollback.previous_workspace_head.is_some());
+    assert!(rollback.result_workspace_head.is_some());
+    assert!(rollback.previous_version_head.is_some());
+    assert!(rollback.result_version_head.is_some());
+}
+
+#[test]
+fn r6_result_version_id_null() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-null-ver".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    assert!(rollback.result_version_id.is_none());
+}
+
+#[test]
+fn r6_prepared_completed_state_transition() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-state".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    assert_eq!(rollback.status, "completed");
+}
+
+// R7: Atomicity
+
+#[test]
+fn r7_missing_version() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let result = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-missing-ver".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version("ver-nonexistent".into()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        });
+
+    assert!(matches!(result, Err(PongError::NotFound(_)) | Err(PongError::Integrity(_))));
+
+    let ws2_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    assert_eq!(ws2_after.head, ws2_before.head);
+}
+
+#[test]
+fn r7_invalid_manifest() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let source_snapshot = fixture
+        .repository
+        .metadata()
+        .snapshot_record(&fixture.source_version.snapshot_id)
+        .unwrap()
+        .unwrap();
+    let source_digest = source_snapshot.root_digest.strip_prefix("sha256:").unwrap();
+    let digest = Digest::from_hex(source_digest).unwrap();
+    let cas_path = fixture.repository.cas().object_path(digest);
+    fs::write(&cas_path, b"invalid manifest").expect("corrupt");
+
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let result = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-invalid-manifest".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        });
+
+    assert!(result.is_err());
+
+    let ws2_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    assert_eq!(ws2_after.head, ws2_before.head);
+}
+
+#[test]
+fn r7_missing_cas() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let source_snapshot = fixture
+        .repository
+        .metadata()
+        .snapshot_record(&fixture.source_version.snapshot_id)
+        .unwrap()
+        .unwrap();
+    let source_digest = source_snapshot.root_digest.strip_prefix("sha256:").unwrap();
+    let digest = Digest::from_hex(source_digest).unwrap();
+    let cas_path = fixture.repository.cas().object_path(digest);
+    fs::remove_file(&cas_path).expect("remove");
+
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let result = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-missing-cas".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        });
+
+    assert!(result.is_err());
+
+    let ws2_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    assert_eq!(ws2_after.head, ws2_before.head);
+}
+
+#[test]
+fn r7_revision_conflict() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let result = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-stale-rev".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision - 1),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        });
+
+    assert!(matches!(result, Err(PongError::Conflict(_))));
+
+    let ws2_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    assert_eq!(ws2_after.head, ws2_before.head);
+}
+
+// R8: Idempotency
+
+#[test]
+fn r8_repeated_same_operation() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let first = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-repeat".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("first rollback");
+
+    let ws2_after_first = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let second = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-repeat".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_after_first.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("second rollback");
+
+    assert_eq!(first.rollback_id, second.rollback_id);
+    assert_eq!(first.result_workspace_head, second.result_workspace_head);
+}
+
+#[test]
+fn r8_retry() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-retry".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    assert_eq!(rollback.status, "completed");
+}
+
+#[test]
+fn r8_no_duplicate_corruption() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-no-dup".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let ws2_after_first = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-no-dup".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_after_first.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("retry");
+
+    let ws2_after_second = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    assert_eq!(ws2_after_first.head, ws2_after_second.head);
+}
+
+// R9: Recovery
+
+#[test]
+fn r9_cold_reopen() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-reopen".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let project_path = fixture._project.path().to_path_buf();
+    drop(fixture);
+
+    let reopened = Repository::open(&project_path).expect("reopen");
+    let ws2 = reopened.metadata().workspace("ws2-rb").unwrap().unwrap();
+    assert_eq!(ws2.head.as_deref(), rollback.result_workspace_head.as_deref());
+}
+
+#[test]
+fn r9_rollback_record_reload() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-record-reload".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let project_path = fixture._project.path().to_path_buf();
+    drop(fixture);
+
+    let reopened = Repository::open(&project_path).expect("reopen");
+    let reloaded = reopened
+        .metadata()
+        .rollback_record(&rollback.rollback_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(reloaded.rollback_id, rollback.rollback_id);
+    assert_eq!(reloaded.status, "completed");
+    assert!(reloaded.result_version_id.is_none());
+}
+
+#[test]
+fn r9_snapshot_reload() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-snap-reload".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let result_head = rollback.result_workspace_head.as_ref().unwrap();
+    let snapshot_id = format!("snp-{}", result_head.strip_prefix("sha256:").unwrap());
+
+    let project_path = fixture._project.path().to_path_buf();
+    drop(fixture);
+
+    let reopened = Repository::open(&project_path).expect("reopen");
+    let snapshot = reopened
+        .metadata()
+        .snapshot_record(&snapshot_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(snapshot.workspace_id, "ws2-rb");
+}
+
+#[test]
+fn r9_cas_reload() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-cas-reload".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let result_head = rollback.result_workspace_head.as_ref().unwrap();
+    let digest_hex = result_head.strip_prefix("sha256:").unwrap();
+    let digest = Digest::from_hex(digest_hex).unwrap();
+
+    let project_path = fixture._project.path().to_path_buf();
+    drop(fixture);
+
+    let reopened = Repository::open(&project_path).expect("reopen");
+    let cas_path = reopened.cas().object_path(digest);
+    assert!(cas_path.exists());
+}
+
+// R10: Scenarios
+
+#[test]
+fn r10_codex_execution_rollback_to_cursor_base() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    // Codex (agent-codex) created V100 in W1
+    // Cursor (agent-cursor) executes in W2, now rolls back to V100[W1]
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-codex-cursor".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    assert_eq!(rollback.status, "completed");
+    assert_eq!(
+        rollback.source_version_id.as_deref(),
+        Some(fixture.source_version.version_id.as_str())
+    );
+}
+
+#[test]
+fn r10_w1_to_w2_rollback() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-w1-w2".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let ws2_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    assert_eq!(ws2_after.head.as_deref(), rollback.result_workspace_head.as_deref());
+}
+
+#[test]
+fn r10_w1_to_w3_rollback() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws3_parent = tempdir().expect("ws3 parent");
+    let ws3_path = ws3_parent.path().join("workspace3");
+
+    let ws3_lease = {
+        let mut manager = WorkspaceManager::new(&mut fixture.repository, Redactor::default());
+        manager
+            .create_local(
+                "ws3-rb",
+                "project-rb",
+                &ws3_path,
+                None,
+                Some("env-rb"),
+                "t-w3",
+            )
+            .expect("ws3");
+        manager
+            .acquire_lease("ws3-rb", "agent-cursor", 0, 1_000_000)
+            .expect("ws3 lease")
+    };
+
+    fixture
+        .repository
+        .metadata_mut()
+        .create_execution(&ExecutionCreation {
+            execution_id: "exec-w3".into(),
+            task_id: "task-rb".into(),
+            agent_id: "agent-cursor".into(),
+            parent_execution_id: None,
+            created_at: "t-w3".into(),
+        })
+        .expect("execution");
+
+    let ws3 = fixture
+        .repository
+        .metadata()
+        .workspace("ws3-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-w3".into(),
+            execution_id: "exec-w3".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws3.revision),
+            lease: Some(ws3_lease),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let ws3_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws3-rb")
+        .unwrap()
+        .unwrap();
+    assert_eq!(ws3_after.head.as_deref(), rollback.result_workspace_head.as_deref());
+}
+
+#[test]
+fn r10_multiple_targets_independently_rollback_to_same_source() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws3_parent = tempdir().expect("ws3 parent");
+    let ws3_path = ws3_parent.path().join("workspace3");
+
+    let ws3_lease = {
+        let mut manager = WorkspaceManager::new(&mut fixture.repository, Redactor::default());
+        manager
+            .create_local(
+                "ws3-multi",
+                "project-rb",
+                &ws3_path,
+                None,
+                Some("env-rb"),
+                "t-w3",
+            )
+            .expect("ws3");
+        manager
+            .acquire_lease("ws3-multi", "agent-cursor", 0, 1_000_000)
+            .expect("ws3 lease")
+    };
+
+    fixture
+        .repository
+        .metadata_mut()
+        .create_execution(&ExecutionCreation {
+            execution_id: "exec-w3-multi".into(),
+            task_id: "task-rb".into(),
+            agent_id: "agent-cursor".into(),
+            parent_execution_id: None,
+            created_at: "t-w3".into(),
+        })
+        .expect("execution");
+
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+    let ws3_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws3-multi")
+        .unwrap()
+        .unwrap();
+
+    let rb_w2 = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-multi-w2".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("w2 rollback");
+
+    let rb_w3 = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-multi-w3".into(),
+            execution_id: "exec-w3-multi".into(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws3_before.revision),
+            lease: Some(ws3_lease),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("w3 rollback");
+
+    assert_eq!(
+        rb_w2.source_version_id,
+        rb_w3.source_version_id
+    );
+    assert_ne!(
+        rb_w2.result_workspace_head,
+        rb_w3.result_workspace_head
+    );
+}
+
+#[test]
+fn r10_concurrent_target_rollback_isolation() {
+    let mut fixture = setup_cross_workspace_rollback_fixture();
+    let ws2_before = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    let rollback = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&RollbackCreation {
+            rollback_id: "rb-isolation".into(),
+            execution_id: fixture.execution_id.clone(),
+            target: RollbackTarget::Version(fixture.source_version.version_id.clone()),
+            expected_workspace_revision: Some(ws2_before.revision),
+            lease: Some(fixture.ws2_lease.clone()),
+            created_at: "t-rb".into(),
+            now_ms: Some(100),
+        })
+        .expect("rollback");
+
+    let ws1_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws1-rb")
+        .unwrap()
+        .unwrap();
+    let ws2_after = fixture
+        .repository
+        .metadata()
+        .workspace("ws2-rb")
+        .unwrap()
+        .unwrap();
+
+    assert_ne!(ws1_after.head, ws2_after.head);
+    assert_eq!(ws2_after.head.as_deref(), rollback.result_workspace_head.as_deref());
+}

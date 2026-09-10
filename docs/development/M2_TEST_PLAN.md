@@ -399,6 +399,13 @@ Capture samples, p95/p99 where meaningful, bytes/files, filesystem, toolchain,
 and command. These are M2 measurements only; do not invent a new budget or
 accept ADR-0015 in this plan.
 
+## M3-SLICE-001B Development Scale Note (2026-09-06)
+
+The M3 durable Agent/Task/Execution suite includes a development-only sanity
+for entity counts of 1, 100, and 1,000 and iterative parent graph depths of 10,
+100, and 1,000. It completed on Windows local native development and is not a
+performance budget, cross-platform qualification, or ADR-0015 acceptance.
+
 ## Compatibility
 
 - M1 Event Envelope, Projection Contract, project sequence/cursor, operation

@@ -1,10 +1,10 @@
 # M3 Agent / Task / Execution Contract
 
-**Status:** `PROPOSAL ONLY` / Internal M3
-**Slice:** M3-SLICE-001A - Agent / Task / Execution Contract
-**Implementation:** None. This document defines a contract and data-model
-proposal only; it does not add production types, SQLite tables, migrations,
-providers, a CLI, an SDK, or a UI.
+**Status:** `IMPLEMENTED` / `INTERNAL` / `TEST-GATED`
+**Slice:** M3-SLICE-001B - Agent Execution Core
+**Implementation:** The bounded Agent/Task/Execution core is implemented in
+`MetadataStore` with four additive SQLite tables. It is internal and remains
+test-gated; no public API, provider integration, CLI, SDK, or UI is claimed.
 
 ## Purpose
 
@@ -246,6 +246,32 @@ This proposal preserves:
 No DDL, migration, provider registry, public API, CLI, SDK, UI, Branch,
 Merge, Candidate, Approval, or Agent State behavior is part of 001A.
 
+## 001B Implementation Boundary
+
+The implementation adds only `agent_identities`, `tasks`, `executions`, and
+`execution_operations`. Agent identities, Tasks, and Executions have durable
+records, revisions, conservative fail-closed state transitions, and cold
+reopen reads. Parent Execution edges are validated iteratively for existence,
+same project/Task scope, and cycles. Operation ownership is an immutable
+separate mapping with one owner per Operation; legacy ownerless Operations
+remain valid.
+
+Workspace and Version references are explicit. Version references are checked
+against the existing Workspace, Snapshot, Operation, parent graph, generation,
+and migration identity. A writable current-Version update uses the existing
+Workspace lease and revision CAS; it never changes `Workspace.head` or Version
+Head. Existing operation identity and event semantics are unchanged.
+
+Failure tests cover provider failure as `TEST_DOUBLE` input, pre-commit
+rollback, post-commit uncertainty, interrupted/unknown states, exact retry,
+stale revision/lease rejection, concurrent start/child creation, and legacy
+v0.1 additive migration. Redaction is applied before new values reach SQLite;
+secret material is not an Agent field.
+
+Handoff, Checkpoint, Rollback, Resume API, dependency edges, Provider
+Registry, Remote/Git providers, Agent State, Candidate, Approval, Memory,
+Skill, Automation, CLI, SDK, and UI remain future work.
+
 ## Open Decisions
 
 - exact durable entity schema and migration strategy;
@@ -260,7 +286,12 @@ Merge, Candidate, Approval, or Agent State behavior is part of 001A.
 
 ## Status
 
-`M3-SLICE-001A = CONTRACT_READY`.
+`M3-SLICE-001B = PASS / INTERNAL / TEST-GATED`.
 
-This is an internal proposal. No production implementation or runtime
-evidence is claimed.
+The 001A contract is now backed by durable implementation and Windows-native
+development evidence. The status does not claim release evidence or a public
+API. The durable suite currently reports 37 passed and 6 explicitly ignored
+`OPEN / FUTURE CONTRACT` cases. A development-only scale sanity exercised
+Agent/Task/Execution entity counts of 1, 100, and 1,000 and iterative
+Execution-graph depths of 10, 100, and 1,000; this is not a performance budget
+or ADR-0015 acceptance.

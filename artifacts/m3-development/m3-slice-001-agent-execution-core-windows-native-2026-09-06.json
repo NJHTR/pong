@@ -1,0 +1,55 @@
+{
+  "evidence_class": "LOCAL_NATIVE_DEVELOPMENT",
+  "evidence_timestamp": "2026-09-07T00:29:29.8651916+08:00",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "slice": "M3-SLICE-001B",
+  "scope": "Durable Agent Identity, Task, Execution, parent graph, workspace/version binding, operation ownership, failure/recovery/retry, concurrency, and legacy additive migration",
+  "platform": {
+    "os": "Windows 11",
+    "architecture": "x86_64",
+    "filesystem": "NTFS",
+    "filesystem_source": "D: volume",
+    "toolchain": {
+      "rustc": "rustc 1.95.0 (59807616 2026-04-14)",
+      "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)"
+    }
+  },
+  "repository": {
+    "branch": "dev",
+    "base_commit": "c44e727d30478575f682cafc0b8c52a657e86043",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "origin_relation": "dev...origin/dev"
+  },
+  "commands": [
+    {"command": "cargo fmt --all -- --check", "exit_code": 0},
+    {"command": "cargo check --locked", "exit_code": 0},
+    {"command": "cargo test --locked --test agent_execution", "exit_code": 0, "passed": 37, "failed": 0, "ignored": 6, "duration_seconds": 159.07},
+    {"command": "cargo test --locked --test agent_execution_contract", "exit_code": 0, "passed": 0, "failed": 0, "ignored": 6},
+    {"command": "cargo test --all --locked --no-fail-fast", "exit_code": 0, "passed": 368, "failed": 0, "ignored": 45},
+    {"command": "cargo clippy --all-targets --all-features --locked -- -D warnings", "exit_code": 0},
+    {"command": "git diff --check", "exit_code": 0, "notes": "LF/CRLF warnings only"}
+  ],
+  "performance_sanity": {
+    "classification": "DEVELOPMENT_ONLY_SANITY_NOT_A_BUDGET",
+    "agent_counts": [1, 100, 1000],
+    "task_counts": [1, 100, 1000],
+    "execution_counts": [1, 100, 1000],
+    "graph_depths": [10, 100, 1000],
+    "max_depth": 1000,
+    "command": "cargo test --locked --test agent_execution development_performance_sanity_counts_and_depth -- --nocapture",
+    "exit_code": 0,
+    "duration_seconds": 194.31,
+    "result": "completed without recursion overflow"
+  },
+  "test_counts": {
+    "m3_agent_execution_focused": {"passed": 37, "failed": 0, "ignored": 6},
+    "m3_future_contract": {"passed": 0, "failed": 0, "ignored": 6},
+    "full_workspace": {"passed": 368, "failed": 0, "ignored": 45}
+  },
+  "limitations": [
+    "Handoff, Checkpoint, Rollback, and Resume remain OPEN / FUTURE CONTRACT and ignored.",
+    "This is Windows local-native development evidence, not release qualification.",
+    "The scale sanity is not ADR-0015 performance acceptance.",
+    "No M3-SLICE-002B implementation, release tag, or push was performed."
+  ]
+}

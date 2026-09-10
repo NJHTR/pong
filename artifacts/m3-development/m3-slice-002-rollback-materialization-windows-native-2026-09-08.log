@@ -1,0 +1,54 @@
+M3-SLICE-002D WINDOWS LOCAL NATIVE DEVELOPMENT EVIDENCE
+Evidence timestamp: 2026-09-08T23:37:59+08:00
+Evidence class: LOCAL_NATIVE_DEVELOPMENT
+Platform: Windows 11 Home Chinese Edition 10.0.26200 x86_64
+Filesystem: NTFS (D: volume)
+Toolchain: rustc 1.95.0 (59807616 2026-04-14); cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+Repository: branch=dev; HEAD/base=c44e727d30478575f682cafc0b8c52a657e86043
+Working tree: UNCOMMITTED_DEVELOPMENT_TREE
+Release tag: none
+Push: not performed
+
+Commands and exit codes:
+  cargo fmt --all -- --check
+    exit=0 duration=0.52s
+  cargo check --locked
+    exit=0 duration=1.78s
+  cargo test --locked --test rollback_result -- --nocapture
+    exit=0 duration=3.79s (30 passed, 0 failed, 0 ignored)
+  cargo test --locked --test handoff_checkpoint_rollback -- --nocapture
+    exit=0 duration=0.92s (48 passed, 0 failed, 0 ignored)
+  cargo test --locked --test rollback_result_contract -- --nocapture
+    exit=0 duration=0.30s (0 passed, 0 failed, 22 ignored; contract index)
+  cargo test --all --locked --no-fail-fast
+    exit=0 duration=54.70s (433 passed, 0 failed, 87 ignored)
+  cargo clippy --all-targets --all-features --locked -- -D warnings
+    exit=0 duration=0.54s
+  git diff --check
+    exit=0 duration=0.24s (CRLF conversion warnings only)
+
+Rollback runtime: 30 passed, 0 failed, 0 ignored.
+Handoff/checkpoint/rollback regression: 48 passed, 0 failed, 0 ignored.
+Rollback result contract index: 0 passed, 0 failed, 22 ignored; ignored is not PASS evidence.
+
+Failure/recovery coverage:
+  missing/corrupt CAS; materialization write failure; stale lease; stale
+  revision; metadata pre-commit and post-commit completion boundaries; cold
+  reopen after parent-sync interruption; exact retry; no phantom success.
+
+Semantics verified:
+  rollback preserves history and immutable Version parentage;
+  Workspace.head and Version Head publish the target together;
+  rollback result_version_id is NULL;
+  Resume creates a new Execution and later Version;
+  legacy v0.1 metadata remains readable without synthetic rollback rows.
+
+Performance classification:
+  DEVELOPMENT_ONLY_SANITY_NOT_A_BUDGET. No ADR-0015 acceptance or new
+  performance budget was created.
+
+Scope and limitations:
+  This is Windows local-native development evidence under artifacts/m3-development,
+  not M1 release evidence. No DDL, provider integration, release tag, or push
+  was performed. Task-scoped/selective/cross-workspace rollback and public API
+  behavior remain out of scope. Ignored contract tests are not PASS evidence.
