@@ -1,0 +1,165 @@
+{
+  "slice": "M4 External Agent Protocol Contract",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "classification": "LOCAL_NATIVE_DEVELOPMENT",
+  "date": "2026-09-11",
+  "platform": "Windows 11 10.0.26200",
+  "architecture": "x86_64",
+  "filesystem": "NTFS",
+  "toolchain": {
+    "rustc": "1.95.0 (59807616e 2026-04-14)",
+    "cargo": "1.95.0 (f2d3ce0bd 2026-03-21)",
+    "host": "x86_64-pc-windows-msvc"
+  },
+  "git": {
+    "branch": "dev",
+    "base_commit": "54a90daab5a8b4b33259e3ad8a15bc6713e4a3bf",
+    "base_subject": "docs: add multilingual readme navigation and badges",
+    "working_tree_at_validation": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "push_performed": false,
+    "tag_created": false
+  },
+  "boundaries": {
+    "CORE": {
+      "status": "PASS",
+      "full_regression": {
+        "passed": 604,
+        "failed": 0,
+        "ignored": 276,
+        "ignored_count_as_pass": false
+      }
+    },
+    "CONTROL": {
+      "status": "PASS",
+      "test_target": "tests/control_layer.rs",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    "PROTOCOL": {
+      "status": "PASS",
+      "protocol_version": "1.0",
+      "serialization": "JSON",
+      "test_target": "tests/external_agent_protocol.rs",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    "TRANSPORT": {
+      "status": "NOT_PROVEN"
+    },
+    "REAL_PROVIDER_E2E": {
+      "status": "NOT_REEXECUTED",
+      "retained_evidence": "artifacts/m3-development/m3-real-agent-handoff-e2e-windows-native-2026-09-11.json"
+    },
+    "PRODUCTION_AUTH": {
+      "status": "NOT_PROVEN",
+      "current_identity": "asserted caller_agent_id"
+    }
+  },
+  "verified_contract": {
+    "provider_neutral": true,
+    "transport_neutral": true,
+    "explicit_wire_dtos": true,
+    "strict_json_schema": true,
+    "safe_error_payloads": true,
+    "workspace_locator_not_exposed": true,
+    "host_supplied_lease_time": true,
+    "unknown_caller_is_unauthorized": true,
+    "cross_agent_execution_write_is_forbidden": true,
+    "lease_and_revision_errors_are_typed": true,
+    "publication_exact_retry": true,
+    "operation_execution_association": true,
+    "cold_reopen_inspection": true,
+    "runtime_a_checkpoint_handoff_runtime_b_resume": true,
+    "cross_workspace_target_snapshot": true,
+    "provider_specific_core_branching": false,
+    "schema_change": false,
+    "new_durable_entity": false,
+    "new_idempotency_system": false
+  },
+  "commands": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "duration_seconds": 0.6
+    },
+    {
+      "command": "cargo check --locked",
+      "exit_code": 0,
+      "duration_seconds": 1.3
+    },
+    {
+      "command": "cargo test --locked --test external_agent_protocol",
+      "exit_code": 0,
+      "duration_seconds": 7.1,
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --locked --test control_layer",
+      "exit_code": 0,
+      "duration_seconds": 7.4,
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --locked --test cross_workspace_rollback",
+      "exit_code": 0,
+      "duration_seconds": 4.3,
+      "passed": 47,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --all --locked",
+      "exit_code": 3221226356,
+      "status": "RETAINED_WINDOWS_FAILURE",
+      "detail": "agent_execution printed its active assertions as ok, then exited with STATUS_HEAP_CORRUPTION"
+    },
+    {
+      "command": "cargo test --locked --test agent_execution",
+      "exit_code": 0,
+      "duration_seconds": 24.5,
+      "passed": 37,
+      "failed": 0,
+      "ignored": 6
+    },
+    {
+      "command": "cargo test --all --locked -- --test-threads=1",
+      "exit_code": 101,
+      "status": "RETAINED_WINDOWS_FAILURE",
+      "detail": "control_layer parallel cold-open encountered transient Windows sharing violation code 33"
+    },
+    {
+      "command": "cargo test --all --locked",
+      "exit_code": 0,
+      "duration_seconds": 219.0,
+      "passed": 604,
+      "failed": 0,
+      "ignored": 276
+    },
+    {
+      "command": "cargo clippy --all-targets --all-features --locked -- -D warnings",
+      "exit_code": 0,
+      "duration_seconds": 0.8
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "duration_seconds": 0.1,
+      "note": "Git emitted only LF-to-CRLF checkout warnings."
+    }
+  ],
+  "known_limitations": [
+    "No local process transport was implemented or tested in this contract checkpoint.",
+    "No production authentication or credential binding exists; caller_agent_id is asserted.",
+    "Lease renewal and materialization require inspect-after-uncertainty because they have no durable protocol request row.",
+    "Rollback is not exposed in protocol version 1.0.",
+    "HTTP, MCP, SDK adapters, remote execution, scheduling, and provider process control are not proven.",
+    "Two Windows host-level failures were retained before the final unchanged full regression passed."
+  ]
+}
+

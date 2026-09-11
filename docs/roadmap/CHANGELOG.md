@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased - M4 External Agent Protocol Contract (2026-09-11)
+
+- Added protocol version `1.0` as explicit JSON-safe request, response,
+  resource, capability, and error DTOs above `AgentControl`; internal Rust
+  records, SQLite details, and Workspace locators do not cross the boundary.
+- Added provider-neutral command/query dispatch for Agent, Task, Execution,
+  Workspace lease, Version publication, Checkpoint, Handoff, Resume,
+  cross-workspace materialization, diff, and durable inspection workflows.
+- Added explicit asserted-identity, Execution ownership, Workspace binding,
+  lease, revision, lifecycle, retry, and cold-reconnect semantics. Production
+  authentication remains `NOT_PROVEN`.
+- Reused the existing `execution_operations` relation and exposed thin
+  AgentControl attach/list methods; no schema, entity, transaction, CAS, or
+  idempotency system was added.
+- Added `tests/external_agent_protocol.rs`, including a complete Runtime A to
+  Runtime B Checkpoint/Handoff/Resume/materialization flow that survives cold
+  reopen. Local transport, HTTP, MCP, SDKs, and remote execution remain outside
+  this contract slice.
+
 ## Unreleased - AgentControl Publication Hardening (2026-09-11)
 
 - Made `PublishVersionRequest.expected_workspace_revision` authoritative from

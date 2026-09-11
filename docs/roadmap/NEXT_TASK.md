@@ -1,39 +1,35 @@
 # Next Task
 
-**Current Phase:** Phase 4 - provider-neutral external control boundary
+**Current Phase:** M4 - provider-neutral external protocol boundary
 
-**Current Milestone:** AgentControl stale-revision, publication retry, and
-durability hardening
+**Current Milestone:** External Agent Protocol contract
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** The internal provider-neutral `AgentControl` facade now uses
-`PublishVersionRequest.expected_workspace_revision` as real publication
-authority. Its existing `version.create` Operation records the initial
-Workspace revision/head and Version Head, allowing deterministic retry after
-pre-commit failure or post-commit uncertainty without a new persistence or
-idempotency system.
+**Current Task:** Protocol version `1.0` adds explicit JSON-safe command, query,
+resource, and error DTOs above the hardened `AgentControl`. It provides
+provider-neutral identity, ownership/revision/lease preflight checks,
+capability discovery, durable publication retry, existing Operation-to-
+Execution association, cross-workspace continuation, and cold-reopen
+inspection without selecting a transport.
 
-**Contract materials:** [`M4_PROVIDER_NEUTRAL_CONTROL_LAYER.md`](../architecture/M4_PROVIDER_NEUTRAL_CONTROL_LAYER.md),
-[`ADR-M4-provider-neutral-control-layer.md`](../decisions/ADR-M4-provider-neutral-control-layer.md),
-and [`control_layer.rs`](../../tests/control_layer.rs).
+**Contract materials:** [`M4_EXTERNAL_AGENT_PROTOCOL.md`](../architecture/M4_EXTERNAL_AGENT_PROTOCOL.md),
+[`ADR-M4-external-agent-protocol.md`](../decisions/ADR-M4-external-agent-protocol.md),
+and [`external_agent_protocol.rs`](../../tests/external_agent_protocol.rs).
 
-**Checkpoint:** AgentControl hardening is `IMPLEMENTED / INTERNAL /
-TEST-GATED`. Ten active facade tests cover the complete durable workflow,
-stale and concurrent revision rejection, lease/input failures, exact retry,
-pre-commit failure, post-commit cold-reopen recovery, replay corruption, and
-W1/W2/W3 isolation. M3's active 47-test cross-workspace rollback suite remains
-the required regression boundary. Ignored placeholders are never counted as
-passes. MCP, SDK adapters, network transport, wire-safe error payloads, and
-production authentication remain `NOT_PROVEN`.
+**Checkpoint:** The external protocol contract is `IMPLEMENTED / INTERNAL /
+TEST-GATED`. Its active transport-neutral tests cover strict serialization,
+wire-safe errors, Agent ownership, lease/revision conflicts, exact retry,
+Operation provenance, cross-workspace handoff/materialization, and cold reopen.
+Existing AgentControl and M3 rollback suites remain regression gates. Ignored
+tests are never counted as passes. Local transport, MCP, HTTP, SDK adapters,
+remote execution, and production authentication remain `NOT_PROVEN`.
 
-**Next Action:** Evaluate the hardened Rust facade as the candidate semantic
-boundary for an M4 external Agent protocol contract. Define transport-neutral
-request, response, reconnect, observability, authentication ownership, and
-safe error semantics before choosing CLI, HTTP, MCP, or another transport. Do
-not start provider-specific adapters or orchestration from this checkpoint.
+**Next Action:** Implement the smallest process-boundary proof as a local JSON
+Lines adapter over the protocol dispatcher with a constrained binding resolver.
+Do not add HTTP, MCP, provider-specific behavior, scheduling, or orchestration.
 
 ## M1 Historical Handoff
 

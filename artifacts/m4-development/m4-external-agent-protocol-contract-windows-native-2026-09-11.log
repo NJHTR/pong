@@ -1,0 +1,79 @@
+M4 EXTERNAL AGENT PROTOCOL CONTRACT - LOCAL NATIVE DEVELOPMENT
+Date: 2026-09-11
+Platform: Windows 11 10.0.26200 / x86_64 / NTFS
+Rust: rustc 1.95.0 (59807616e 2026-04-14)
+Cargo: cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+Branch: dev
+Base/tested HEAD: 54a90daab5a8b4b33259e3ad8a15bc6713e4a3bf
+Working tree at validation: UNCOMMITTED_DEVELOPMENT_TREE
+
+BOUNDARY RESULTS
+CORE: PASS
+  Full regression: 604 passed, 0 failed, 276 ignored.
+  Ignored tests do not count as PASS.
+CONTROL: PASS
+  tests/control_layer.rs: 10 passed, 0 failed, 0 ignored.
+PROTOCOL: PASS
+  Protocol version: 1.0
+  Serialization: explicit strict JSON DTOs
+  tests/external_agent_protocol.rs: 9 passed, 0 failed, 0 ignored.
+TRANSPORT: NOT_PROVEN
+REAL_PROVIDER_E2E: NOT_REEXECUTED
+PRODUCTION_AUTH: NOT_PROVEN
+
+VERIFIED
+- Hello negotiates protocol version, commands, queries, and durable-or-error
+  mutation acknowledgement without requiring a registered caller.
+- Internal Rust records are not used as wire resources.
+- Workspace paths, SQLite details, stack traces, and raw Pong errors are not
+  emitted in protocol responses.
+- Unknown callers are UNAUTHORIZED. Cross-Agent Execution and Workspace writes
+  are FORBIDDEN before lease mutation.
+- Lease, revision, lifecycle, idempotency, integrity, and recovery failures use
+  stable provider-neutral codes.
+- Host-supplied now_ms remains lease authority; issued_at is caller-stable only.
+- Version publication exact retry returns one Snapshot/Version and repairs the
+  existing Operation-to-Execution association idempotently.
+- Execution inspection reconstructs direct Checkpoints, Handoffs, Resume,
+  base/current Version, Workspace/lease, and attached Operations after reopen.
+- Runtime A -> C1 -> Handoff -> Runtime B -> E2/W2 -> materialize -> C2 survives
+  cold reopen with W1/W2 isolation and same-workspace Version lineage.
+- Provider strings are metadata only. No schema, durable entity, transaction,
+  CAS, or idempotency system was added.
+
+COMMANDS
+PASS cargo fmt --all -- --check
+  exit 0; duration 0.6 s
+PASS cargo check --locked
+  exit 0; duration 1.3 s
+PASS cargo test --locked --test external_agent_protocol
+  exit 0; 9 passed, 0 failed, 0 ignored; duration 7.1 s
+PASS cargo test --locked --test control_layer
+  exit 0; 10 passed, 0 failed, 0 ignored; duration 7.4 s
+PASS cargo test --locked --test cross_workspace_rollback
+  exit 0; 47 passed, 0 failed, 0 ignored; duration 4.3 s
+RETAINED WINDOWS FAILURE cargo test --all --locked
+  agent_execution printed active assertions as ok, then exited 0xc0000374
+  (STATUS_HEAP_CORRUPTION).
+PASS cargo test --locked --test agent_execution
+  exit 0; 37 passed, 0 failed, 6 ignored; duration 24.5 s
+RETAINED WINDOWS FAILURE cargo test --all --locked -- --test-threads=1
+  control_layer's internal parallel cold-open encountered transient Windows
+  sharing violation code 33.
+PASS cargo test --all --locked
+  exit 0; 604 passed, 0 failed, 276 ignored; duration 219.0 s
+PASS cargo clippy --all-targets --all-features --locked -- -D warnings
+  exit 0; duration 0.8 s
+PASS git diff --check
+  exit 0; duration 0.1 s; only LF-to-CRLF checkout warnings.
+
+LIMITATIONS
+- No transport or external process boundary was implemented in this checkpoint.
+- caller_agent_id is asserted identity, not production authentication.
+- Materialization and lease renewal use inspect-after-uncertainty semantics.
+- Rollback, HTTP, MCP, SDKs, remote execution, scheduling, and provider process
+  control remain NOT_PROVEN.
+- The two retained Windows host failures remain a development-environment risk;
+  the final unchanged full regression passed.
+
+STATUS: PASS / INTERNAL / TEST-GATED

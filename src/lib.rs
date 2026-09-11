@@ -11,6 +11,7 @@ pub mod control;
 pub mod environment;
 pub mod error;
 pub mod metadata;
+pub mod protocol;
 pub mod redaction;
 pub mod repository;
 pub mod workspace;

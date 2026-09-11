@@ -5,10 +5,10 @@
 //! exposing SQLite connections or making provider names part of core behavior.
 
 use crate::metadata::{
-    AgentIdentity, CheckpointCreation, CheckpointRecord, ExecutionCreation, ExecutionRecord,
-    HandoffCreation, HandoffRecord, LeaseToken, OperationEnvelope, OperationRecord, OperationRef,
-    ResumeCreation, ResumeRecord, SnapshotRecord, TaskCreation, TaskRecord, VersionPublication,
-    VersionRecord, WorkspaceRecord,
+    AgentIdentity, CheckpointCreation, CheckpointRecord, ExecutionCreation,
+    ExecutionOperationRecord, ExecutionRecord, HandoffCreation, HandoffRecord, LeaseToken,
+    OperationEnvelope, OperationRecord, OperationRef, ResumeCreation, ResumeRecord, SnapshotRecord,
+    TaskCreation, TaskRecord, VersionPublication, VersionRecord, WorkspaceRecord,
 };
 use crate::redaction::Redactor;
 use crate::workspace::{SnapshotDiff, SnapshotOptions, WorkspaceManager};
@@ -587,6 +587,38 @@ impl<'a> AgentControl<'a> {
 
     pub fn operation(&self, operation_id: &str) -> Result<Option<OperationRecord>, PongError> {
         self.repository.metadata().operation_record(operation_id)
+    }
+
+    pub fn attach_operation_to_execution(
+        &mut self,
+        execution_id: &str,
+        operation_id: &str,
+        created_at: &str,
+    ) -> Result<ExecutionOperationRecord, PongError> {
+        self.repository
+            .metadata_mut()
+            .attach_operation_to_execution(execution_id, operation_id, created_at)
+    }
+
+    pub fn operations_for_execution(
+        &self,
+        execution_id: &str,
+    ) -> Result<Vec<OperationRecord>, PongError> {
+        self.repository
+            .metadata()
+            .operations_for_execution(execution_id)?
+            .into_iter()
+            .map(|ownership| {
+                self.repository
+                    .metadata()
+                    .operation_record(&ownership.operation_id)?
+                    .ok_or_else(|| {
+                        PongError::Integrity(
+                            "execution references a missing durable Operation".into(),
+                        )
+                    })
+            })
+            .collect()
     }
 
     pub fn create_checkpoint(
