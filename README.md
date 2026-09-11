@@ -1,64 +1,75 @@
 # Pong
 
-> Pong is an agent-first, versioned workspace and execution infrastructure for long-running and multi-agent software development.
+<p align="center">
+  <strong>English</strong> |
+  <a href="./README.zh-CN.md">简体中文</a> |
+  <a href="./README.ja.md">日本語</a> |
+  <a href="./README.ru.md">Русский</a>
+</p>
 
-Pong 不是给 AI 套一层 Git，而是为 AI Agent 重新设计版本、状态、任务和执行管理。项目当前是 **Internal / Experimental / Test-Gated** Rust core：M1 已发布，M2 状态引擎与 M3 Agent Execution 核心工作流已完成内部实现，M4 正在定义 provider-neutral 外部控制边界。
+<p align="center">
+  <a href="https://github.com/NJHTR/pong/actions/workflows/m1-release-evidence.yml"><img alt="CI" src="https://github.com/NJHTR/pong/actions/workflows/m1-release-evidence.yml/badge.svg?branch=dev"></a>
+  <a href="https://github.com/NJHTR/pong/releases/tag/v0.1.0"><img alt="Release v0.1.0" src="https://img.shields.io/badge/release-v0.1.0-2ea44f"></a>
+  <a href="https://www.rust-lang.org"><img alt="Rust 1.78+" src="https://img.shields.io/badge/rust-1.78%2B-000000?logo=rust"></a>
+  <a href="https://www.apache.org/licenses/LICENSE-2.0"><img alt="License Apache 2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
+  <a href="./docs/roadmap/ROADMAP.md"><img alt="Status Experimental" src="https://img.shields.io/badge/status-experimental-orange"></a>
+</p>
 
-**Current release:** `v0.1.0`
+> Agent-first, versioned workspace and execution infrastructure for long-running and multi-agent software development.
 
-**M1:** Released
+Pong is not a Git wrapper for AI. It provides a durable model for agent versions, state, tasks, workspaces, and execution. The project is currently an **internal, experimental, test-gated** Rust core.
 
-**M2:** Internal development complete (`M2-SLICE-001` ~ `012`, internal/test-gated)
+## Project Status
 
-**M3:** Agent Execution core implemented (internal/test-gated)
-
-**M4:** Provider-neutral `AgentControl` facade implemented and publication-hardened (internal/test-gated)
+| Milestone | Status |
+| --- | --- |
+| Current release | `v0.1.0` |
+| M1 durable primitives | Released |
+| M2 state engine | Internal implementation complete |
+| M3 agent execution core | Internal implementation complete |
+| M4 provider-neutral `AgentControl` | Implemented and publication-hardened; external protocol contract in progress |
 
 ## About
 
-Pong is local-first version control and execution infrastructure for AI agents. It complements Git by making agent workspaces, state, and handoffs traceable, recoverable, and safe to resume.
+Pong is local-first version control and execution infrastructure for AI agents. It complements Git by making agent workspaces, state transitions, checkpoints, handoffs, and recovery traceable and durable.
 
-## The Problem
+Git manages source history. Pong manages the state and evidence created while agents execute work. Pong is a Rust library/core, not a model runtime, scheduler, public CLI, server, SDK, or UI.
 
-传统 Git 默认围绕人类开发者：`commit`、`branch`、`merge`、`checkout`、`rebase`。Agent 的执行模型更复杂：
+## Why Pong?
 
-- 一个 Agent 可以启动多个 SubAgent；
-- 多个 Agent 可以并行开发；
-- Agent 可能失败、崩溃、超时或耗尽额度；
-- 任务可能从 Cursor、Codex、Claude 或其他 runtime 接管；
-- 一次任务可能产生许多自动修改和多个候选状态；
-- 用户需要恢复到任务开始或某个稳定状态，而不是删除历史。
+Agent execution has requirements that do not map cleanly to a human-centered Git workflow:
 
-因此问题不是“AI 会不会用 Git？”，而是“Git 的状态模型是否适合 Agent 的执行模型？” Pong 以显式身份、不可变状态、操作耐久性和恢复边界回答这个问题。
+- one agent can start multiple subagents;
+- multiple executions can work in parallel;
+- an execution can fail, crash, time out, or exhaust its quota;
+- a task can move between Codex, Claude, Cursor, or another runtime;
+- one task can produce many intermediate and candidate states;
+- recovery must return to a known task state without deleting history.
+
+Pong addresses these requirements with explicit identity, immutable state, durable operations, deterministic recovery, and auditable ownership boundaries.
 
 ## Pong and Git
 
 | Git | Pong |
 | --- | --- |
-| 源代码 commit、branch、merge | Agent workspace、snapshot、version、operation |
-| 面向人类协作的历史 | 面向自动执行的 durable state |
-| 代码树的版本关系 | 执行上下文、状态引用和恢复证据 |
+| Commits, branches, merges | Agent workspaces, snapshots, versions, operations |
+| Human collaboration history | Durable automated-execution state |
+| Source-tree lineage | Execution context, state references, recovery evidence |
 
-两者可以同时存在：项目源代码继续使用 Git，Agent 执行状态由 Pong 记录。Pong 当前不是 Git replacement。
+They are designed to coexist. Pong is not a Git replacement.
 
-## Current Architecture
+## Architecture
 
-已实现的核心关系如下。`Workspace.head` 仍然是 Snapshot root digest；Version Head 是独立的逻辑选择，不改变 M1 Snapshot-head 语义。
+`Workspace.head` is the Snapshot root digest. Version Head is a separate logical selection and does not change Snapshot-head semantics.
 
 ```text
 Workspace
     |
     +-- Snapshot Head
     |
-    +-- Version Head
-          |
-          +-- Version
-                |
-                +-- Parent Version
-                |
-                +-- Snapshot
-                      |
-                      +-- CAS / Tree
+    +-- Version Head -- Version -- Parent Version
+                              |
+                              +-- Snapshot -- CAS / Tree
 
 Task
     |
@@ -73,106 +84,70 @@ AgentControl
           +-- Operation / Snapshot / Version / Rollback
 ```
 
-当前实现边界：
+Implemented layers:
 
-- **Storage Core:** SQLite metadata、content-addressed storage (CAS)、filesystem、canonical identity and schema checks。
-- **State Engine:** Workspace lifecycle、Snapshot、Restore、Diff、Reconciliation、Version、Version Graph、Version Head、durable Operation ledger、lease/revision guards and recovery boundaries。
-- **Execution Engine:** Agent、Task、Execution、独立 Workspace、Checkpoint、Handoff、Resume、跨 Workspace materialization/diff/restore/rollback，以及显式 provenance。
-- **Control Layer:** 本地 Rust `AgentControl` facade，组合 durable workflow，并执行 lease、revision CAS、ownership、replay 和 recovery 检查。
-- **Agent State Layer:** Memory、Skill、Automation、Policy、Plugin、Permission、Candidate、Approval 等属于后续范围。
+- **Storage core:** SQLite metadata, content-addressed storage, filesystem publication, canonical identity, and schema validation.
+- **State engine:** Workspace lifecycle, Snapshot, restore, diff, reconciliation, Version graph and Head, durable Operation ledger, leases, revision guards, and recovery boundaries.
+- **Execution engine:** Agent, Task, Execution, independent Workspaces, Checkpoint, Handoff, Resume, cross-workspace materialization/diff/restore/rollback, and explicit provenance.
+- **Control layer:** local Rust `AgentControl` facade with typed requests and views over the durable workflow.
 
-## Agent Execution Model
+Memory, Skill, Automation, Policy, Plugin, Permission, Candidate, and Approval belong to later milestones.
 
-M3 已在 Core 内实现 Agent、Task、Execution、Checkpoint、Handoff、Resume 和 Rollback 的 durable records，并实现跨 Workspace 的 source validation、target-local materialization、diff、restore 与 history-preserving rollback。相关设计见 [`M3_AGENT_EXECUTION.md`](docs/architecture/M3_AGENT_EXECUTION.md)、[`M3_HANDOFF_CHECKPOINT_ROLLBACK.md`](docs/architecture/M3_HANDOFF_CHECKPOINT_ROLLBACK.md) 和 [`ADR-M3-001`](docs/decisions/ADR-M3-001-agent-execution-model.md)。
+## Agent Execution
 
-当前模型区分：
+Each Agent has a durable identity. A Task identifies the work, while an Execution represents one concrete attempt by one Agent. An Execution has explicit Workspace, base Version, current Version, and Operation references.
 
-- **Agent Identity**：跨进程的 durable actor identity；provider metadata 与 credentials 分离，秘密不进入 Core。
-- **Task**：工作的持久身份和协调状态。
-- **Execution**：某个 Agent 为某个 Task 运行的一次具体尝试，有独立状态、Workspace、base/current Version 和 Operation 引用。
-- **SubAgent / Execution Graph**：父子 Execution 是独立的、有限深度且无环的关系；它不是 Version parent，也不是 Handoff。
+Parent and child Executions form a bounded, acyclic execution graph. This relation is separate from Version ancestry and from Handoff.
 
 ### Multi-Agent Workspaces
-
-一个 Task 可以关联多个独立 Execution：
 
 ```text
 Task
 |
 +-- Codex Execution
-|     |
 |     +-- Backend SubAgent
 |     +-- Test SubAgent
 |
 +-- Cursor Execution
-|
 +-- Claude Review Execution
 ```
 
-多个 Execution 可以从相同的 base Version 开始，并绑定独立 writable Workspace。Version parent 始终保持同 Workspace lineage；跨 Workspace 延续通过显式 Checkpoint、Handoff、Resume 和 source Version 完成。写入继续受 lease 与 revision CAS 保护。自动调度、merge/rebase 和共享可写 Workspace 策略仍不在 Core 范围内。
+Executions can start from the same base Version while using independent writable Workspaces. Version parents always remain within one Workspace. Cross-workspace continuation uses explicit Checkpoint, Handoff, Resume, and source Version records. Every write remains protected by leases and revision compare-and-swap.
 
-### Handoff
+### Handoff and Recovery
 
-```text
-Codex
-  |
-Task T100
-  |
-quota exhausted
-  |
-Cursor
-  |
-继续 Task T100
-```
+Pong persists Handoff and Resume records without rewriting Task identity or fabricating Version ancestry. Local development evidence validates a process-level handoff from Codex to Claude Code, but this is not yet a supported provider adapter or remote protocol.
 
-Handoff 保持 Task identity、Version context 和 Operation history，通过显式 context reference 把工作交给另一个 Execution。Core 已支持 durable Handoff/Resume records；本地开发证据验证了 Codex 到 Claude Code 的进程级接力，但这不等同于公开 provider adapter、SDK 或远程协议。
-
-### Checkpoint, Rollback and Resume
-
-```text
-Task baseline
-     |
-Checkpoint
-     |
-Agent execution
-     |
-many versions
-     |
-Rollback / Resume
-```
-
-Rollback 恢复到稳定的 Version 或 Checkpoint，并保留历史 Version、Operation 和 Execution。跨 Workspace rollback 会发布 target-local Snapshot、更新目标 Workspace head、保留目标 Version Head，并保持源 Workspace 不变。
+Rollback preserves Version, Operation, and Execution history. Cross-workspace rollback publishes a target-local Snapshot, updates only the target Workspace head, preserves its Version Head, and leaves the source Workspace unchanged.
 
 ## Progress
 
 ### Completed
 
-- M1 durable primitives release：`v0.1.0`。
-- M2 core state engine：Workspace/snapshot、lifecycle、operation ledger、Version persistence、Version graph、Version Head，以及对应迁移、故障和恢复测试。
-- M3 Agent Execution core：Agent、Task、Execution、Checkpoint、Handoff、Resume、跨 Workspace materialization/diff/restore/rollback，以及本地真实 Agent handoff 验证。
-- M4 local control facade：provider-neutral `AgentControl` 与 typed requests/views；Version publication 支持 stale-revision rejection、durable exact retry、pre-commit failure 和 post-commit cold-reopen recovery。
+- M1 durable primitives release: `v0.1.0`.
+- M2 state engine and its migration, fault, and recovery coverage.
+- M3 execution records, cross-workspace workflows, and local real-agent handoff validation.
+- M4 local `AgentControl`, including stale-revision rejection, exact durable retry, pre-commit failure recovery, and post-commit cold-reopen recovery.
 
 ### In Progress
 
-- M4 external Agent protocol contract：定义 transport-neutral request/response、reconnect、observability、authentication ownership 与 safe wire error semantics。当前尚未选择 CLI、HTTP、MCP 或 SDK transport。
+- M4 external Agent protocol contract: transport-neutral requests and responses, reconnect behavior, observability, authentication ownership, and safe wire errors.
 
 ### Planned
 
-- External provider adapters and transport
-- Scheduling and orchestration
-- Merge/rebase and reconciliation policy across executions
-- Candidate and Approval
-- Agent State layer
-- Safe self-evolution
+- external provider adapters and transport;
+- scheduling and orchestration;
+- merge, rebase, and reconciliation policy across executions;
+- Candidate and Approval;
+- Agent State layer;
+- safe self-evolution.
 
-## Running Locally
+## Run Locally
 
-### Requirements
+Requirements:
 
-- Rust `1.78` or a compatible newer toolchain
-- A local filesystem supported by the host platform
-
-### Build and Test
+- Rust `1.78` or a compatible newer toolchain;
+- a local filesystem supported by the host platform.
 
 ```bash
 cargo fmt --all -- --check
@@ -182,35 +157,31 @@ cargo clippy --all-targets --all-features --locked -- -D warnings
 git diff --check
 ```
 
-The repository currently has no public `pong init`, `pong checkpoint`, or `pong rollback` CLI. Read [`docs/development/DEVELOPMENT_GUIDE.md`](docs/development/DEVELOPMENT_GUIDE.md) and [`docs/roadmap/NEXT_TASK.md`](docs/roadmap/NEXT_TASK.md) before changing persistence semantics.
+There is currently no public `pong init`, `pong checkpoint`, or `pong rollback` CLI. Read the [development guide](docs/development/DEVELOPMENT_GUIDE.md) and [next task](docs/roadmap/NEXT_TASK.md) before changing persistence semantics.
 
 ## Technical Principles
 
-- immutable state
-- explicit identity
-- deterministic behavior
-- fail closed
-- crash recovery
-- durable operations
-- explicit version references
-- no phantom success
-- provider-neutral design
-- agent-neutral execution model
+- immutable state;
+- explicit identity and ownership;
+- deterministic behavior;
+- fail-closed validation;
+- crash recovery and durable operations;
+- explicit Version references;
+- no phantom success;
+- provider-neutral, agent-neutral design.
 
 ## Explicit Limits
 
-Pong is not production-ready, enterprise-ready, fully autonomous, or a Git replacement. There is no supported provider integration, public SDK/CLI/MCP endpoint, server mode, remote replication service, scheduler, merge/rebase policy, shared-writable-workspace policy, Candidate/Approval flow, or Agent State implementation. External side effects and credentials remain outside Core behind explicit adapter and permission boundaries.
+Pong is not production-ready, enterprise-ready, fully autonomous, or a Git replacement. It does not provide a supported provider integration, public SDK/CLI/MCP endpoint, server mode, remote replication, scheduler, merge/rebase policy, shared writable Workspace policy, Candidate/Approval flow, or Agent State implementation. Credentials and external side effects remain outside Core.
 
 ## Documentation
 
-- [`docs/architecture/`](docs/architecture/) — system and data contracts
-- [`docs/decisions/`](docs/decisions/) — ADRs and accepted boundaries
-- [`docs/development/`](docs/development/) — development and test gates
-- [`docs/roadmap/`](docs/roadmap/) — milestone status and next task
-- [`artifacts/`](artifacts/) — retained internal validation evidence
+- [Architecture](docs/architecture/)
+- [Architecture decisions](docs/decisions/)
+- [Development and test gates](docs/development/)
+- [Roadmap and next task](docs/roadmap/)
+- [Validation evidence](artifacts/)
 
 ## Next Step
 
-Define the M4 external Agent protocol contract over the hardened local `AgentControl` semantic boundary.
-
-Transport-neutral request/response, reconnect, observability, authentication ownership, and safe wire errors must be specified before selecting CLI, HTTP, MCP, SDK, or provider-specific adapters. See [`NEXT_TASK.md`](docs/roadmap/NEXT_TASK.md).
+Define the M4 external Agent protocol contract over the hardened local `AgentControl` semantic boundary before selecting CLI, HTTP, MCP, SDK, or provider-specific adapters. See [NEXT_TASK.md](docs/roadmap/NEXT_TASK.md).
