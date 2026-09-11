@@ -1,0 +1,92 @@
+{
+  "base_commit": "fe3868dbd99d5dcba4efd6b1d3283c66ce4e104b",
+  "branch": "dev",
+  "checkpoint_discovery": "Pong metadata query after reopen",
+  "concurrent_operation_count": 0,
+  "conflict_count": 0,
+  "durable_ids": [
+    {
+      "id": "task-real-agent-handoff",
+      "kind": "task"
+    },
+    {
+      "id": "execution-codex-real",
+      "kind": "execution_codex"
+    },
+    {
+      "id": "execution-claude-real",
+      "kind": "execution_claude"
+    },
+    {
+      "id": "ver-7ea2d47135c948fbef02cd048ac7e7f58a8db68719d1a16a49883552f9e4deb6",
+      "kind": "version_codex"
+    },
+    {
+      "id": "ver-4cb5efb55195ad5cfedae8ab90885beb92f07a3c42c6fa3e170470c0c877c575",
+      "kind": "version_claude"
+    },
+    {
+      "id": "checkpoint-codex-real",
+      "kind": "checkpoint_codex"
+    },
+    {
+      "id": "checkpoint-claude-real",
+      "kind": "checkpoint_claude"
+    },
+    {
+      "id": "handoff-codex-to-claude-real",
+      "kind": "handoff"
+    },
+    {
+      "id": "execution-claude-real",
+      "kind": "resume"
+    }
+  ],
+  "execution_count": 2,
+  "focused_tests": "cargo test --locked --test agent_handoff_e2e -- --ignored --nocapture",
+  "full_regression": "cargo test --all --locked --no-fail-fast",
+  "control_layer_test": {
+    "command": "cargo test --locked --test control_layer -- --nocapture",
+    "exit_code": 0,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  "head": "fe3868dbd99d5dcba4efd6b1d3283c66ce4e104b",
+  "ignored": "reported separately by cargo",
+  "mode": "LOCAL_NATIVE_DEVELOPMENT",
+  "platform": {
+    "arch": "x86_64",
+    "filesystem": "NTFS",
+    "os": "Windows 11"
+  },
+  "provider_commands": [
+    {
+      "command": "codex exec --dangerously-bypass-approvals-and-sandbox --ephemeral --skip-git-repo-check -C C:\\Users\\NJHTR\\AppData\\Local\\Temp\\.tmptOb9t0\\codex-workspace Use the shell tool now, in the current workspace. Run this exact PowerShell script: New-Item -ItemType Directory -Force src | Out-Null; [IO.File]::WriteAllText((Join-Path (Get-Location) 'src/calculator.rs'), \"// Added by Codex`r`n pub fn add(a: i32, b: i32) -> i32 { a + b }`r`n pub fn multiply(a: i32, b: i32) -> i32 { a * b }`r`n\", [Text.UTF8Encoding]::new($false)); [IO.File]::WriteAllText((Join-Path (Get-Location) 'README.md'), '# Calculator', [Text.UTF8Encoding]::new($false)); Get-Item src/calculator.rs,README.md. Execute it, verify the files exist, and stop. Do not use git and do not merely describe the changes.",
+      "duration_ms": 103069,
+      "exit_code": 0,
+      "provider": "Codex"
+    },
+    {
+      "command": "claude -p --dangerously-skip-permissions --no-session-persistence --permission-mode bypassPermissions Use the shell tool now, in the current workspace. Run this exact PowerShell script: $p = Join-Path (Get-Location) 'src/calculator.rs'; $existing = [IO.File]::ReadAllText($p); if (-not $existing.Contains('Added by Codex')) { throw 'Codex work is missing' }; [IO.File]::AppendAllText($p, \"`r`n// Added by Claude Code`r`n pub fn subtract(a: i32, b: i32) -> i32 { a - b }`r`n\", [Text.UTF8Encoding]::new($false)); Get-Item $p. Execute it, verify the file, and stop. Do not use git and do not merely describe the changes.",
+      "duration_ms": 29525,
+      "exit_code": 0,
+      "provider": "Claude Code"
+    }
+  ],
+  "recovery": "checkpoint, handoff, resume records reopened successfully",
+  "quality_gate_summary": {
+    "fmt_check": 0,
+    "cargo_check_locked": 0,
+    "full_regression_exit_code": 0,
+    "full_regression_passed": 538,
+    "full_regression_failed": 0,
+    "full_regression_ignored": 276,
+    "clippy_warnings_denied": 0,
+    "git_diff_check": 0,
+    "ignored_contracts_counted_as_pass": false
+  },
+  "shared_base_count": 1,
+  "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+  "workspace_count": 2
+}

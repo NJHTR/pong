@@ -1,41 +1,39 @@
 # Next Task
 
-**Current Phase:** Phase 3 - M3 agent execution layer
+**Current Phase:** Phase 4 - provider-neutral external control boundary
 
-**Current Milestone:** M3-SLICE-003G-RE Cross-Workspace Source / Materialization
+**Current Milestone:** AgentControl stale-revision, publication retry, and
+durability hardening
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** M3-SLICE-003G-RE / PHASE-1 implements cross-workspace immutable
-source Version/Snapshot validation for read-only base references. Executions in
-W2 can reference V100[W1] via `Execution.base_version_id`. The source remains
-immutable and Workspace-owned. Validation enforces project, environment,
-generation, and migration compatibility.
+**Current Task:** The internal provider-neutral `AgentControl` facade now uses
+`PublishVersionRequest.expected_workspace_revision` as real publication
+authority. Its existing `version.create` Operation records the initial
+Workspace revision/head and Version Head, allowing deterministic retry after
+pre-commit failure or post-commit uncertainty without a new persistence or
+idempotency system.
 
-**Contract materials:** [`M3_CROSS_WORKSPACE_SOURCE_MODEL.md`](../architecture/M3_CROSS_WORKSPACE_SOURCE_MODEL.md),
-[`M3_LOCAL_MATERIALIZED_STATE.md`](../architecture/M3_LOCAL_MATERIALIZED_STATE.md),
-[`ADR-M3-006`](../decisions/ADR-M3-006-cross-workspace-source-model.md),
-[`ADR-M3-007`](../decisions/ADR-M3-007-local-materialized-state.md), and
-[`cross_workspace_source.rs`](../../tests/cross_workspace_source.rs).
+**Contract materials:** [`M4_PROVIDER_NEUTRAL_CONTROL_LAYER.md`](../architecture/M4_PROVIDER_NEUTRAL_CONTROL_LAYER.md),
+[`ADR-M4-provider-neutral-control-layer.md`](../decisions/ADR-M4-provider-neutral-control-layer.md),
+and [`control_layer.rs`](../../tests/control_layer.rs).
 
-**Checkpoint:** M3-SLICE-003G-RE / PHASE-4 is `PASS / INTERNAL / TEST-GATED`.
-Cross-workspace diff and restore verified complete. The existing implementation
-(`diff_workspace_against_version` at workspace.rs:1596, `restore_from_version`
-at workspace.rs:1571) provides read-only cross-workspace diff and full restore
-with all frozen semantics verified: diff is deterministic and read-only,
-restore creates target-local Snapshot (not foreign assignment), W2.version_head_id
-preserved, W1 completely unchanged, parallel W2/W3 isolation maintained. 19/19
-Phase 4 tests pass. Phases 1-4 complete (30 source + 43 materialization + 48
-rollback + 19 diff/restore = 140 cross-workspace tests). 456+ total repository
-tests passing with 0 failures. M1 v0.1.0, M2-SLICE-001~012, M3-SLICE-001B,
-M3-SLICE-002D, and M3-SLICE-003G-RE/PHASE-1~4 complete.
+**Checkpoint:** AgentControl hardening is `IMPLEMENTED / INTERNAL /
+TEST-GATED`. Ten active facade tests cover the complete durable workflow,
+stale and concurrent revision rejection, lease/input failures, exact retry,
+pre-commit failure, post-commit cold-reopen recovery, replay corruption, and
+W1/W2/W3 isolation. M3's active 47-test cross-workspace rollback suite remains
+the required regression boundary. Ignored placeholders are never counted as
+passes. MCP, SDK adapters, network transport, wire-safe error payloads, and
+production authentication remain `NOT_PROVEN`.
 
-**Next Action:** Determine next M3 core slice or evaluate readiness for agent
-adapter integration. Cross-workspace source/materialization/rollback/diff/restore
-foundation is complete. Evaluate whether additional core workspace primitives are
-needed before beginning provider adapters, CLI, MCP, or SDK integration.
+**Next Action:** Evaluate the hardened Rust facade as the candidate semantic
+boundary for an M4 external Agent protocol contract. Define transport-neutral
+request, response, reconnect, observability, authentication ownership, and
+safe error semantics before choosing CLI, HTTP, MCP, or another transport. Do
+not start provider-specific adapters or orchestration from this checkpoint.
 
 ## M1 Historical Handoff
 

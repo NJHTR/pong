@@ -2190,11 +2190,50 @@ impl<'a> WorkspaceManager<'a> {
         now_ms: i64,
         now: &str,
     ) -> Result<Snapshot, PongError> {
+        self.snapshot_local_inner(workspace_id, lease, options, None, now_ms, now)
+    }
+
+    pub(crate) fn snapshot_local_at_revision(
+        &mut self,
+        workspace_id: &str,
+        lease: &LeaseToken,
+        options: SnapshotOptions,
+        expected_revision: i64,
+        now_ms: i64,
+        now: &str,
+    ) -> Result<Snapshot, PongError> {
+        if expected_revision < 0 {
+            return Err(PongError::InvalidInput(
+                "workspace revision must not be negative".into(),
+            ));
+        }
+        self.snapshot_local_inner(
+            workspace_id,
+            lease,
+            options,
+            Some(expected_revision),
+            now_ms,
+            now,
+        )
+    }
+
+    fn snapshot_local_inner(
+        &mut self,
+        workspace_id: &str,
+        lease: &LeaseToken,
+        options: SnapshotOptions,
+        expected_revision: Option<i64>,
+        now_ms: i64,
+        now: &str,
+    ) -> Result<Snapshot, PongError> {
         let record = self
             .repository
             .metadata()
             .workspace(workspace_id)?
             .ok_or_else(|| PongError::NotFound("workspace does not exist".into()))?;
+        if expected_revision.is_some_and(|expected| record.revision != expected) {
+            return Err(PongError::Conflict("workspace revision is stale".into()));
+        }
         if record.driver != "local" {
             return Err(PongError::Unsupported(
                 "workspace is not bound to the local driver".into(),
@@ -2361,7 +2400,7 @@ impl<'a> WorkspaceManager<'a> {
             event_id,
             causation_id: Some(format!("operation:{operation_id}:1")),
             correlation_id: Some(operation_id.clone()),
-            expected_revision: record.revision,
+            expected_revision: expected_revision.unwrap_or(record.revision),
             lease: lease.clone(),
             now_ms,
         };

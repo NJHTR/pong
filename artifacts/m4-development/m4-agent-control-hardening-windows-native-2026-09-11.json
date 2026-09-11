@@ -1,0 +1,164 @@
+{
+  "slice": "M4 AgentControl Hardening",
+  "title": "Stale Revision, Publication Failure, Retry, and Durability",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "classification": "LOCAL_NATIVE_DEVELOPMENT",
+  "date": "2026-09-11",
+  "platform": "Windows 11",
+  "architecture": "x86_64",
+  "filesystem": "NTFS",
+  "toolchain": {
+    "rustc": "1.95.0 (59807616e 2026-04-14)",
+    "cargo": "1.95.0 (f2d3ce0bd 2026-03-21)",
+    "host": "x86_64-pc-windows-msvc"
+  },
+  "git": {
+    "branch": "dev",
+    "base_commit": "fe3868dbd99d5dcba4efd6b1d3283c66ce4e104b",
+    "tested_head": "fe3868dbd99d5dcba4efd6b1d3283c66ce4e104b",
+    "head_subject": "checkpoint: m3-003g-re-phase4-diff-restore",
+    "working_tree_at_validation": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "push_performed": false,
+    "tag_created": false
+  },
+  "boundaries": {
+    "CORE": {
+      "status": "PASS",
+      "full_regression": {
+        "passed": 595,
+        "failed": 0,
+        "ignored": 276,
+        "ignored_count_as_pass": false
+      },
+      "m3_cross_workspace_rollback": {
+        "passed": 47,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "CONTROL": {
+      "status": "PASS",
+      "test_target": "tests/control_layer.rs",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    "REAL_PROVIDER": {
+      "status": "NOT_REEXECUTED",
+      "reason": "Provider execution is a separate validation layer and was outside this hardening slice.",
+      "retained_evidence": [
+        "artifacts/m3-development/m3-real-agent-handoff-e2e-windows-native-2026-09-11.json",
+        "artifacts/m3-development/m3-real-agent-handoff-e2e-windows-native-2026-09-11.log"
+      ]
+    }
+  },
+  "publication_contract": {
+    "expected_workspace_revision_is_authority": true,
+    "stale_request_fails_before_snapshot_mutation": true,
+    "snapshot_publication_uses_caller_revision": true,
+    "version_operation_records_initial_revision": true,
+    "version_operation_records_initial_workspace_head": true,
+    "version_operation_records_initial_version_head": true,
+    "version_operation_records_update_head_policy": true,
+    "version_and_operation_completion_are_one_sqlite_transaction": true,
+    "version_head_is_a_separate_lease_guarded_revision_transition": true,
+    "new_schema_or_entity_added": false,
+    "new_transaction_or_idempotency_system_added": false
+  },
+  "verified_scenarios": {
+    "current_revision_succeeds": true,
+    "stale_revision_rejected_without_durable_mutation": true,
+    "refreshed_revision_can_publish_new_state": true,
+    "foreign_lease_fails_before_mutation": true,
+    "expired_lease_fails_before_mutation": true,
+    "invalid_workspace_fails_before_mutation": true,
+    "invalid_request_and_parent_fail_before_mutation": true,
+    "precommit_version_failure_retains_one_started_operation": true,
+    "exact_retry_finishes_one_version": true,
+    "postcommit_uncertainty_survives_cold_reopen": true,
+    "completed_replay_does_not_repeat_revision": true,
+    "missing_snapshot_replay_fails_closed": true,
+    "foreign_snapshot_replay_fails_closed": true,
+    "concurrent_workspace_mutation_is_not_overwritten": true,
+    "successful_workflow_survives_cold_reopen": true,
+    "three_provider_metadata_values_remain_workspace_isolated": true,
+    "durable_operation_is_inspectable_through_agent_control": true
+  },
+  "commands": [
+    {
+      "command": "cargo test --locked --test control_layer -- --nocapture",
+      "exit_code": 0,
+      "duration_seconds": 4.1,
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --locked --test cross_workspace_rollback",
+      "exit_code": 0,
+      "duration_seconds": 4.3,
+      "passed": 47,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --all --locked",
+      "exit_code": 3221226356,
+      "duration_seconds": 25.9,
+      "status": "RETAINED_TRANSIENT_FAILURE",
+      "detail": "agent_execution printed all active cases as ok, then exited with Windows STATUS_HEAP_CORRUPTION"
+    },
+    {
+      "command": "cargo test --locked --test agent_execution -- --test-threads=1",
+      "exit_code": 0,
+      "duration_seconds": 26.9,
+      "passed": 37,
+      "failed": 0,
+      "ignored": 6
+    },
+    {
+      "command": "cargo test --locked --test agent_execution",
+      "exit_code": 0,
+      "duration_seconds": 23.5,
+      "passed": 37,
+      "failed": 0,
+      "ignored": 6
+    },
+    {
+      "command": "cargo test --all --locked",
+      "exit_code": 0,
+      "duration_seconds": 128.5,
+      "passed": 595,
+      "failed": 0,
+      "ignored": 276
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "duration_seconds": 0.8
+    },
+    {
+      "command": "cargo check --locked",
+      "exit_code": 0,
+      "duration_seconds": 0.8
+    },
+    {
+      "command": "cargo clippy --all-targets --all-features --locked -- -D warnings",
+      "exit_code": 0,
+      "duration_seconds": 0.4
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "duration_seconds": 0.1,
+      "note": "Git emitted only existing LF-to-CRLF checkout warnings."
+    }
+  ],
+  "known_limitations": [
+    "PongError exposes stable local codes, but a wire-safe external error payload is not defined.",
+    "Operation-to-Execution association remains an explicit open decision.",
+    "Authentication, authorization, reconnect, cancellation, and remote execution contracts are not defined.",
+    "No external transport, provider adapter, MCP server, CLI, HTTP API, or SDK was selected or implemented.",
+    "One transient Windows parallel test-process heap-corruption exit was retained; serial verification, a default-suite retry, and the final default full regression all passed."
+  ]
+}

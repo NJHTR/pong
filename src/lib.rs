@@ -7,6 +7,7 @@
 pub(crate) mod atomic_replace;
 pub mod canonical;
 pub mod cas;
+pub mod control;
 pub mod environment;
 pub mod error;
 pub mod metadata;
@@ -14,6 +15,12 @@ pub mod redaction;
 pub mod repository;
 pub mod workspace;
 
+pub use control::{
+    AcquireWorkspaceRequest, AgentControl, CreateExecutionRequest, CreateTaskRequest,
+    CreateWorkspaceRequest, LeaseView, PublishVersionRequest, PublishVersionResult,
+    RegisterAgentRequest, ReleaseWorkspaceRequest, RenewWorkspaceRequest, SnapshotView, StateView,
+    WorkspaceView,
+};
 pub use environment::{EnvironmentFacts, ENVIRONMENT_SCHEMA_VERSION};
 pub use error::PongError;
 pub use metadata::{

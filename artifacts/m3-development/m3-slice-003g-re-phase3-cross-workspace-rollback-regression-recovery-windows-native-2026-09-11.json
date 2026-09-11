@@ -1,0 +1,168 @@
+{
+  "phase": "M3-SLICE-003G-RE / PHASE-3",
+  "title": "Cross-Workspace Rollback Regression Recovery",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "classification": "LOCAL_NATIVE_DEVELOPMENT",
+  "date": "2026-09-11",
+  "platform": "Windows 11",
+  "architecture": "x86_64",
+  "filesystem": "NTFS",
+  "toolchain": {
+    "rustc": "1.95.0 (59807616e 2026-04-14)",
+    "cargo": "1.95.0 (f2d3ce0bd 2026-03-21)",
+    "host": "x86_64-pc-windows-msvc"
+  },
+  "git": {
+    "branch": "dev",
+    "base_commit": "fe3868dbd99d5dcba4efd6b1d3283c66ce4e104b",
+    "head": "fe3868dbd99d5dcba4efd6b1d3283c66ce4e104b",
+    "head_subject": "checkpoint: m3-003g-re-phase4-diff-restore",
+    "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "push_performed": false,
+    "tag_created": false
+  },
+  "before": {
+    "status": "PARTIAL",
+    "reason": "The runtime implementation existed, but tests/cross_workspace_rollback.rs was not an active Cargo integration target.",
+    "disabled_copy": {
+      "path": "tests/cross_workspace_rollback.rs.disabled",
+      "tests": 42,
+      "cargo_status": "DISABLED_BY_FILENAME",
+      "ignored_attributes": 0
+    },
+    "backup_copy": {
+      "path": "tests/cross_workspace_rollback.rs.bak",
+      "tests": 42,
+      "cargo_status": "NOT_A_CARGO_TEST_TARGET",
+      "ignored_attributes": 0
+    },
+    "historical_evidence": [
+      "artifacts/m3-development/M3_PHASE3_IMPLEMENTATION_COMPLETE.md",
+      "artifacts/m3-development/m3-slice-003g-re-phase4-cross-workspace-diff-restore-windows-native-2026-09-11.json"
+    ]
+  },
+  "repair": {
+    "active_test": "tests/cross_workspace_rollback.rs",
+    "active_tests": 47,
+    "ignored_tests": 0,
+    "production_semantics_changed": false,
+    "old_tests_deleted": false,
+    "changes": [
+      "Updated RollbackCreation and ExecutionCreation fixtures to the current explicit task, workspace, actor, request, base, and current Version bindings.",
+      "Created target Workspaces before binding Executions, matching current fail-closed scope validation.",
+      "Explicitly selected the W2-local V200 Version Head instead of assuming Version creation selects it.",
+      "Reused byte-for-byte equivalent RollbackCreation requests for exact idempotent retries.",
+      "Added active coverage for source and target lease preservation, target Version history, missing Snapshot metadata, foreign and expired leases, exact revision advancement, and concurrent W2/W3 rollback isolation."
+    ]
+  },
+  "frozen_semantics": {
+    "source": "V100 and S100 remain owned by W1 and immutable",
+    "target": "Rollback publishes a target-local Snapshot owned by W2",
+    "workspace_head": "W2.head points to the target-local Snapshot",
+    "version_head": "W2.version_head_id remains the W2-local V200",
+    "result_version_id": null,
+    "version_creation": "Rollback creates no Version",
+    "history": "Existing source and target Versions remain durable",
+    "parallel_isolation": "Independent W2 and W3 rollback requests run concurrently through separate Repository handles"
+  },
+  "coverage": {
+    "source_validation": true,
+    "source_snapshot_validation": true,
+    "target_local_snapshot": true,
+    "workspace_head_update": true,
+    "version_head_preservation": true,
+    "source_immutability": true,
+    "source_revision_preservation": true,
+    "source_lease_preservation": true,
+    "target_revision_exactly_once": true,
+    "target_lease_preservation": true,
+    "missing_version": true,
+    "missing_snapshot": true,
+    "missing_cas": true,
+    "invalid_manifest": true,
+    "revision_conflict": true,
+    "lease_conflict": true,
+    "idempotent_retry": true,
+    "cold_reopen": true,
+    "rollback_record_durability": true,
+    "multiple_targets": true,
+    "parallel_target_isolation": true,
+    "history_preservation": true
+  },
+  "commands": [
+    {
+      "command": "cargo test --locked --test cross_workspace_rollback",
+      "exit_code": 0,
+      "duration_seconds": 1.220,
+      "passed": 47,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --locked --test cross_workspace_source",
+      "exit_code": 0,
+      "duration_seconds": 0.707,
+      "passed": 30,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --locked --test cross_workspace_materialization",
+      "exit_code": 0,
+      "duration_seconds": 1.108,
+      "passed": 43,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --locked --test rollback_result",
+      "exit_code": 0,
+      "duration_seconds": 0.673,
+      "passed": 30,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --locked --test handoff_checkpoint_rollback",
+      "exit_code": 0,
+      "duration_seconds": 0.820,
+      "passed": 48,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --all --locked",
+      "exit_code": 0,
+      "duration_seconds": 68.383,
+      "passed": 586,
+      "failed": 0,
+      "ignored": 276,
+      "listed_tests": 862
+    },
+    {
+      "command": "cargo clippy --all-targets --all-features --locked -- -D warnings",
+      "exit_code": 0,
+      "duration_seconds": 0.306
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "duration_seconds": 0.508
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "duration_seconds": 0.048,
+      "note": "PASS; Git emitted only existing LF-to-CRLF checkout warnings."
+    }
+  ],
+  "evidence_boundary": {
+    "active_tests_count_as_pass": true,
+    "ignored_tests_count_as_pass": false,
+    "disabled_tests_count_as_pass": false,
+    "historical_evidence_counted_as_current_execution": false,
+    "m1_changed": false,
+    "m2_semantics_changed": false,
+    "m4_prototype_preserved": true
+  }
+}

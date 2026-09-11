@@ -1,0 +1,65 @@
+M4 AGENTCONTROL HARDENING - LOCAL NATIVE DEVELOPMENT
+Date: 2026-09-11
+Platform: Windows 11 / x86_64 / NTFS
+Rust: rustc 1.95.0 (59807616e 2026-04-14)
+Cargo: cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+Branch: dev
+Base/tested HEAD: fe3868dbd99d5dcba4efd6b1d3283c66ce4e104b
+Working tree at validation: UNCOMMITTED_DEVELOPMENT_TREE
+
+BOUNDARY RESULTS
+CORE: PASS
+  Full regression: 595 passed, 0 failed, 276 ignored.
+  Ignored tests do not count as PASS.
+  M3 cross-workspace rollback: 47 passed, 0 failed, 0 ignored.
+CONTROL: PASS
+  tests/control_layer.rs: 10 passed, 0 failed, 0 ignored.
+REAL_PROVIDER: NOT_REEXECUTED
+  This hardening slice did not invoke Codex or Claude. Existing real-provider
+  evidence remains separate under artifacts/m3-development/.
+
+VERIFIED
+- Caller-observed Workspace revision is enforced before publication.
+- Stale, foreign-lease, expired-lease, invalid Workspace, invalid request, and
+  invalid parent failures create no publication state.
+- The existing version.create Operation stores publication authority and is
+  queryable through AgentControl.
+- Version pre-commit failure retains one retryable started Operation.
+- Exact retry creates one Version and one Version Head transition.
+- Version post-commit uncertainty recovers after cold reopen.
+- Missing or foreign replay Snapshot metadata fails closed.
+- Unrelated Workspace mutation after intent is never overwritten.
+- Three provider metadata values can publish concurrently to W1/W2/W3 with
+  independent Snapshot, Version, head, revision, lease, and Operation state.
+- No schema, entity, transaction, or idempotency system was added.
+
+COMMANDS
+PASS cargo test --locked --test control_layer -- --nocapture
+  10 passed; 0 failed; 0 ignored; duration 4.1 s
+PASS cargo test --locked --test cross_workspace_rollback
+  47 passed; 0 failed; 0 ignored; duration 4.3 s
+RETAINED TRANSIENT cargo test --all --locked
+  agent_execution printed all active cases as ok and then exited
+  0xc0000374 (STATUS_HEAP_CORRUPTION); duration 25.9 s
+PASS cargo test --locked --test agent_execution -- --test-threads=1
+  37 passed; 0 failed; 6 ignored; duration 26.9 s
+PASS cargo test --locked --test agent_execution
+  37 passed; 0 failed; 6 ignored; duration 23.5 s
+PASS cargo test --all --locked
+  595 passed; 0 failed; 276 ignored; duration 128.5 s
+PASS cargo fmt --all -- --check; duration 0.8 s
+PASS cargo check --locked; duration 0.8 s
+PASS cargo clippy --all-targets --all-features --locked -- -D warnings;
+  duration 0.4 s
+PASS git diff --check; duration 0.1 s
+
+KNOWN LIMITATIONS
+- A wire-safe external error payload is not defined.
+- Durable Operation-to-Execution association remains open.
+- Authentication, authorization, reconnect, cancellation, remote execution,
+  and transport selection remain open.
+- No MCP, CLI, HTTP, SDK, provider adapter, or orchestration was implemented.
+- The transient Windows heap-corruption exit is retained as residual risk;
+  serial verification, default-suite retry, and final full regression passed.
+
+STATUS: PASS / INTERNAL / TEST-GATED

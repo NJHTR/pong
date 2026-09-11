@@ -1,0 +1,113 @@
+PONG M3-SLICE-003G-RE / PHASE-3
+CROSS-WORKSPACE ROLLBACK REGRESSION RECOVERY
+DATE: 2026-09-11
+CLASSIFICATION: LOCAL_NATIVE_DEVELOPMENT
+STATUS: PASS / INTERNAL / TEST-GATED
+
+PLATFORM
+Windows 11
+x86_64-pc-windows-msvc
+NTFS
+rustc 1.95.0 (59807616e 2026-04-14)
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+
+GIT
+branch: dev
+base commit: fe3868dbd99d5dcba4efd6b1d3283c66ce4e104b
+HEAD: fe3868dbd99d5dcba4efd6b1d3283c66ce4e104b
+subject: checkpoint: m3-003g-re-phase4-diff-restore
+working tree: UNCOMMITTED_DEVELOPMENT_TREE
+push: not performed
+tag: not created
+
+PRE-REPAIR STATE
+tests/cross_workspace_rollback.rs: absent as active Cargo target
+tests/cross_workspace_rollback.rs.disabled: 42 tests, 0 ignored attributes
+tests/cross_workspace_rollback.rs.bak: 42 tests, 0 ignored attributes
+The disabled and backup filenames were not executable regression evidence.
+Historical Phase 3 prose claimed implementation completion, while Phase 4
+evidence explicitly deferred the non-compiling rollback suite.
+
+STALE TEST ASSUMPTIONS REPAIRED
+- RollbackCreation now supplies task_id, workspace_id, actor_agent_id, and
+  request_id.
+- ExecutionCreation now supplies workspace_id, base_version_id, and
+  current_version_id.
+- Target Workspaces are created before Executions bind to them.
+- W2/V200 is explicitly selected through set_version_head; create_version does
+  not implicitly update Version Head.
+- Exact retries reuse the same RollbackCreation, including the original
+  expected Workspace revision.
+
+ACTIVE EVIDENCE
+tests/cross_workspace_rollback.rs: 47 active tests
+ignored: 0
+failed: 0
+The 42-test disabled and backup copies remain preserved and are not counted as
+passing evidence.
+
+ADDED COVERAGE
+- source and target lease records remain unchanged
+- target Workspace revision increments exactly once across exact retry
+- target-local V200 remains durable and selected as Version Head
+- missing source Snapshot metadata fails closed
+- foreign and expired target leases fail closed
+- two independent target Workspaces rollback concurrently through separate
+  Repository handles and preserve source state
+
+COMMAND RESULTS
+
+command: cargo test --locked --test cross_workspace_rollback
+exit_code: 0
+duration_seconds: 1.220
+result: 47 passed; 0 failed; 0 ignored
+
+command: cargo test --locked --test cross_workspace_source
+exit_code: 0
+duration_seconds: 0.707
+result: 30 passed; 0 failed; 0 ignored
+
+command: cargo test --locked --test cross_workspace_materialization
+exit_code: 0
+duration_seconds: 1.108
+result: 43 passed; 0 failed; 0 ignored
+
+command: cargo test --locked --test rollback_result
+exit_code: 0
+duration_seconds: 0.673
+result: 30 passed; 0 failed; 0 ignored
+
+command: cargo test --locked --test handoff_checkpoint_rollback
+exit_code: 0
+duration_seconds: 0.820
+result: 48 passed; 0 failed; 0 ignored
+
+command: cargo test --all --locked
+exit_code: 0
+duration_seconds: 68.383
+result: 586 passed; 0 failed; 276 ignored; 862 listed
+note: ignored contract and environment-dependent tests are not PASS evidence
+
+command: cargo clippy --all-targets --all-features --locked -- -D warnings
+exit_code: 0
+duration_seconds: 0.306
+result: PASS
+
+command: cargo fmt --all -- --check
+exit_code: 0
+duration_seconds: 0.508
+result: PASS
+
+command: git diff --check
+exit_code: 0
+duration_seconds: 0.048
+result: PASS; existing checkout line-ending warnings only
+
+CONTRACT RESULT
+Source V100/S100 remains immutable and owned by W1.
+Rollback into W2 publishes a W2-local Snapshot and updates only W2.head.
+W2.version_head_id remains W2-local V200.
+result_version_id remains NULL and rollback creates no Version.
+No production semantics changed in this recovery.
+M1 and M2 source semantics remain unchanged.
+The uncommitted AgentControl and real-agent E2E work remains present.

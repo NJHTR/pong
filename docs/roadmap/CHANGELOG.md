@@ -1,5 +1,93 @@
 # Changelog
 
+## Unreleased - AgentControl Publication Hardening (2026-09-11)
+
+- Made `PublishVersionRequest.expected_workspace_revision` authoritative from
+  the facade through Snapshot publication, so stale callers fail before
+  durable Snapshot, Operation, Version, or Version Head mutation.
+- Persisted publication authority in the existing `version.create` Operation
+  envelope and added strict replay validation for Workspace head/revision,
+  Version Head, Snapshot ownership, and exact request identity. No schema,
+  entity, transaction model, or idempotency system was added.
+- Added deterministic recovery for Version pre-commit failure and
+  post-commit uncertainty. Exact retries return one Version and apply at most
+  one Snapshot and one Version Head revision transition; cold reopen does not
+  depend on process memory.
+- Expanded `tests/control_layer.rs` from one happy-path test to ten active
+  contract-level tests covering stale revisions, refreshed retry, lease and
+  invalid-input failures, durable Operation inspection, missing/foreign
+  replay Snapshot state, concurrent mutation rejection, cold reopen, and
+  W1/W2/W3 provider-neutral isolation.
+- Kept M3's active cross-workspace rollback regression intact at 47 passed,
+  0 failed, and 0 ignored. External protocol selection, wire-safe error
+  payloads, authentication, provider adapters, MCP, CLI, HTTP, SDKs, and
+  orchestration remain outside this slice.
+
+## Unreleased - M3-SLICE-003G-RE / PHASE-3 Regression Recovery (2026-09-11)
+
+- Restored `tests/cross_workspace_rollback.rs` as a normal active Cargo
+  integration suite. Its 47 tests pass with 0 failed and 0 ignored; the 42-test
+  `.disabled` and `.bak` historical copies remain preserved and are not counted
+  as executable evidence.
+- Updated stale test fixtures to current explicit Execution and Rollback
+  bindings, explicit W2-local Version Head selection, and identical-request
+  retry semantics. No production behavior or schema changed.
+- Added direct coverage for source/target lease preservation, one-time target
+  revision advancement, W2 Version history, missing Snapshot metadata,
+  foreign/expired leases, and concurrent rollback into independent W2/W3
+  targets through separate repository handles.
+- The focused rollback suite and related source, materialization, rollback
+  result, and handoff suites pass. Full regression passes with 586 passed,
+  0 failed, and 276 ignored; ignored tests are excluded from PASS evidence.
+  Clippy with warnings denied, format check, and diff check also pass.
+- Retained current Windows-native evidence in
+  `artifacts/m3-development/m3-slice-003g-re-phase3-cross-workspace-rollback-regression-recovery-windows-native-2026-09-11.{json,log}`.
+  Phase 3 is now `PASS / INTERNAL / TEST-GATED`.
+
+## Unreleased - Provider-Neutral Control Layer (2026-09-11)
+
+- Added the thin `AgentControl` facade and typed request/view models for local
+  composition of Agent, Task, Execution, Workspace, lease, Version,
+  Checkpoint, Handoff, Resume, materialization, restore, diff, rollback, and
+  state inspection operations.
+- Added `tests/control_layer.rs`, including cold-reopen durability,
+  cross-workspace target isolation, current-Version binding, and idempotent
+  handoff retry.
+- Added the internal architecture note and ADR. Provider adapters, MCP, SDK,
+  network transport, authentication, and orchestration remain `NOT_PROVEN`.
+
+## Unreleased - M3 Real Agent Handoff E2E (2026-09-11)
+
+- Validated complete agent handoff workflow through Pong's core runtime APIs.
+  Created `tests/agent_handoff_e2e.rs` with 1 passing real-provider test proving
+  Codex → Pong → Checkpoint → Claude Code → Resume architecture.
+- Agent A (Codex) creates Task, Execution, Workspace, performs real work (adds
+  multiply function), creates Version V1, and Checkpoint C1. Agent B (Claude Code)
+  discovers C1 through metadata API, creates new Execution E2 via resume_from_checkpoint,
+  creates new Workspace W2, restores V1 state via restore_from_version, continues
+  work (adds subtract function), creates Version V2 and Checkpoint C2.
+- **Architecture findings**: Versions are workspace-local (cannot reference parents
+  from other workspaces). Cross-workspace lineage tracked through Checkpoints and
+  Resume, not Version parents. Workspaces have independent head, revision, locator.
+  The E2E retains each workspace lease for the complete write sequence.
+- All core primitives validated: AgentIdentity, TaskCreation, ExecutionCreation,
+  workspace binding, CheckpointCreation, checkpoint discovery, ResumeCreation,
+  cross-workspace restore, state inspection, provenance discovery all work.
+- Tests verify: checkpoint durability (survives repository close/reopen), execution
+  independence (E1 ≠ E2), workspace isolation (W1 ≠ W2), checkpoint immutability,
+  complete provenance chain reconstructable without Git dependency.
+- **Classification**: LOCAL_NATIVE_DEVELOPMENT. A real `codex exec` and real
+  `claude -p` both exited zero after modifying only temporary workspaces.
+  MCP, SDK adapters, network transport, and production authentication remain
+  `NOT_PROVEN`.
+- Focused real-agent test passed: 1 passed, 0 failed, 0 ignored. Provider command
+  stdout/stderr, exit codes, durations, durable IDs, and cold-reopen claims are
+  retained under `artifacts/m3-development/m3-real-agent-handoff-e2e-windows-native-2026-09-11.json`
+  and the matching `.log`.
+- Full regression passed with 538 passed, 0 failed, and 276 ignored; ignored
+  contract placeholders remain excluded from the PASS count. Format, check,
+  clippy with warnings denied, and diff-check also exited zero.
+
 ## Unreleased - M3-SLICE-003G-RE / PHASE-4 Cross-Workspace Diff and Restore (2026-09-11)
 
 - Verified cross-workspace diff and restore implementation complete. The existing
