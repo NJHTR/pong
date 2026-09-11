@@ -1,0 +1,56 @@
+M4 LOCAL AGENT PROTOCOL TRANSPORT - LOCAL NATIVE DEVELOPMENT
+Date: 2026-09-11
+Platform: Windows 11 10.0.26200 / x86_64 / NTFS
+Rust: rustc 1.95.0 (59807616e 2026-04-14)
+Cargo: cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+Branch: dev
+Base HEAD: df5d167 checkpoint: m4-external-agent-protocol-contract
+Working tree at validation: UNCOMMITTED_DEVELOPMENT_TREE
+
+BOUNDARY RESULTS
+CORE: PASS
+  Full regression: 606 passed, 0 failed, 276 ignored.
+  Ignored tests do not count as PASS.
+CONTROL: PASS
+PROTOCOL: PASS
+TRANSPORT: PASS
+  tests/external_agent_protocol_transport.rs: 2 passed, 0 failed, 0 ignored.
+REAL_PROVIDER_E2E: NOT_REEXECUTED
+PRODUCTION_AUTH: NOT_PROVEN
+
+VERIFIED
+- pong-agent-protocol reads JSON Lines from stdin and emits JSON Lines to stdout.
+- Protocol handling uses the same version 1.0 dispatcher and AgentControl/Core.
+- Host time, not issued_at, controls lease validity.
+- Binding refs allow one safe ASCII path component under a canonical root.
+- Malformed JSON and traversal return safe protocol errors without path leaks.
+- Runtime A creates T1/E1/W1, publishes V1, and creates C1.
+- Runtime B resumes into E2/W2, receives a Handoff, materializes V1, publishes
+  W2-local V2, explicitly selects it, and creates C2.
+- A fresh transport process inspects the complete durable relationship without
+  the first process session.
+
+COMMANDS
+PASS cargo fmt --all -- --check
+  exit 0; duration 0.6 s
+PASS cargo check --locked
+  exit 0; duration 0.4 s
+PASS cargo check --all-targets --locked
+  exit 0; duration 0.2 s
+PASS cargo test --locked --test external_agent_protocol_transport -- --nocapture
+  exit 0; 2 passed, 0 failed, 0 ignored; duration 3.1 s
+PASS cargo clippy --all-targets --all-features --locked -- -D warnings
+  exit 0; duration 0.8 s
+PASS cargo test --all --locked
+  exit 0; 606 passed, 0 failed, 276 ignored; duration 99.2 s
+PASS git diff --check
+  exit 0; duration 0.2 s
+
+LIMITATIONS
+- This is a local development transport, not an authenticated service.
+- Requests are serial and one repository handle is owned by the process.
+- Real Codex and Claude Code were not invoked through this transport here.
+- HTTP, MCP, sockets, SDK adapters, remote execution, and provider process
+  supervision remain NOT_PROVEN.
+
+STATUS: PASS / INTERNAL / TEST-GATED

@@ -1,0 +1,119 @@
+{
+  "slice": "M4 Local Agent Protocol Transport",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "classification": "LOCAL_NATIVE_DEVELOPMENT",
+  "date": "2026-09-11",
+  "platform": "Windows 11 10.0.26200",
+  "architecture": "x86_64",
+  "filesystem": "NTFS",
+  "toolchain": {
+    "rustc": "1.95.0 (59807616e 2026-04-14)",
+    "cargo": "1.95.0 (f2d3ce0bd 2026-03-21)",
+    "host": "x86_64-pc-windows-msvc"
+  },
+  "git": {
+    "branch": "dev",
+    "base_commit": "df5d167",
+    "base_subject": "checkpoint: m4-external-agent-protocol-contract",
+    "working_tree_at_validation": "UNCOMMITTED_DEVELOPMENT_TREE",
+    "push_performed": false,
+    "tag_created": false
+  },
+  "boundaries": {
+    "CORE": {
+      "status": "PASS",
+      "full_regression": {
+        "passed": 606,
+        "failed": 0,
+        "ignored": 276,
+        "ignored_count_as_pass": false
+      }
+    },
+    "CONTROL": {
+      "status": "PASS"
+    },
+    "PROTOCOL": {
+      "status": "PASS",
+      "protocol_version": "1.0"
+    },
+    "TRANSPORT": {
+      "status": "PASS",
+      "kind": "local stdin/stdout JSON Lines",
+      "test_target": "tests/external_agent_protocol_transport.rs",
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    },
+    "REAL_PROVIDER_E2E": {
+      "status": "NOT_REEXECUTED"
+    },
+    "PRODUCTION_AUTH": {
+      "status": "NOT_PROVEN"
+    }
+  },
+  "verified_transport": {
+    "external_process_boundary": true,
+    "one_request_response_per_line": true,
+    "malformed_envelope_is_safe_error": true,
+    "host_supplied_time": true,
+    "binding_root_is_canonical": true,
+    "binding_traversal_rejected": true,
+    "workspace_locator_not_returned": true,
+    "runtime_a_checkpoint": true,
+    "handoff": true,
+    "runtime_b_resume": true,
+    "cross_workspace_materialization": true,
+    "runtime_b_checkpoint": true,
+    "fresh_process_reconnect": true,
+    "provider_specific_core_branching": false
+  },
+  "commands": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "duration_seconds": 0.6
+    },
+    {
+      "command": "cargo check --locked",
+      "exit_code": 0,
+      "duration_seconds": 0.4
+    },
+    {
+      "command": "cargo check --all-targets --locked",
+      "exit_code": 0,
+      "duration_seconds": 0.2
+    },
+    {
+      "command": "cargo test --locked --test external_agent_protocol_transport -- --nocapture",
+      "exit_code": 0,
+      "duration_seconds": 3.1,
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo clippy --all-targets --all-features --locked -- -D warnings",
+      "exit_code": 0,
+      "duration_seconds": 0.8
+    },
+    {
+      "command": "cargo test --all --locked",
+      "exit_code": 0,
+      "duration_seconds": 99.2,
+      "passed": 606,
+      "failed": 0,
+      "ignored": 276
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "duration_seconds": 0.2
+    }
+  ],
+  "known_limitations": [
+    "The transport is local development tooling and has no authenticated trust boundary.",
+    "The process owns one repository handle and does not implement parallel request multiplexing.",
+    "No real provider CLI was invoked through this transport in this checkpoint.",
+    "HTTP, MCP, sockets, SDK adapters, remote execution, and process supervision are not proven."
+  ]
+}

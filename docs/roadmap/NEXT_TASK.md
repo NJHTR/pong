@@ -2,34 +2,33 @@
 
 **Current Phase:** M4 - provider-neutral external protocol boundary
 
-**Current Milestone:** External Agent Protocol contract
+**Current Milestone:** External Agent Protocol and local process transport
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** Protocol version `1.0` adds explicit JSON-safe command, query,
-resource, and error DTOs above the hardened `AgentControl`. It provides
-provider-neutral identity, ownership/revision/lease preflight checks,
-capability discovery, durable publication retry, existing Operation-to-
-Execution association, cross-workspace continuation, and cold-reopen
-inspection without selecting a transport.
+**Current Task:** Protocol version `1.0` now has a minimal development-only JSON
+Lines process adapter. `pong-agent-protocol` maps stdin/stdout messages to the
+transport-neutral dispatcher, supplies host lease time, and resolves constrained
+single-component Workspace bindings beneath a host-owned root.
 
 **Contract materials:** [`M4_EXTERNAL_AGENT_PROTOCOL.md`](../architecture/M4_EXTERNAL_AGENT_PROTOCOL.md),
 [`ADR-M4-external-agent-protocol.md`](../decisions/ADR-M4-external-agent-protocol.md),
 and [`external_agent_protocol.rs`](../../tests/external_agent_protocol.rs).
 
-**Checkpoint:** The external protocol contract is `IMPLEMENTED / INTERNAL /
-TEST-GATED`. Its active transport-neutral tests cover strict serialization,
-wire-safe errors, Agent ownership, lease/revision conflicts, exact retry,
-Operation provenance, cross-workspace handoff/materialization, and cold reopen.
-Existing AgentControl and M3 rollback suites remain regression gates. Ignored
-tests are never counted as passes. Local transport, MCP, HTTP, SDK adapters,
-remote execution, and production authentication remain `NOT_PROVEN`.
+**Checkpoint:** The external protocol and local JSON Lines transport are
+`IMPLEMENTED / INTERNAL / TEST-GATED`. Two process tests cover malformed input,
+binding traversal rejection, complete Runtime A to Runtime B continuation, and
+reconnect through a fresh process. Existing protocol, AgentControl, and M3
+rollback suites remain regression gates. Ignored tests are never counted as
+passes. MCP, HTTP, SDK adapters, remote execution, and production authentication
+remain `NOT_PROVEN`.
 
-**Next Action:** Implement the smallest process-boundary proof as a local JSON
-Lines adapter over the protocol dispatcher with a constrained binding resolver.
-Do not add HTTP, MCP, provider-specific behavior, scheduling, or orchestration.
+**Next Action:** If both authenticated local CLIs are available, run Codex and
+Claude Code as separate external runtimes while all Pong lifecycle calls cross
+the JSON Lines process boundary. Do not add HTTP, MCP, provider-specific core
+behavior, scheduling, or orchestration.
 
 ## M1 Historical Handoff
 

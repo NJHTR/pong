@@ -114,15 +114,17 @@ addition exposes an already-existing durable relation.
 ## Consequences
 
 External clients can now express and inspect a provider-neutral handoff through
-one stable in-process contract. A minimal local transport can map JSON messages
-to this dispatcher without changing domain semantics.
+one stable in-process contract. The minimal `pong-agent-protocol` process maps
+JSON Lines messages to this dispatcher without changing domain semantics. Its
+single-component binding resolver constrains Workspace paths beneath a
+host-owned root.
 
-The contract does not prove a transport, authenticated remote deployment,
-provider SDK, MCP server, or process supervision. These claims must remain
-separate in tests and evidence.
+The local process transport is test-gated but does not prove an authenticated
+remote deployment, provider SDK, MCP server, or process supervision. These
+claims remain separate in tests and evidence.
 
 ## Next Slice
 
-Implement the smallest process-boundary validation as a local JSON Lines
-transport with a constrained binding resolver. Keep `CORE`, `CONTROL`,
+Run the existing real Codex and Claude Code workflow through the JSON Lines
+transport when both authenticated CLIs are available. Keep `CORE`, `CONTROL`,
 `PROTOCOL`, `TRANSPORT`, and `REAL_PROVIDER_E2E` evidence distinct.

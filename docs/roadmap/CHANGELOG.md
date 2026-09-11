@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased - M4 Local Agent Protocol Transport (2026-09-11)
+
+- Added `pong-agent-protocol`, a minimal local JSON Lines stdin/stdout adapter
+  over protocol version `1.0`; it opens existing repositories, supplies host
+  lease time, and emits exactly one JSON response for each non-empty input.
+- Added a constrained Workspace binding resolver. References are single safe
+  path components beneath a canonical host-owned root; traversal and malformed
+  values fail before Workspace creation.
+- Added two process-level transport tests covering malformed envelopes, safe
+  errors, binding traversal, complete two-Runtime handoff/materialization,
+  shutdown, fresh-process reconnect, provenance, and Workspace isolation.
+- Kept the transport development-only and provider-neutral. Authentication,
+  HTTP, MCP, SDK adapters, remote execution, and provider process control remain
+  `NOT_PROVEN`.
+
 ## Unreleased - M4 External Agent Protocol Contract (2026-09-11)
 
 - Added protocol version `1.0` as explicit JSON-safe request, response,

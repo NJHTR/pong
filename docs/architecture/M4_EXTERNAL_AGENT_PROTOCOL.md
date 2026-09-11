@@ -20,9 +20,9 @@ Agent Runtime
 
 The protocol defines explicit serializable DTOs and dispatch semantics. It is
 not a network service, process manager, provider adapter, authentication
-system, or second persistence layer. JSON is the version 1.0 representation;
-JSON Lines, CLI, HTTP, MCP, and SDK bindings remain transport choices above
-this contract.
+system, or second persistence layer. JSON is the version 1.0 representation.
+The first local process transport uses JSON Lines; HTTP, MCP, and SDK bindings
+remain optional transport choices above this contract.
 
 ## Envelope
 
@@ -181,9 +181,30 @@ lifecycle errors, exact retries, locator suppression, Operation ownership,
 cross-workspace diff, the complete Runtime A to Runtime B handoff flow, and
 cold-reopen discovery. Runtime names in this suite are metadata only.
 
+## Local JSON Lines Transport
+
+`pong-agent-protocol` is the minimal process-boundary adapter. It opens one
+existing repository, reads one JSON request per stdin line, supplies host time,
+dispatches through `ExternalAgentProtocol`, and writes one JSON response per
+stdout line. Empty lines are ignored and malformed envelopes receive a safe
+`VALIDATION_ERROR`; stdout contains no diagnostic prose.
+
+The adapter accepts `--repository` and `--workspace-root`. A binding reference
+is one ASCII alphanumeric, dot, underscore, or hyphen component beneath the
+canonical binding root. Absolute paths, separators, `.` and `..` are rejected
+before Core sees a Workspace creation request. Core retains its own filesystem
+and repository-boundary validation.
+
+`tests/external_agent_protocol_transport.rs` starts the compiled binary as a
+child process and sends raw JSON through pipes. It covers malformed input,
+path traversal rejection, the complete two-Runtime Checkpoint/Handoff/Resume
+and cross-workspace materialization workflow, process shutdown, a fresh
+transport process, and durable inspection without session memory.
+
 ## Not Proven
 
-Local or remote transport, production authentication/authorization, network
-security, reconnecting a live provider process, process cancellation, HTTP,
-MCP, SDKs, remote execution, provider-specific adapters, scheduling, and
-distributed workers are `NOT_PROVEN` by this contract slice.
+Production authentication/authorization, network transport/security,
+reconnecting a live provider process, process cancellation, HTTP, MCP, SDKs,
+remote execution, provider-specific adapters, scheduling, and distributed
+workers are `NOT_PROVEN`. The local JSON Lines transport is development-only;
+it is not a production trust boundary.
