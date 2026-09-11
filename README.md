@@ -2,7 +2,7 @@
 
 > Pong is an agent-first, versioned workspace and execution infrastructure for long-running and multi-agent software development.
 
-Pong 不是给 AI 套一层 Git，而是为 AI Agent 重新设计版本、状态、任务和执行管理。项目当前是 **Internal / Experimental / Test-Gated** Rust core：M1 已发布，M2 状态引擎已完成内部切片，M3 正在从 contract 进入实现。
+Pong 不是给 AI 套一层 Git，而是为 AI Agent 重新设计版本、状态、任务和执行管理。项目当前是 **Internal / Experimental / Test-Gated** Rust core：M1 已发布，M2 状态引擎与 M3 Agent Execution 核心工作流已完成内部实现，M4 正在定义 provider-neutral 外部控制边界。
 
 **Current release:** `v0.1.0`
 
@@ -10,13 +10,13 @@ Pong 不是给 AI 套一层 Git，而是为 AI Agent 重新设计版本、状态
 
 **M2:** Internal development complete (`M2-SLICE-001` ~ `012`, internal/test-gated)
 
-**M3:** Agent Execution in development (`M3-SLICE-001A = CONTRACT_READY`)
+**M3:** Agent Execution core implemented (internal/test-gated)
 
-## What Is Pong?
+**M4:** Provider-neutral `AgentControl` facade implemented and publication-hardened (internal/test-gated)
 
-Pong 为 Agent 工作空间提供可验证、持久化的状态边界。它记录 Workspace、Snapshot、Version 和 Operation 的身份与关系，使自动化修改在崩溃、重试、恢复和审计时仍有明确的 durable state。
+## About
 
-Pong 是本地优先的 Rust library/core，不是 Agent provider、模型运行时、调度器、公开 CLI、服务器或 UI。它与 Git 互补：Git 管理源代码历史，Pong 管理 Agent 执行过程中产生的工作空间状态和证据。
+Pong is local-first version control and execution infrastructure for AI agents. It complements Git by making agent workspaces, state, and handoffs traceable, recoverable, and safe to resume.
 
 ## The Problem
 
@@ -60,33 +60,41 @@ Workspace
                       |
                       +-- CAS / Tree
 
-Operation
+Task
     |
-    +-- Version
-    +-- Workspace lifecycle
+    +-- Execution -- Workspace / Lease
+          |
+          +-- Checkpoint / Handoff / Resume
+
+AgentControl
+    |
+    +-- MetadataStore + WorkspaceManager
+          |
+          +-- Operation / Snapshot / Version / Rollback
 ```
 
 当前实现边界：
 
 - **Storage Core:** SQLite metadata、content-addressed storage (CAS)、filesystem、canonical identity and schema checks。
 - **State Engine:** Workspace lifecycle、Snapshot、Restore、Diff、Reconciliation、Version、Version Graph、Version Head、durable Operation ledger、lease/revision guards and recovery boundaries。
-- **Execution Engine:** Task、Agent、Execution、SubAgent、Handoff、Checkpoint、Rollback 等正在设计和实现中。
+- **Execution Engine:** Agent、Task、Execution、独立 Workspace、Checkpoint、Handoff、Resume、跨 Workspace materialization/diff/restore/rollback，以及显式 provenance。
+- **Control Layer:** 本地 Rust `AgentControl` facade，组合 durable workflow，并执行 lease、revision CAS、ownership、replay 和 recovery 检查。
 - **Agent State Layer:** Memory、Skill、Automation、Policy、Plugin、Permission、Candidate、Approval 等属于后续范围。
 
 ## Agent Execution Model
 
-`M3-SLICE-001A = CONTRACT_READY`。该 slice 是 proposal-only contract；它没有添加生产类型、SQLite DDL、provider、CLI、SDK、UI，也没有实现 Handoff、Checkpoint、Rollback、Candidate 或 Approval。相关设计见 [`M3_AGENT_EXECUTION.md`](docs/architecture/M3_AGENT_EXECUTION.md)、[`M3_EXECUTION_GRAPH.md`](docs/architecture/M3_EXECUTION_GRAPH.md) 和 [`ADR-M3-001`](docs/decisions/ADR-M3-001-agent-execution-model.md)。
+M3 已在 Core 内实现 Agent、Task、Execution、Checkpoint、Handoff、Resume 和 Rollback 的 durable records，并实现跨 Workspace 的 source validation、target-local materialization、diff、restore 与 history-preserving rollback。相关设计见 [`M3_AGENT_EXECUTION.md`](docs/architecture/M3_AGENT_EXECUTION.md)、[`M3_HANDOFF_CHECKPOINT_ROLLBACK.md`](docs/architecture/M3_HANDOFF_CHECKPOINT_ROLLBACK.md) 和 [`ADR-M3-001`](docs/decisions/ADR-M3-001-agent-execution-model.md)。
 
-目标模型区分：
+当前模型区分：
 
 - **Agent Identity**：跨进程的 durable actor identity；provider metadata 与 credentials 分离，秘密不进入 Core。
 - **Task**：工作的持久身份和协调状态。
 - **Execution**：某个 Agent 为某个 Task 运行的一次具体尝试，有独立状态、Workspace、base/current Version 和 Operation 引用。
 - **SubAgent / Execution Graph**：父子 Execution 是独立的、有限深度且无环的关系；它不是 Version parent，也不是 Handoff。
 
-### Multi-Agent Direction
+### Multi-Agent Workspaces
 
-目标架构中的一个任务可能这样展开：
+一个 Task 可以关联多个独立 Execution：
 
 ```text
 Task
@@ -101,7 +109,7 @@ Task
 +-- Claude Review Execution
 ```
 
-多个 Execution 可以并行，并从相同的 base Version 开始。每个 writable Execution 默认绑定独立 Workspace，并继续遵守现有 lease 和 revision CAS。最终通过显式 reconciliation 汇合。这是当前发展方向，不是已经全部实现的运行时能力。
+多个 Execution 可以从相同的 base Version 开始，并绑定独立 writable Workspace。Version parent 始终保持同 Workspace lineage；跨 Workspace 延续通过显式 Checkpoint、Handoff、Resume 和 source Version 完成。写入继续受 lease 与 revision CAS 保护。自动调度、merge/rebase 和共享可写 Workspace 策略仍不在 Core 范围内。
 
 ### Handoff
 
@@ -117,7 +125,7 @@ Cursor
 继续 Task T100
 ```
 
-Handoff 的目标是保持 Task identity、Version context 和 Operation history，通过显式 context reference 把工作交给另一个 Execution。Handoff 当前仍是未来 slice，不会重写身份或伪造 Version。
+Handoff 保持 Task identity、Version context 和 Operation history，通过显式 context reference 把工作交给另一个 Execution。Core 已支持 durable Handoff/Resume records；本地开发证据验证了 Codex 到 Claude Code 的进程级接力，但这不等同于公开 provider adapter、SDK 或远程协议。
 
 ### Checkpoint, Rollback and Resume
 
@@ -133,7 +141,7 @@ many versions
 Rollback / Resume
 ```
 
-Rollback 应恢复到稳定的 Version 或 Checkpoint，并从那里创建新的尝试；它不删除历史 Version、Operation 或 Execution。Checkpoint、Rollback 和 Resume 当前仍是未来能力。
+Rollback 恢复到稳定的 Version 或 Checkpoint，并保留历史 Version、Operation 和 Execution。跨 Workspace rollback 会发布 target-local Snapshot、更新目标 Workspace head、保留目标 Version Head，并保持源 Workspace 不变。
 
 ## Progress
 
@@ -141,17 +149,18 @@ Rollback 应恢复到稳定的 Version 或 Checkpoint，并从那里创建新的
 
 - M1 durable primitives release：`v0.1.0`。
 - M2 core state engine：Workspace/snapshot、lifecycle、operation ledger、Version persistence、Version graph、Version Head，以及对应迁移、故障和恢复测试。
+- M3 Agent Execution core：Agent、Task、Execution、Checkpoint、Handoff、Resume、跨 Workspace materialization/diff/restore/rollback，以及本地真实 Agent handoff 验证。
+- M4 local control facade：provider-neutral `AgentControl` 与 typed requests/views；Version publication 支持 stale-revision rejection、durable exact retry、pre-commit failure 和 post-commit cold-reopen recovery。
 
 ### In Progress
 
-- M3 Agent Execution：当前为 `M3-SLICE-001A = CONTRACT_READY`；35 个 contract-only tests 明确标记为 `NOT_IMPLEMENTED_CONTRACT_TEST` 并被 ignored，不计作 PASS 或 runtime evidence。
+- M4 external Agent protocol contract：定义 transport-neutral request/response、reconnect、observability、authentication ownership 与 safe wire error semantics。当前尚未选择 CLI、HTTP、MCP 或 SDK transport。
 
 ### Planned
 
-- Multi-agent parallel execution
-- Handoff
-- Checkpoint and Rollback
-- Reconciliation across executions
+- External provider adapters and transport
+- Scheduling and orchestration
+- Merge/rebase and reconciliation policy across executions
 - Candidate and Approval
 - Agent State layer
 - Safe self-evolution
@@ -190,7 +199,7 @@ The repository currently has no public `pong init`, `pong checkpoint`, or `pong 
 
 ## Explicit Limits
 
-Pong is not production-ready, enterprise-ready, fully multi-agent, fully autonomous, or a Git replacement. There is no supported provider integration, public SDK/CLI, server mode, remote replication service, shared-writable-workspace policy, Candidate/Approval flow, or Agent State implementation. External side effects and credentials remain outside Core behind explicit adapter and permission boundaries.
+Pong is not production-ready, enterprise-ready, fully autonomous, or a Git replacement. There is no supported provider integration, public SDK/CLI/MCP endpoint, server mode, remote replication service, scheduler, merge/rebase policy, shared-writable-workspace policy, Candidate/Approval flow, or Agent State implementation. External side effects and credentials remain outside Core behind explicit adapter and permission boundaries.
 
 ## Documentation
 
@@ -202,6 +211,6 @@ Pong is not production-ready, enterprise-ready, fully multi-agent, fully autonom
 
 ## Next Step
 
-`M3-SLICE-001B — IMPLEMENT AGENT EXECUTION CORE`
+Define the M4 external Agent protocol contract over the hardened local `AgentControl` semantic boundary.
 
-This is the single next slice. M1 remains **RELEASED**, M2 remains **INTERNAL / TEST-GATED**, and M3-001A remains **CONTRACT_READY**.
+Transport-neutral request/response, reconnect, observability, authentication ownership, and safe wire errors must be specified before selecting CLI, HTTP, MCP, SDK, or provider-specific adapters. See [`NEXT_TASK.md`](docs/roadmap/NEXT_TASK.md).
