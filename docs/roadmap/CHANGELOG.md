@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased - M4 Remote Security Boundary (2026-09-13)
+
+- Defined the authentication, Principal, authorization, ownership, replay,
+  session, and observability boundary required before remote transport.
+- Kept transport authentication outside Pong Core; connections and sessions are
+  ephemeral and never become Agent or Execution identity.
+- Defined a minimal ownership-based authorization matrix using existing
+  Execution, Workspace, Operation, lease, revision, and CAS semantics.
+- Marked production authentication as `NOT_PROVEN`, observability as `PARTIAL`,
+  and remote readiness as `PARTIAL`; HTTP, JWT, MCP, and distributed auth remain
+  deferred.
+
 ## Unreleased - M4 Protocol Architecture Freeze (2026-09-13)
 
 - Froze External Agent Protocol v1.0 as Pong's provider-neutral external

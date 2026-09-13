@@ -1,0 +1,18 @@
+M4-006 Remote Control Security / Authorization / Observability Boundary
+status: PASS / INTERNAL / ARCHITECTURE-TEST-GATED
+
+Core security boundary: PASS
+Authentication model: NOT_PROVEN (v1.0 caller_agent_id is asserted identity)
+Authorization model: PASS / INTERNAL
+Resource ownership: PASS
+Replay/idempotency: PASS
+Session/reconnect: PASS / INTERNAL
+Observability: PARTIAL (durable mutation ledger; no complete auth/read audit stream)
+Remote readiness: PARTIAL
+
+Decision: transport authenticates a Principal, binds it to Agent identity, and
+passes it to External Agent Protocol. Core never inspects HTTP/JWT/MCP/
+WebSocket details. Connections and sessions remain ephemeral.
+
+No HTTP, JWT, MCP, schema migration, distributed auth service, or Core refactor.
+Real Claude JSONL remains BLOCKED / ENVIRONMENT due provider quota exhaustion.

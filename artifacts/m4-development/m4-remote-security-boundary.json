@@ -1,0 +1,19 @@
+{
+  "slice": "M4-006",
+  "status": "PASS / INTERNAL / ARCHITECTURE-TEST-GATED",
+  "head": "2b27c34",
+  "security_boundary": "PASS",
+  "authentication_model": "NOT_PROVEN",
+  "authorization_model": "PASS / INTERNAL",
+  "resource_ownership": "PASS",
+  "replay_idempotency": "PASS",
+  "session_reconnect": "PASS / INTERNAL",
+  "observability": "PARTIAL",
+  "remote_readiness": "PARTIAL",
+  "verified": ["provider/transport/MCP neutrality", "opaque identity separation", "Agent-Execution-Workspace ownership", "Operation-Execution durable relation", "lease/revision/CAS authority", "uncertain outcome and reconnect semantics", "safe protocol error and diagnostic boundary"],
+  "deferred": ["production authentication", "principal binding implementation", "HTTP/HTTPS", "JWT or equivalent credential adapter", "rate limiting and replay protection deployment", "durable authentication/read audit stream", "MCP adapter"],
+  "real_claude_jsonl": "BLOCKED / ENVIRONMENT",
+  "schema_migration": false,
+  "release_tag_created": false,
+  "pushed": false
+}
