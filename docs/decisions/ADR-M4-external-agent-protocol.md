@@ -128,3 +128,21 @@ claims remain separate in tests and evidence.
 Run the existing real Codex and Claude Code workflow through the JSON Lines
 transport when both authenticated CLIs are available. Keep `CORE`, `CONTROL`,
 `PROTOCOL`, `TRANSPORT`, and `REAL_PROVIDER_E2E` evidence distinct.
+
+## M4-004 Lifecycle Decision
+
+The protocol reuses the existing Operation ledger and `execution_operations`
+association. It does not add a request table, async queue, session entity, or
+second transaction log. `request_id` resolves an uncertain response through
+the caller/project scope; `operation_id` identifies the durable mutation;
+`execution_id` identifies the Agent run; and `agent_id` remains durable Agent
+identity. `start_operation` and `finish_operation` expose the existing
+started/terminal lifecycle, with exact terminal replay and changed-outcome
+rejection. `resolve_operation`, `get_operation`, and `inspect_execution`
+provide cold-reopen recovery after process or connection loss.
+
+An interrupted Execution and a started/unknown Operation remain observable and
+require explicit reconciliation. Cancellation is a durable intent, not a
+claim that an external process was killed. Transport session identity is never
+used as Agent identity, and asserted identity remains an authorization-ready
+boundary pending production authentication.

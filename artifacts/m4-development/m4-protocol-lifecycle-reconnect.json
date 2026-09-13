@@ -1,0 +1,40 @@
+{
+  "slice": "M4-004",
+  "title": "protocol lifecycle, reconnectability, and operation observability",
+  "status": "IMPLEMENTED / INTERNAL / TEST-GATED",
+  "protocol_version": "1.0",
+  "platform": "Windows 11 x86_64 NTFS",
+  "layers": {
+    "core": "PASS",
+    "control": "PASS",
+    "protocol": "PASS",
+    "jsonl_transport": "PASS",
+    "real_claude_jsonl": "BLOCKED / ENVIRONMENT"
+  },
+  "operations_tested": [
+    "start_operation", "finish_operation", "resolve_operation",
+    "get_operation", "inspect_execution", "interrupt_execution"
+  ],
+  "verified": [
+    "started operation is durable and attached to execution",
+    "completed, failed, cancelled, and unknown outcomes are explicit",
+    "exact retry replays one durable result; changed retry is rejected",
+    "lost response is resolved by request identity after fresh process",
+    "operation and interrupted execution survive cold reopen",
+    "agent ownership is enforced independently of transport session",
+    "safe wire resources omit secrets, paths, SQL, and raw diagnostics"
+  ],
+  "focused_tests": {
+    "protocol_lifecycle_reconnect": {"passed": 16, "failed": 0, "ignored": 0},
+    "external_agent_protocol": {"passed": 9, "failed": 0, "ignored": 0},
+    "external_agent_protocol_transport": {"passed": 2, "failed": 0, "ignored": 0}
+  },
+  "limitations": [
+    "production authentication is not implemented",
+    "Pong records cancellation/interruption but does not kill external processes",
+    "real Claude JSONL completion is blocked by provider HTTP 403 quota exhaustion"
+  ],
+  "working_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+  "release_tag_created": false,
+  "pushed": false
+}

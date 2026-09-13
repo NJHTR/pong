@@ -13,6 +13,12 @@ Lines process adapter. `pong-agent-protocol` maps stdin/stdout messages to the
 transport-neutral dispatcher, supplies host lease time, and resolves constrained
 single-component Workspace bindings beneath a host-owned root.
 
+M4-004 lifecycle/reconnect hardening is now implemented and test-gated:
+durable generic Operations can be started and finished, resolved by request
+identity after a lost response, inspected after cold reopen, and retried with
+existing Operation idempotency. Request, Operation, Execution, Agent, and
+transport-session identities remain separate.
+
 **Contract materials:** [`M4_EXTERNAL_AGENT_PROTOCOL.md`](../architecture/M4_EXTERNAL_AGENT_PROTOCOL.md),
 [`ADR-M4-external-agent-protocol.md`](../decisions/ADR-M4-external-agent-protocol.md),
 and [`external_agent_protocol.rs`](../../tests/external_agent_protocol.rs).

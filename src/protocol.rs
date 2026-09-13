@@ -10,8 +10,9 @@ use crate::control::{
 };
 use crate::metadata::{
     AgentIdentity, CheckpointCreation, CheckpointRecord, ExecutionRecord, HandoffCreation,
-    HandoffRecord, LeaseToken, OperationRecord, ResumeCreation, ResumeRecord, TaskRecord,
-    VersionRecord,
+    HandoffRecord, LeaseToken, OperationEnvelope, OperationError, OperationOutcome,
+    OperationRecord, ResumeCreation, ResumeRecord, TaskRecord, VersionRecord,
+    OPERATION_SCHEMA_VERSION,
 };
 use crate::workspace::{SnapshotChangeType, SnapshotDiff};
 use crate::{PongError, Repository};
@@ -39,6 +40,8 @@ const COMMAND_CAPABILITIES: &[&str] = &[
     "resume_from_checkpoint",
     "create_handoff",
     "materialize_version",
+    "start_operation",
+    "finish_operation",
 ];
 
 const QUERY_CAPABILITIES: &[&str] = &[
@@ -51,6 +54,7 @@ const QUERY_CAPABILITIES: &[&str] = &[
     "get_checkpoint",
     "get_handoff",
     "get_operation",
+    "resolve_operation",
     "inspect_execution",
     "list_checkpoints",
     "list_handoffs",
@@ -91,6 +95,8 @@ pub enum ProtocolCall {
     ResumeFromCheckpoint(ResumeCheckpointCommand),
     CreateHandoff(CreateHandoffCommand),
     MaterializeVersion(MaterializeVersionCommand),
+    StartOperation(StartOperationCommand),
+    FinishOperation(FinishOperationCommand),
     GetAgent(EntityQuery),
     GetTask(EntityQuery),
     GetExecution(EntityQuery),
@@ -99,6 +105,7 @@ pub enum ProtocolCall {
     GetCheckpoint(EntityQuery),
     GetHandoff(EntityQuery),
     GetOperation(EntityQuery),
+    ResolveOperation(OperationRequestQuery),
     InspectExecution(EntityQuery),
     ListCheckpoints(TaskQuery),
     ListHandoffs(TaskQuery),
@@ -155,6 +162,48 @@ pub struct ExecutionOutcomeCommand {
     pub execution_id: String,
     pub expected_revision: i64,
     pub outcome_code: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct StartOperationCommand {
+    pub execution_id: String,
+    pub action: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum OperationTerminalStatus {
+    Completed,
+    Failed,
+    Cancelled,
+    Unknown,
+}
+
+impl OperationTerminalStatus {
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+            Self::Cancelled => "cancelled",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct OperationFailureResource {
+    pub code: String,
+    pub retryable: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FinishOperationCommand {
+    pub execution_id: String,
+    pub status: OperationTerminalStatus,
+    pub failure: Option<OperationFailureResource>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -247,6 +296,13 @@ pub struct MaterializeVersionCommand {
 #[serde(deny_unknown_fields)]
 pub struct EntityQuery {
     pub id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct OperationRequestQuery {
+    pub project_id: String,
+    pub request_id: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -544,6 +600,7 @@ pub struct ResumeResource {
 #[serde(deny_unknown_fields)]
 pub struct OperationResource {
     pub operation_id: String,
+    pub execution_id: Option<String>,
     pub request_id: String,
     pub agent_id: String,
     pub workspace_id: Option<String>,
@@ -734,10 +791,11 @@ impl From<ResumeRecord> for ResumeResource {
     }
 }
 
-impl From<OperationRecord> for OperationResource {
-    fn from(value: OperationRecord) -> Self {
+impl OperationResource {
+    fn from_record(value: OperationRecord, execution_id: Option<String>) -> Self {
         Self {
             operation_id: value.operation_id,
+            execution_id,
             request_id: value.request_id,
             agent_id: value.agent_id,
             workspace_id: value.workspace_id,
@@ -810,7 +868,12 @@ impl ExecutionInspection {
                 .map(Into::into)
                 .collect(),
             resume: state.resume.map(Into::into),
-            operations: operations.into_iter().map(Into::into).collect(),
+            operations: operations
+                .into_iter()
+                .map(|operation| {
+                    OperationResource::from_record(operation, Some(execution_id.clone()))
+                })
+                .collect(),
         }
     }
 }
@@ -1283,6 +1346,112 @@ impl<'repository, 'bindings> ExternalAgentProtocol<'repository, 'bindings> {
                     .map_err(ProtocolFailure::from_pong)?;
                 Ok(ProtocolResult::Snapshot(snapshot.into()))
             }
+            ProtocolCall::StartOperation(command) => {
+                let operation_id = required_operation_id(operation_id)?;
+                let execution = self.require_execution_owner(caller, &command.execution_id)?;
+                if execution.state != "running" {
+                    return Err(ProtocolFailure::new(
+                        ProtocolErrorCode::InvalidState,
+                        "Operation requires a running Execution",
+                        false,
+                    )
+                    .with_entity("execution", &command.execution_id));
+                }
+                if command.action.trim().is_empty() {
+                    return Err(ProtocolFailure::validation(
+                        "operation action must not be empty",
+                    ));
+                }
+                let environment_id = match execution.workspace_id.as_deref() {
+                    Some(workspace_id) => {
+                        AgentControl::new(self.repository)
+                            .workspace(workspace_id)
+                            .map_err(ProtocolFailure::from_pong)?
+                            .ok_or_else(|| ProtocolFailure::not_found("workspace", workspace_id))?
+                            .environment_id
+                    }
+                    None => None,
+                };
+                let operation = AgentControl::new(self.repository)
+                    .start_execution_operation(
+                        &command.execution_id,
+                        OperationEnvelope {
+                            operation_id: operation_id.into(),
+                            project_id: execution.project_id,
+                            request_id: request_id.into(),
+                            agent_id: caller.into(),
+                            session_id: format!("execution:{}", command.execution_id),
+                            workspace_id: execution.workspace_id,
+                            environment_id,
+                            parent_operation_id: None,
+                            schema_version: OPERATION_SCHEMA_VERSION.into(),
+                            started_at: issued_at.into(),
+                            tool: "external-agent-runtime".into(),
+                            action: command.action,
+                            input_refs: Vec::new(),
+                            output_refs: Vec::new(),
+                            resource: None,
+                            before_state: None,
+                            after_state: None,
+                            reversibility: "UNKNOWN".into(),
+                            replayability: "UNKNOWN".into(),
+                            side_effect: "EXTERNAL".into(),
+                            policy_decision: None,
+                        },
+                        issued_at,
+                    )
+                    .map_err(ProtocolFailure::from_pong)?;
+                Ok(ProtocolResult::Operation(OperationResource::from_record(
+                    operation,
+                    Some(command.execution_id),
+                )))
+            }
+            ProtocolCall::FinishOperation(command) => {
+                let operation_id = required_operation_id(operation_id)?;
+                self.require_execution_owner(caller, &command.execution_id)?;
+                let operation = AgentControl::new(self.repository)
+                    .operation(operation_id)
+                    .map_err(ProtocolFailure::from_pong)?
+                    .ok_or_else(|| ProtocolFailure::not_found("operation", operation_id))?;
+                if operation.agent_id != caller {
+                    return Err(ProtocolFailure::forbidden(
+                        "caller does not own the target Operation",
+                    )
+                    .with_entity("operation", operation_id));
+                }
+                validate_operation_outcome_command(&command)?;
+                let status = command.status.as_str();
+                let error = command.failure.map(|failure| OperationError {
+                    code: failure.code,
+                    message: "external Agent reported a terminal Operation outcome".into(),
+                    retryable: failure.retryable,
+                    details: None,
+                    safe_to_expose: false,
+                });
+                let result = (status == "completed").then(|| {
+                    serde_json::json!({
+                        "acknowledgement": "external Agent reported completion"
+                    })
+                });
+                let operation = AgentControl::new(self.repository)
+                    .finish_execution_operation(
+                        &command.execution_id,
+                        operation_id,
+                        OperationOutcome {
+                            status: status.into(),
+                            finished_at: issued_at.into(),
+                            output_refs: None,
+                            after_state: None,
+                            result,
+                            error,
+                        },
+                    )
+                    .map_err(ProtocolFailure::from_pong)?;
+                Ok(ProtocolResult::Operation(OperationResource::from_record(
+                    operation,
+                    Some(command.execution_id),
+                )))
+            }
             ProtocolCall::GetAgent(query) => {
                 let agent = AgentControl::new(self.repository)
                     .agent(&query.id)
@@ -1298,10 +1467,7 @@ impl<'repository, 'bindings> ExternalAgentProtocol<'repository, 'bindings> {
                 Ok(ProtocolResult::Task(task.into()))
             }
             ProtocolCall::GetExecution(query) => {
-                let execution = AgentControl::new(self.repository)
-                    .execution(&query.id)
-                    .map_err(ProtocolFailure::from_pong)?
-                    .ok_or_else(|| ProtocolFailure::not_found("execution", &query.id))?;
+                let execution = self.require_execution_owner(caller, &query.id)?;
                 Ok(ProtocolResult::Execution(execution.into()))
             }
             ProtocolCall::GetWorkspace(query) => {
@@ -1346,9 +1512,37 @@ impl<'repository, 'bindings> ExternalAgentProtocol<'repository, 'bindings> {
                     .operation(&query.id)
                     .map_err(ProtocolFailure::from_pong)?
                     .ok_or_else(|| ProtocolFailure::not_found("operation", &query.id))?;
-                Ok(ProtocolResult::Operation(operation.into()))
+                if operation.agent_id != caller {
+                    return Err(ProtocolFailure::forbidden(
+                        "caller does not own the target Operation",
+                    )
+                    .with_entity("operation", &query.id));
+                }
+                let execution_id = AgentControl::new(self.repository)
+                    .execution_for_operation(&query.id)
+                    .map_err(ProtocolFailure::from_pong)?
+                    .map(|association| association.execution_id);
+                Ok(ProtocolResult::Operation(OperationResource::from_record(
+                    operation,
+                    execution_id,
+                )))
+            }
+            ProtocolCall::ResolveOperation(query) => {
+                let operation = AgentControl::new(self.repository)
+                    .operation_for_request(&query.project_id, caller, &query.request_id)
+                    .map_err(ProtocolFailure::from_pong)?
+                    .ok_or_else(|| ProtocolFailure::not_found("operation", &query.request_id))?;
+                let execution_id = AgentControl::new(self.repository)
+                    .execution_for_operation(&operation.operation_id)
+                    .map_err(ProtocolFailure::from_pong)?
+                    .map(|association| association.execution_id);
+                Ok(ProtocolResult::Operation(OperationResource::from_record(
+                    operation,
+                    execution_id,
+                )))
             }
             ProtocolCall::InspectExecution(query) => {
+                self.require_execution_owner(caller, &query.id)?;
                 let state = AgentControl::new(self.repository)
                     .state(&query.id, now_ms)
                     .map_err(ProtocolFailure::from_pong)?;
@@ -1632,6 +1826,24 @@ fn required_caller(caller: Option<&str>) -> Result<&str, ProtocolFailure> {
 
 fn required_operation_id(operation_id: Option<&str>) -> Result<&str, ProtocolFailure> {
     operation_id.ok_or_else(|| ProtocolFailure::validation("operation_id is required"))
+}
+
+fn validate_operation_outcome_command(
+    command: &FinishOperationCommand,
+) -> Result<(), ProtocolFailure> {
+    match (&command.status, &command.failure) {
+        (OperationTerminalStatus::Completed, None) => Ok(()),
+        (OperationTerminalStatus::Completed, Some(_)) => Err(ProtocolFailure::validation(
+            "completed Operation must not include failure",
+        )),
+        (_, Some(failure)) if !failure.code.trim().is_empty() => Ok(()),
+        (_, Some(_)) => Err(ProtocolFailure::validation(
+            "operation failure code must not be empty",
+        )),
+        (_, None) => Err(ProtocolFailure::validation(
+            "non-completed Operation must include failure",
+        )),
+    }
 }
 
 fn protocol_execution_transition_allowed(current: &str, next: &str) -> bool {

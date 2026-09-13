@@ -7,8 +7,9 @@
 use crate::metadata::{
     AgentIdentity, CheckpointCreation, CheckpointRecord, ExecutionCreation,
     ExecutionOperationRecord, ExecutionRecord, HandoffCreation, HandoffRecord, LeaseToken,
-    OperationEnvelope, OperationRecord, OperationRef, ResumeCreation, ResumeRecord, SnapshotRecord,
-    TaskCreation, TaskRecord, VersionPublication, VersionRecord, WorkspaceRecord,
+    OperationEnvelope, OperationOutcome, OperationRecord, OperationRef, ResumeCreation,
+    ResumeRecord, SnapshotRecord, TaskCreation, TaskRecord, VersionPublication, VersionRecord,
+    WorkspaceRecord,
 };
 use crate::redaction::Redactor;
 use crate::workspace::{SnapshotDiff, SnapshotOptions, WorkspaceManager};
@@ -587,6 +588,61 @@ impl<'a> AgentControl<'a> {
 
     pub fn operation(&self, operation_id: &str) -> Result<Option<OperationRecord>, PongError> {
         self.repository.metadata().operation_record(operation_id)
+    }
+
+    pub fn operation_for_request(
+        &self,
+        project_id: &str,
+        agent_id: &str,
+        request_id: &str,
+    ) -> Result<Option<OperationRecord>, PongError> {
+        self.repository
+            .metadata()
+            .operation_record_for_request(project_id, agent_id, request_id)
+    }
+
+    pub fn execution_for_operation(
+        &self,
+        operation_id: &str,
+    ) -> Result<Option<ExecutionOperationRecord>, PongError> {
+        self.repository
+            .metadata()
+            .execution_for_operation(operation_id)
+    }
+
+    pub fn start_execution_operation(
+        &mut self,
+        execution_id: &str,
+        operation: OperationEnvelope,
+        associated_at: &str,
+    ) -> Result<OperationRecord, PongError> {
+        let operation_id = operation.operation_id.clone();
+        let operation = self.repository.metadata_mut().start_operation(operation)?;
+        self.repository
+            .metadata_mut()
+            .attach_operation_to_execution(execution_id, &operation_id, associated_at)?;
+        Ok(operation)
+    }
+
+    pub fn finish_execution_operation(
+        &mut self,
+        execution_id: &str,
+        operation_id: &str,
+        outcome: OperationOutcome,
+    ) -> Result<OperationRecord, PongError> {
+        if self
+            .repository
+            .metadata()
+            .execution_operation(execution_id, operation_id)?
+            .is_none()
+        {
+            return Err(PongError::NotFound(
+                "Execution Operation association does not exist".into(),
+            ));
+        }
+        self.repository
+            .metadata_mut()
+            .finish_operation(operation_id, outcome)
     }
 
     pub fn attach_operation_to_execution(

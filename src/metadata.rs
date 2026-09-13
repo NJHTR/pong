@@ -4848,6 +4848,27 @@ impl MetadataStore {
         }
     }
 
+    pub fn execution_for_operation(
+        &self,
+        operation_id: &str,
+    ) -> Result<Option<ExecutionOperationRecord>, PongError> {
+        let operation_id = self.redactor.redact_text(operation_id);
+        let record = self
+            .connection
+            .query_row(
+                "SELECT execution_id, operation_id, created_at
+                 FROM execution_operations WHERE operation_id = ?1",
+                [&operation_id],
+                execution_operation_from_row,
+            )
+            .optional()
+            .map_err(PongError::from)?;
+        match record {
+            Some(record) => self.execution_operation(&record.execution_id, &record.operation_id),
+            None => Ok(None),
+        }
+    }
+
     pub fn operations_for_execution(
         &self,
         execution_id: &str,

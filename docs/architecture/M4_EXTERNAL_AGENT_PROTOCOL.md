@@ -2,6 +2,8 @@
 
 **Status:** `IMPLEMENTED / INTERNAL / TEST-GATED`
 
+M4-004 lifecycle/reconnect semantics are included in this internal slice.
+
 **Protocol version:** `1.0`
 
 **Scope:** provider-neutral, transport-independent control contract
@@ -148,6 +150,25 @@ issuing a new request. A stale materialization retry fails with
 Reconnect does not depend on a prior transport session. Clients recover using
 `get_operation`, `get_workspace`, `get_execution`, `inspect_execution`, and
 checkpoint/Handoff discovery.
+
+### Operation lifecycle and reconnect
+
+External runtimes keep `request_id`, `operation_id`, `execution_id`, and
+`agent_id` distinct. `start_operation` durably creates a `started` Operation
+attached to a running, caller-owned Execution. `finish_operation` records one
+terminal state: `completed`, `failed`, `cancelled`, or `unknown`. Terminal
+retries with identical content replay the durable record; changed content is
+rejected. `resolve_operation` finds an Operation by project, caller Agent, and
+request identity after a lost response. `get_operation` exposes its owning
+Execution while enforcing Agent ownership.
+
+The existing Operation ledger remains authoritative. A started or unknown
+Operation is not interpreted as successful completion; clients must inspect it
+and choose recovery, resume, or handoff using the existing Execution state.
+Connection and process restarts do not change Agent identity or durable state.
+Cancellation records intent or interruption; Pong does not claim to terminate
+an external process. `hello` advertises the lifecycle commands and queries
+without coupling the protocol version to transport or provider versions.
 
 ## Error Contract
 

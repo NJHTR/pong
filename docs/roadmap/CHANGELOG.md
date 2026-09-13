@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased - M4 Protocol Lifecycle and Reconnect (2026-09-13)
+
+- Added provider-neutral `start_operation`, `finish_operation`, and
+  `resolve_operation` protocol operations over the existing durable Operation
+  ledger; no schema or second idempotency system was introduced.
+- Added ownership-safe Operation-to-Execution inspection and explicit
+  started/completed/failed/cancelled/unknown lifecycle outcomes.
+- Added reconnect and uncertain-outcome coverage across process disconnect,
+  fresh transport process, cold reopen, exact retry, changed retry, stale
+  ownership, and interrupted Execution scenarios.
+- Real Claude-over-JSONL remains `BLOCKED / ENVIRONMENT` due provider quota;
+  provider-neutral protocol and local transport results remain separate.
+
 ## Unreleased - M4 Local Agent Protocol Transport (2026-09-11)
 
 - Added `pong-agent-protocol`, a minimal local JSON Lines stdin/stdout adapter

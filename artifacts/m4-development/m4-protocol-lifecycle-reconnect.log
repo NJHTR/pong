@@ -1,0 +1,20 @@
+M4-004 protocol lifecycle/reconnect evidence
+platform: Windows 11 x86_64 NTFS
+protocol_version: 1.0
+
+focused: cargo test --locked --test protocol_lifecycle_reconnect -- --nocapture
+result: 16 passed, 0 failed, 0 ignored
+
+compatibility: cargo test --locked --test external_agent_protocol
+result: 9 passed, 0 failed, 0 ignored
+transport: cargo test --locked --test external_agent_protocol_transport
+result: 2 passed, 0 failed, 0 ignored
+
+verified: durable operation lifecycle, uncertain-outcome request resolution,
+exact retry, changed retry rejection, cold reopen, interrupted execution,
+fresh-process reconnect, ownership isolation.
+
+real_provider_jsonl: BLOCKED / ENVIRONMENT (Claude returned HTTP 403 provider quota exhausted)
+working_tree: UNCOMMITTED_DEVELOPMENT_TREE
+release_tag: none
+push: none
