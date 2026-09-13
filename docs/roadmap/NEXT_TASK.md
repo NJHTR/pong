@@ -8,7 +8,13 @@
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** Protocol version `1.0` now has a minimal development-only JSON
+**Current Task:** External Agent Protocol v1.0 is frozen as the provider-neutral
+control contract. M4-005 evaluated JSONL, CLI, HTTP, WebSocket, and MCP against
+Pong's control-plane requirements. JSONL remains the development/local
+transport; MCP is an optional adapter through the protocol, never a Core
+interface. Production authentication and remote transports remain deferred.
+
+The prior transport description remains applicable: Protocol version `1.0` now has a minimal development-only JSON
 Lines process adapter. `pong-agent-protocol` maps stdin/stdout messages to the
 transport-neutral dispatcher, supplies host lease time, and resolves constrained
 single-component Workspace bindings beneath a host-owned root.
@@ -31,10 +37,10 @@ rollback suites remain regression gates. Ignored tests are never counted as
 passes. MCP, HTTP, SDK adapters, remote execution, and production authentication
 remain `NOT_PROVEN`.
 
-**Next Action:** If both authenticated local CLIs are available, run Codex and
-Claude Code as separate external runtimes while all Pong lifecycle calls cross
-the JSON Lines process boundary. Do not add HTTP, MCP, provider-specific core
-behavior, scheduling, or orchestration.
+**Next Action:** Specify authentication, authorization binding, and observability
+requirements for a future remote transport. Do not implement HTTP, MCP,
+provider-specific core behavior, scheduling, or orchestration before that
+contract is reviewed.
 
 ## M1 Historical Handoff
 

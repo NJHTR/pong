@@ -1,0 +1,22 @@
+M4-005 External Agent Protocol Architecture Freeze
+status: PASS / INTERNAL / TEST-GATED
+protocol: 1.0
+
+Audit: Core, AgentControl, protocol, Operation ledger, execution relation,
+lease/revision/CAS, reconnect, capability discovery, wire safety, and provider
+neutrality are stable and evidenced by active tests.
+
+Decision: External Agent Protocol is frozen as the formal control contract.
+JSONL stdin/stdout remains development/local transport. HTTP is deferred
+candidate for remote deployment. WebSocket, CLI, and MCP are deferred; MCP is
+an optional adapter and may only call the External Agent Protocol.
+
+LLM black-box boundary: forgetting or duplicating a tool call cannot define
+Core correctness; durable Operation identity and idempotency remain authority.
+
+Real Claude JSONL: BLOCKED / ENVIRONMENT, HTTP 403 provider quota exhausted.
+No provider retry performed and no missing result fabricated.
+
+schema migration: none
+release tag: none
+push: none

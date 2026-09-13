@@ -1,0 +1,49 @@
+{
+  "slice": "M4-005",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "protocol_version": "1.0",
+  "head": "4876c51",
+  "working_tree_before_checkpoint": "clean except prior blocked real-provider artifacts",
+  "layers": {
+    "core": "PASS",
+    "control": "PASS",
+    "protocol": "PASS",
+    "jsonl_transport": "PASS",
+    "real_codex": "PASS / prior evidence",
+    "real_claude_jsonl": "BLOCKED / ENVIRONMENT"
+  },
+  "freeze": {
+    "external_protocol": "FROZEN v1.0",
+    "jsonl": "development/local transport",
+    "http": "deferred candidate",
+    "websocket": "deferred",
+    "cli": "deferred convenience wrapper",
+    "mcp": "optional adapter only"
+  },
+  "audited": [
+    "provider neutrality",
+    "wire safety",
+    "identity separation",
+    "durable Operation ledger",
+    "Operation-to-Execution relation",
+    "lease/revision/CAS authority",
+    "reconnect and uncertain outcomes",
+    "capability discovery and protocol version",
+    "LLM black-box failure boundaries"
+  ],
+  "not_proven": [
+    "production authentication",
+    "remote authorization deployment",
+    "HTTP/WebSocket/MCP implementation",
+    "SDK generation",
+    "live provider process supervision",
+    "streaming events"
+  ],
+  "limitations": [
+    "Claude JSONL provider attempt returned HTTP 403 quota exhausted",
+    "strict v1 DTO decoding requires explicit versioned evolution"
+  ],
+  "schema_migration": false,
+  "release_tag_created": false,
+  "pushed": false
+}

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased - M4 Protocol Architecture Freeze (2026-09-13)
+
+- Froze External Agent Protocol v1.0 as Pong's provider-neutral external
+  control contract, distinct from Core domain semantics and transport.
+- Evaluated JSONL, CLI, HTTP, WebSocket, and MCP against language neutrality,
+  reconnectability, durable retry, concurrency, observability, security, and
+  control-plane fit. JSONL remains development/local; HTTP is the deferred
+  remote candidate.
+- Decided MCP is an optional adapter that must call External Agent Protocol;
+  it is not Pong Core protocol and LLM tool-call order is not state authority.
+- Recorded real Claude JSONL as `BLOCKED / ENVIRONMENT` due HTTP 403 provider
+  quota exhaustion; no provider-specific PASS claim was added.
+
 ## Unreleased - M4 Protocol Lifecycle and Reconnect (2026-09-13)
 
 - Added provider-neutral `start_operation`, `finish_operation`, and
