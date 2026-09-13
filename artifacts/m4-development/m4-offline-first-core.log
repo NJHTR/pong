@@ -1,0 +1,26 @@
+M4-007 Offline-First Core Architecture
+status: PASS / INTERNAL / TEST-GATED
+platform: Windows 11 x86_64 NTFS
+
+Dependency/runtime audit: no HTTP, WebSocket, MCP, cloud, remote DB, or
+credential-provider startup dependency in Cargo.toml or src/.
+
+offline_core_e2e: cargo test --locked --test offline_core_e2e -- --nocapture
+result: 1 passed, 0 failed, 0 ignored
+network_services_used: false
+
+fmt/check/clippy/diff_check: PASS
+full regression: PARTIAL / ENVIRONMENT. Existing control_layer concurrent
+SQLite test failed with Windows sharing violation code 33 while opening a
+parallel repository. The new offline E2E and all preceding targeted suites
+passed; no Pong offline dependency failure was observed.
+
+Workflow verified: Agent -> Task -> Execution -> Workspace -> Operation ->
+Snapshot/Version -> Checkpoint -> Handoff -> Resume -> Restore/Rollback ->
+cold reopen with durable state present.
+
+MCP: optional adapter, not implemented.
+Real Claude JSONL: BLOCKED / ENVIRONMENT due provider quota exhaustion.
+schema migration: none
+release tag: none
+push: none

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased - M4 Offline-First Core (2026-09-13)
+
+- Froze Pong Core as offline-first, local-first, self-contained, durable, and
+  network-independent.
+- Added a real `offline_core_e2e` workflow covering Agent, Task, Execution,
+  Workspace, Operation, Snapshot, Version, Checkpoint, Handoff, Resume,
+  Restore, Rollback, and cold reopen using only local resources.
+- Confirmed HTTP, WebSocket, MCP, cloud services, remote databases, and
+  external authentication are optional adapters, not Core dependencies.
+- Offline E2E and targeted quality gates passed. One full-regression Windows
+  concurrent SQLite test encountered sharing violation code 33 and is retained
+  as `PARTIAL / ENVIRONMENT`; this did not involve the new offline workflow.
+
 ## Unreleased - M4 Remote Security Boundary (2026-09-13)
 
 - Defined the authentication, Principal, authorization, ownership, replay,

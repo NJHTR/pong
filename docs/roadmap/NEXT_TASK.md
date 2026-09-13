@@ -8,7 +8,12 @@
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** External Agent Protocol v1.0 is frozen as the provider-neutral
+**Current Task:** Pong Core is frozen as an offline-first, local-first,
+network-independent execution/state/control plane. M4-007 verified the complete
+local durable workflow without network, HTTP, MCP, cloud services, remote DB, or
+external authentication. Remote access remains an optional adapter.
+
+The External Agent Protocol v1.0 remains frozen as the provider-neutral
 control contract. M4-005 evaluated JSONL, CLI, HTTP, WebSocket, and MCP against
 Pong's control-plane requirements. JSONL remains the development/local
 transport; MCP is an optional adapter through the protocol, never a Core
@@ -37,13 +42,10 @@ rollback suites remain regression gates. Ignored tests are never counted as
 passes. MCP, HTTP, SDK adapters, remote execution, and production authentication
 remain `NOT_PROVEN`.
 
-**Next Action:** Specify authentication, authorization binding, and observability
-requirements for a future remote transport. M4-006 now defines the remote
-security boundary: transport authentication produces an ephemeral Principal,
-protocol authorization checks durable Agent/Execution/Workspace ownership, and
-Core remains transport-neutral. Production authentication and complete audit
-streaming are not yet proven. Do not implement HTTP, MCP, provider-specific
-core behavior, scheduling, or orchestration before that contract is reviewed.
+**Next Action:** Specify remote synchronization and transport requirements only
+after the offline Core and security boundaries are reviewed. Do not make HTTP,
+MCP, provider-specific behavior, scheduling, orchestration, or network services
+Core dependencies.
 
 ## M1 Historical Handoff
 

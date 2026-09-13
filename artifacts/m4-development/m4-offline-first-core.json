@@ -1,0 +1,29 @@
+{
+  "slice": "M4-007",
+  "status": "PASS / INTERNAL / TEST-GATED",
+  "platform": "Windows 11 x86_64 NTFS",
+  "offline_core": "PASS",
+  "network_independence": "PASS",
+  "local_e2e": "PASS",
+  "remote_optionality": "PASS",
+  "mcp_optionality": "PASS / NOT_IMPLEMENTED",
+  "provider_neutrality": "PASS",
+  "production_remote_security": "NOT_PROVEN",
+  "offline_e2e": {"passed": 1, "failed": 0, "ignored": 0},
+  "quality_gates": {
+    "fmt_check": "PASS",
+    "cargo_check": "PASS",
+    "offline_focused": "PASS",
+    "full_regression": "PARTIAL / ENVIRONMENT",
+    "full_regression_failure": "control_layer concurrent SQLite open returned Windows sharing violation code 33",
+    "clippy": "PASS",
+    "diff_check": "PASS"
+  },
+  "workflow": ["Agent", "Task", "Execution", "Workspace", "Operation", "Snapshot", "Version", "Checkpoint", "Handoff", "Resume", "Restore", "Rollback", "cold_reopen"],
+  "network_services_used": false,
+  "schema_migration": false,
+  "deferred": ["HTTP", "WebSocket", "MCP adapter", "remote sync", "remote database", "external authentication"],
+  "real_claude_jsonl": "BLOCKED / ENVIRONMENT",
+  "release_tag_created": false,
+  "pushed": false
+}
