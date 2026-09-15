@@ -8,10 +8,24 @@
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** M4-011 freezes Repository access policy. Core-owned access is
-the supported external Runtime mode; direct `Repository` access remains the
-supported internal/embedded and offline-maintenance API; independent external
-Runtime processes directly opening Repository are explicitly `NOT_SUPPORTED`.
+**Current Task:** M4-012 freezes the transport-neutral Remote Agent access
+contract before any HTTP, WebSocket, or MCP implementation. An authenticated
+transport hands an opaque Principal to an ephemeral session boundary, which
+authorizes the asserted Agent before dispatching the unchanged External Agent
+Protocol v1.0 through AgentControl and the single Core owner.
+
+The contract keeps Connection, Session, Principal, Agent, Execution, and
+Operation identities distinct. Disconnect, timeout, client restart, and Core
+restart do not mutate durable Pong state. Reconnect requires re-authentication,
+a new session binding, durable inspection/resolution, and explicit retry or
+continuation.
+
+M4-012 passes 18 active Remote Contract tests and a 53-test focused matrix with
+no failures or ignored tests. The combined full regression remains
+`PARTIAL / ENVIRONMENT` because the pre-existing independent-handle
+`control_layer` diagnostic can still receive Windows lock violation code 33;
+an unchanged focused rerun passed. This does not promote that unsupported
+external access mode or claim a real remote network deployment.
 
 The production JSONL adapter remains a single attached stdin/stdout stream. It
 is not relabeled as a multi-client daemon. Protocol v1.0 and the durable
@@ -74,11 +88,11 @@ rollback suites remain regression gates. Ignored tests are never counted as
 passes. MCP, HTTP, SDK adapters, remote execution, and production authentication
 remain `NOT_PROVEN`.
 
-**Next Action:** Review the M4-011 policy checkpoint, then select the next local
-integration boundary separately. Production multi-client local transport and
-Linux/macOS parity remain unproven; direct external Repository access remains
-`NOT_SUPPORTED`. Do not introduce remote sync, HTTP, MCP, consensus, or
-replication as a workaround.
+**Next Action:** Review the M4-012 contract checkpoint, then evaluate the first
+concrete remote transport separately against this contract. Production
+credential verification, TLS, rate limits, v1.x negotiation, network behavior,
+and Linux/macOS adapter parity remain `NOT_PROVEN`. Do not infer a transport
+choice from the contract checkpoint; HTTP, WebSocket, and MCP remain deferred.
 
 ## M1 Historical Handoff
 

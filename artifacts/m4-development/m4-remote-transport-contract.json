@@ -1,0 +1,98 @@
+{
+  "slice": "M4-012",
+  "date": "2026-09-15",
+  "status": "PASS / CONTRACT-FROZEN / REMOTE DEPLOYMENT NOT_PROVEN",
+  "branch": "dev",
+  "base_head": "2e341ca3a4231cda6555b7c0b319b96cf31ce0d2",
+  "base_subject": "checkpoint: m4-repository-access-policy",
+  "platform": "Windows 11 x86_64 NTFS SQLite WAL",
+  "contract": {
+    "remote_access_contract_version": "1",
+    "external_agent_protocol_version": "1.0 exact match",
+    "authentication": "transport/security adapter produces an already-authenticated Principal",
+    "authorization": "ephemeral Principal-to-Agent grant before unchanged protocol dispatch",
+    "session": "ephemeral, expiring, invalidated by disconnect or Core restart",
+    "durable_state": "Agent, Execution, Operation, Workspace, Checkpoint, and Handoff remain Core-owned",
+    "disconnect_cancels_operation": false,
+    "network_implementation_added": false,
+    "provider_specific_coupling_added": false
+  },
+  "identity_separation": {
+    "connection_session": "distinct",
+    "session_principal": "distinct",
+    "principal_agent": "distinct",
+    "agent_execution": "distinct",
+    "request_operation": "distinct"
+  },
+  "status_matrix": {
+    "remote_connection_model": "PASS at transport-neutral contract level",
+    "principal_handoff": "PASS",
+    "remote_authentication_contract": "PASS / credential verification NOT_PROVEN",
+    "remote_authorization": "PASS at Principal/Agent and protocol ownership boundaries",
+    "retry_idempotency": "PASS",
+    "uncertain_outcome": "PASS",
+    "reconnect": "PASS",
+    "core_restart": "PASS in cold-reopen contract test",
+    "client_restart": "PASS in session replacement contract test",
+    "version_negotiation": "NOT_PROVEN / exact protocol 1.0 rejection PASS",
+    "error_contract": "PASS",
+    "observability": "PARTIAL",
+    "real_remote_network_transport": "NOT_PROVEN",
+    "http": "DEFERRED",
+    "websocket": "DEFERRED",
+    "mcp": "OPTIONAL ADAPTER / DEFERRED",
+    "linux_macos_remote_adapter_parity": "NOT_PROVEN"
+  },
+  "focused_contract_tests": {
+    "command": "cargo test --locked --test remote_transport_contract -- --nocapture",
+    "passed": 18,
+    "failed": 0,
+    "ignored": 0
+  },
+  "focused_matrix": {
+    "status": "PASS",
+    "passed": 53,
+    "failed": 0,
+    "ignored": 0,
+    "targets": {
+      "remote_transport_contract": 18,
+      "external_agent_protocol": 9,
+      "external_agent_protocol_transport": 2,
+      "protocol_lifecycle_reconnect": 16,
+      "local_core_broker": 3,
+      "core_ownership": 2,
+      "repository_access_policy": 2,
+      "security_boundaries": 1
+    }
+  },
+  "quality_gates": {
+    "cargo_fmt_all_check": "PASS / exit 0",
+    "cargo_check_locked": "PASS / exit 0",
+    "cargo_clippy_all_targets_all_features_locked_deny_warnings": "PASS / exit 0",
+    "cargo_test_all_locked": "PARTIAL / ENVIRONMENT / existing control_layer independent Repository open failed with Windows code 33 under combined load",
+    "control_layer_focused_rerun": "PASS once and FAIL once / code 33 remains an existing Windows availability limitation",
+    "git_diff_check": "PASS / exit 0 including staged M4-012 diff"
+  },
+  "full_regression_observations": {
+    "first_attempt": "agent_execution process exited after test output with Windows STATUS_HEAP_CORRUPTION 0xc0000374",
+    "agent_execution_isolated_single_thread": "PASS / 37 passed / 6 ignored",
+    "agent_execution_isolated_default_threads": "PASS / 37 passed / 6 ignored",
+    "later_attempts": "control_layer::three_provider_metadata_values_publish_to_isolated_workspaces failed with Windows code 33",
+    "focused_control_layer": "one fail followed by one pass without weakening or ignoring the test",
+    "corruption_observed": false,
+    "silent_overwrite_observed": false,
+    "m4_012_regression_attribution": "none; M4-012 does not open Repository or mutate Core persistence"
+  },
+  "limitations": {
+    "credential_verification": "NOT_PROVEN",
+    "tls_rate_limits_backpressure_streaming": "NOT_PROVEN",
+    "future_v1_minor_version_negotiation": "NOT_PROVEN",
+    "durable_authentication_decision_audit": "PARTIAL / DEFERRED",
+    "existing_windows_direct_multi_handle_publication": "PARTIAL / ENVIRONMENT / NOT_SUPPORTED EXTERNALLY",
+    "real_claude_jsonl_e2e": "BLOCKED / ENVIRONMENT / PROVIDER QUOTA; NOT RERUN"
+  },
+  "checkpoint_subject": "checkpoint: m4-remote-transport-contract",
+  "checkpoint_created": true,
+  "tag_created": false,
+  "pushed": false
+}

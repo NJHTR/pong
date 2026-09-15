@@ -14,6 +14,7 @@ pub mod error;
 pub mod metadata;
 pub mod protocol;
 pub mod redaction;
+pub mod remote;
 pub mod repository;
 pub mod workspace;
 
@@ -36,6 +37,11 @@ pub use metadata::{
     SnapshotRecord, TaskCreation, TaskRecord, VersionCreation, VersionPublication, VersionRecord,
     WorkspaceRecord, WorkspaceUpdate, EVENT_ENVELOPE_SCHEMA_VERSION, OPERATION_SCHEMA_VERSION,
     PROJECTION_SCHEMA_VERSION, SNAPSHOT_SCHEMA_VERSION,
+};
+pub use remote::{
+    AuthenticatedPrincipal, AuthorizedProtocolRequest, RemoteAccessBoundary,
+    RemoteAccessCapabilities, RemoteAccessError, RemoteAccessErrorCode, RemoteSession,
+    REMOTE_ACCESS_CONTRACT_VERSION,
 };
 pub use repository::{
     MigrationFailpoint, MigrationFailpoints, MigrationOutcome, MigrationSpec, Repository,

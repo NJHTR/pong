@@ -1,0 +1,79 @@
+M4-012 Remote Agent Transport Contract
+Date: 2026-09-15
+Platform: Windows 11 / NTFS / SQLite WAL
+Base HEAD: 2e341ca3a4231cda6555b7c0b319b96cf31ce0d2
+
+RESULT
+PASS / CONTRACT-FROZEN / REMOTE DEPLOYMENT NOT_PROVEN
+
+IMPLEMENTED CONTRACT
+- Authentication remains outside Pong Core.
+- An authenticated Principal is bound to an ephemeral, expiring session.
+- Principal-to-Agent authorization occurs before External Agent Protocol dispatch.
+- Connection, Session, Principal, Agent, Execution, Operation, and request identities remain separate.
+- Disconnect, timeout, client restart, and Core restart do not cancel or erase durable Operations.
+- Reconnect requires a new authentication result and session, followed by durable inspection or resolution.
+- Remote access capabilities remain separate from protocol hello and future transport capabilities.
+- External Agent Protocol 1.0 remains exact-match and unchanged.
+- No HTTP, WebSocket, MCP, JWT, OAuth, TLS, provider adapter, cloud sync, or replication was added.
+
+FOCUSED CONTRACT
+PASS cargo test --locked --test remote_transport_contract -- --nocapture
+  remote_transport_contract: 18 passed, 0 failed, 0 ignored
+
+FOCUSED MATRIX
+PASS 53 passed, 0 failed, 0 ignored
+  core_ownership: 2
+  external_agent_protocol: 9
+  external_agent_protocol_transport: 2
+  local_core_broker: 3
+  protocol_lifecycle_reconnect: 16
+  remote_transport_contract: 18
+  repository_access_policy: 2
+  security_boundaries: 1
+
+QUALITY GATES
+PASS cargo fmt --all -- --check
+PASS cargo check --locked
+PASS cargo clippy --all-targets --all-features --locked -- -D warnings
+PASS git diff --check including staged M4-012 diff
+PARTIAL / ENVIRONMENT cargo test --all --locked
+
+FULL REGRESSION OBSERVATIONS
+- The first full run completed agent_execution test output and then its Windows
+  process exited with STATUS_HEAP_CORRUPTION 0xc0000374.
+- Isolated agent_execution reruns passed with both one test thread and default
+  test concurrency: 37 passed, 0 failed, 6 ignored.
+- Later full runs reached the existing control_layer diagnostic and failed when
+  an independent Repository::open received Windows lock violation code 33.
+- A focused control_layer run reproduced code 33; a subsequent unchanged run
+  passed 10/10. The test was not ignored and concurrency was not reduced.
+- This is the already documented M4-008/M4-009 Windows independent-handle
+  availability limitation. The supported external Runtime path is Core-owned.
+- M4-012 remote.rs owns no Repository handle and does not change persistence,
+  SQLite, CAS, Workspace publication, or Core ownership behavior.
+- No corruption or silent overwrite was observed.
+
+STATUS MATRIX
+Remote connection model: PASS at transport-neutral contract level
+Principal handoff: PASS
+Remote authentication contract: PASS; credential verification NOT_PROVEN
+Remote authorization: PASS
+Retry/idempotency: PASS
+Uncertain outcome: PASS
+Reconnect: PASS
+Core restart: PASS in contract test
+Client restart: PASS in contract test
+Version negotiation: NOT_PROVEN; exact 1.0 rejection PASS
+Error contract: PASS
+Observability: PARTIAL
+Real remote network transport: NOT_PROVEN
+HTTP: DEFERRED
+WebSocket: DEFERRED
+MCP: OPTIONAL ADAPTER / DEFERRED
+Linux/macOS remote adapter parity: NOT_PROVEN
+
+REAL PROVIDER
+Real Claude JSONL E2E remains BLOCKED / ENVIRONMENT because provider quota was
+exhausted. It was not rerun. The unrelated untracked provider test and evidence
+are excluded from the M4-012 checkpoint.

@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased - M4 Remote Agent Transport Contract (2026-09-15)
+
+- Added a transport-neutral ephemeral session boundary that accepts an already
+  authenticated Principal and authorizes its Agent grant before dispatching the
+  unchanged External Agent Protocol v1.0.
+- Kept Connection, Session, Principal, Agent, Execution, Operation, and
+  Workspace identities separate across disconnect, timeout, client restart,
+  Core restart, reconnect, and uncertain outcomes.
+- Split remote access capability discovery from protocol `hello`, retained
+  exact protocol `1.0` matching, and deferred future v1.x negotiation.
+- Added contract coverage for authentication handoff, session expiry,
+  Principal binding, foreign resources, revision/lease conflicts, retry,
+  uncertain outcomes, reconnect, restart, disconnect-not-cancel, wire-safe
+  errors, and absence of network/provider coupling.
+- Did not add HTTP, WebSocket, MCP, JWT, OAuth, TLS, cloud sync, replication,
+  provider adapters, credentials, or durable session schema.
+
 ## Unreleased - M4 Repository Access Policy (2026-09-15)
 
 - Froze Core-owned access as the supported external Runtime path, retained
