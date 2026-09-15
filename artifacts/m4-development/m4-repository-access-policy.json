@@ -1,0 +1,97 @@
+{
+  "slice": "M4-011",
+  "date": "2026-09-15",
+  "status": "PASS / POLICY-FROZEN",
+  "branch": "dev",
+  "base_head": "8cc153e",
+  "base_subject": "checkpoint: m4-local-concurrency",
+  "platform": "Windows 11 x86_64 NTFS SQLite WAL",
+  "access_modes": {
+    "core_owned": "SUPPORTED / PASS ON WINDOWS",
+    "external_runtime_via_core": "SUPPORTED / PASS",
+    "embedded_direct": "SUPPORTED INTERNAL / EMBEDDED",
+    "direct_multi_process_external": "NOT_SUPPORTED"
+  },
+  "production_path_audit": {
+    "external_runtime_path": "External Agent Protocol -> AgentControl -> Core -> Repository",
+    "production_repository_open": "pong-agent-protocol uses Repository::open_as_core_owner",
+    "production_external_runtime_direct_open_found": false,
+    "metadata_store_external_runtime_direct_open_found": false,
+    "direct_repository_uses": "library implementation, tests, cold reopen, offline migration and maintenance"
+  },
+  "negative_safety": {
+    "test": "repository_access_policy::unsupported_direct_multi_process_access_fails_closed",
+    "real_process_probes": 2,
+    "result": "PASS / both rejected with CONFLICT while Core owns Repository",
+    "cold_reopen": "PASS / marker unchanged / no unexpected Operation",
+    "existing_direct_writer_diagnostics_retained": true,
+    "expected_results_weakened": false,
+    "tests_ignored": false,
+    "corruption_observed": false,
+    "silent_overwrite_observed": false
+  },
+  "os_error_classification": {
+    "owner_lock_would_block": "REPOSITORY ACCESS CONFLICT / CONFLICT",
+    "windows_32": "ERROR_SHARING_VIOLATION / ACCESS CONFLICT",
+    "windows_33": "ERROR_LOCK_VIOLATION / ACCESS CONFLICT",
+    "windows_2": "CONTEXT-DEPENDENT TRANSIENT NAMESPACE RACE / NOT GLOBAL CONFLICT",
+    "windows_5": "AMBIGUOUS ACL OR ACCESS RACE / NOT_PROVEN / REMAINS PERMISSION_DENIED",
+    "linux_macos": "NOT_PROVEN"
+  },
+  "code_5_investigation": {
+    "prior_full_regression": "observed raw OS error 5 in combined open/snapshot direct writer path",
+    "diagnostic_change": "records OPEN versus SNAPSHOT and validates cold-reopen Workspace heads before unexpected-error assertion",
+    "focused_reruns": 30,
+    "focused_code_5_reproductions": 0,
+    "focused_observations": "successful publications, open-time code 33, one open-time code 2",
+    "global_reclassification_performed": false
+  },
+  "release_gate": {
+    "core_owner": "PASS",
+    "runtime_via_core": "PASS",
+    "core_crash_recovery": "PASS",
+    "runtime_crash_isolation": "PASS",
+    "reconnect": "PASS",
+    "second_core_rejection": "PASS",
+    "durable_state": "PASS",
+    "direct_multi_process_external_availability": "NOT A SUPPORTED RELEASE FEATURE",
+    "m4_010_release_readiness": "PASS UNDER CORE-OWNED POLICY"
+  },
+  "focused_matrix": {
+    "status": "PASS",
+    "passed": 137,
+    "failed": 0,
+    "ignored": 0,
+    "targets": {
+      "core_ownership": 2,
+      "repository_access_policy": 2,
+      "local_core_broker": 3,
+      "external_agent_protocol": 9,
+      "external_agent_protocol_transport": 2,
+      "protocol_lifecycle_reconnect": 16,
+      "local_concurrency": 8,
+      "cross_workspace_rollback": 47,
+      "handoff_checkpoint_rollback": 48
+    }
+  },
+  "quality_gates": {
+    "cargo_fmt_all_check": "PASS / exit 0",
+    "cargo_check_locked": "PASS / exit 0",
+    "cargo_clippy_all_targets_all_features_locked_deny_warnings": "PASS / exit 0",
+    "cargo_test_all_locked": "PASS / exit 0",
+    "git_diff_check": "PASS / exit 0"
+  },
+  "boundaries": {
+    "windows_direct_multi_process": "PARTIAL / IMPLEMENTATION LIMITATION / NOT_SUPPORTED EXTERNALLY",
+    "linux_macos": "NOT_PROVEN",
+    "production_multi_client_local_transport": "NOT_PROVEN",
+    "remote_transport": "DEFERRED",
+    "mcp": "OPTIONAL ADAPTER / DEFERRED",
+    "multi_pong_replication": "DEFERRED"
+  },
+  "real_claude_jsonl_e2e": "BLOCKED / ENVIRONMENT / PROVIDER QUOTA; NOT RERUN",
+  "checkpoint_subject": "checkpoint: m4-repository-access-policy",
+  "checkpoint_created": true,
+  "tag_created": false,
+  "pushed": false
+}

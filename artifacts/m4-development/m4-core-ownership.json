@@ -1,0 +1,91 @@
+{
+  "slice": "M4-009",
+  "date": "2026-09-15",
+  "status": "PARTIAL / INTERNAL / FOCUSED-TEST-GATED; MODEL B PASS ON WINDOWS; FULL REGRESSION BLOCKED BY MODEL A CODE 33",
+  "branch": "dev",
+  "base_head": "8cc153e",
+  "base_subject": "checkpoint: m4-local-concurrency",
+  "development_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+  "platform": "Windows 11 x86_64 NTFS SQLite WAL",
+  "recommended_model": "MODEL_B_SINGLE_LONG_LIVED_CORE_OWNER",
+  "model_a_shared_repository_handles": "PARTIAL / IMPLEMENTATION LIMITATION",
+  "model_b_single_core_owner": "PASS ON WINDOWS",
+  "repository_ownership": "PASS ON WINDOWS",
+  "single_core_owner": "PASS ON WINDOWS",
+  "multi_runtime_via_core": "PASS FOR MULTIPLE AGENT/RUNTIME IDENTITIES THROUGH ONE SERIALIZING CORE",
+  "direct_multi_process_repository_access": "PARTIAL / IMPLEMENTATION LIMITATION",
+  "core_crash_recovery": "PASS ON WINDOWS",
+  "second_core_rejection": "PASS ON WINDOWS",
+  "direct_open_rejection_while_owned": "PASS ON WINDOWS",
+  "offline_migration_rejection_while_owned": "PASS ON WINDOWS",
+  "offline_core": "PASS",
+  "remote_compatibility": "PASS AT CONTRACT LEVEL / TRANSPORT DEFERRED",
+  "linux_macos_owner_lock_parity": "NOT_PROVEN",
+  "simultaneous_multiple_transport_connections": "NOT_PROVEN / TRANSPORT BOUNDARY",
+  "ownership_mechanism": {
+    "core_owner": "OS-held exclusive .pong/locks/core-owner.lock",
+    "embedded_repository": "shared core access lock when no Core owner is active",
+    "migration": "separate .pong/locks/repository.lock namespace fence",
+    "workspace": "Agent-owned lease plus epoch, expiry, and revision",
+    "pid_file": false,
+    "schema_migration": false
+  },
+  "process_validation": {
+    "core_process": "pong-agent-protocol",
+    "second_core_exit": "CONFLICT / exit 2",
+    "forced_termination": "PASS",
+    "replacement_core_start": "PASS",
+    "durable_handoff_state_after_reopen": "PASS"
+  },
+  "focused_tests": {
+    "core_ownership": {"passed": 2, "failed": 0, "ignored": 0},
+    "external_agent_protocol": {"passed": 9, "failed": 0, "ignored": 0},
+    "external_agent_protocol_transport": {"passed": 2, "failed": 0, "ignored": 0},
+    "protocol_lifecycle_reconnect": {"passed": 16, "failed": 0, "ignored": 0},
+    "cross_workspace_rollback": {"passed": 47, "failed": 0, "ignored": 0},
+    "handoff_checkpoint_rollback": {"passed": 48, "failed": 0, "ignored": 0},
+    "local_concurrency": {"passed": 8, "failed": 0, "ignored": 0}
+  },
+  "known_direct_access_observations": {
+    "control_layer_run": {"passed": 9, "failed": 1, "ignored": 0},
+    "failure": "three_provider_metadata_values_publish_to_isolated_workspaces",
+    "windows_error": "code 33 sharing violation",
+    "classification": "MODEL_A / M4-008 KNOWN IMPLEMENTATION LIMITATION",
+    "hidden_or_ignored": false,
+    "local_concurrency_workspace_writer_fail_closed_count": 1,
+    "observed_corruption": false,
+    "observed_silent_overwrite": false
+  },
+  "quality_gates": {
+    "cargo_fmt_check": "PASS / exit 0 / 0.78s",
+    "cargo_check_locked": "PASS / exit 0 / 1.81s",
+    "cargo_test_all_locked": "FAIL / control_layer::three_provider_metadata_values_publish_to_isolated_workspaces / Windows code 33",
+    "cargo_clippy": "PASS / exit 0 / 7.26s",
+    "git_diff_check": "PASS / exit 0"
+  },
+  "final_core_process_tests": "PASS / 4 passed / 0 failed / 0 ignored / exit 0 / 8.96s",
+  "resolved_implementation_diagnostic": {
+    "initial_failure": "STATUS_ACCESS_VIOLATION / STATUS_HEAP_CORRUPTION during high-volume Repository drop",
+    "cause": "redundant explicit unlock followed by closing the process-shared Core access lock file",
+    "fix": "last process reference closes the sole OS File handle without explicit unlock",
+    "verification": "isolated performance sanity, full agent_execution, Core ownership, and forced-exit tests pass"
+  },
+  "forbidden_scope": {
+    "http": false,
+    "mcp": false,
+    "cloud_sync": false,
+    "replication": false,
+    "provider_coupling": false,
+    "network_dependency": false
+  },
+  "real_claude_jsonl_e2e": "BLOCKED / ENVIRONMENT / PROVIDER QUOTA; NOT RERUN",
+  "release_tag_created": false,
+  "checkpoint_created": false,
+  "subsequent_m4_011_disposition": {
+    "full_regression": "PASS / exit 0",
+    "core_owned_release_gate": "PASS",
+    "direct_multi_process_external": "NOT_SUPPORTED",
+    "historical_code_33_observation_retained": true
+  },
+  "pushed": false
+}

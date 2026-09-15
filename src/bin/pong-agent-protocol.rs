@@ -99,8 +99,13 @@ fn request_id_from_invalid_json(line: &str) -> Option<String> {
 }
 
 fn run(arguments: Arguments) -> Result<(), String> {
-    let mut repository = Repository::open(&arguments.repository)
-        .map_err(|_| "Pong repository could not be opened".to_string())?;
+    let mut repository =
+        Repository::open_as_core_owner(&arguments.repository).map_err(|error| {
+            format!(
+                "Pong repository Core ownership could not be acquired ({})",
+                error.code()
+            )
+        })?;
     let bindings = LocalBindings::new(&arguments.workspace_root)?;
     let stdin = io::stdin();
     let mut stdout = io::BufWriter::new(io::stdout().lock());

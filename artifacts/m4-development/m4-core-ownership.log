@@ -1,0 +1,101 @@
+M4-009 Single Long-Lived Core / Repository Ownership Contract
+date: 2026-09-15
+branch: dev
+base: 8cc153e checkpoint: m4-local-concurrency
+platform: Windows 11 x86_64 NTFS SQLite WAL
+development state: UNCOMMITTED_DEVELOPMENT_TREE
+
+ARCHITECTURE
+Model A, independent shared Repository handles:
+PARTIAL / IMPLEMENTATION LIMITATION.
+
+Model B, one long-lived Core owner:
+PASS on Windows focused validation.
+
+Overall M4-009 status:
+PARTIAL / INTERNAL / FOCUSED-TEST-GATED.
+
+The Core owns Repository, MetadataStore/SQLite, CAS, Workspace filesystem
+mutation, Operation lifecycle, and recovery entry. Agent Runtimes use the
+external Agent protocol. Repository ownership is separate from repository
+migration locking, Agent Workspace lease, Execution identity, and transport
+session identity.
+
+IMPLEMENTATION
+The JSONL Core opens with Repository::open_as_core_owner.
+An OS-held exclusive .pong/locks/core-owner.lock rejects a second Core and new
+direct Repository handles. Ordinary embedded handles retain shared access only
+when no Core owner is active. The lock is not durable domain state or a PID
+file. Forced process exit releases it automatically.
+
+PROCESS TESTS
+core_ownership: 2 passed, 0 failed, 0 ignored.
+- second Core rejected with CONFLICT / exit 2
+- direct Repository open rejected while Core is active
+- migration rejected while Core is active
+- forced Core termination releases ownership
+- replacement Core opens and answers protocol hello
+
+external_agent_protocol_transport: 2 passed, 0 failed, 0 ignored.
+The complete two-Runtime checkpoint/handoff/resume/continuation/checkpoint flow
+was persisted, the Core process was forcibly terminated, and a replacement
+Core reconstructed the durable state.
+
+FOCUSED REGRESSION
+external_agent_protocol: 9 passed
+protocol_lifecycle_reconnect: 16 passed
+cross_workspace_rollback: 47 passed
+handoff_checkpoint_rollback: 48 passed
+local_concurrency: 8 passed
+
+DIRECT ACCESS LIMITATION RETAINED
+A focused control_layer run produced 9 passes and 1 failure in
+three_provider_metadata_values_publish_to_isolated_workspaces with Windows
+sharing violation code 33. The local_concurrency diagnostic passed while one
+independent Workspace writer failed closed with code 33. No corruption or
+silent overwrite was observed. No test was ignored, disabled, serialized, or
+removed to hide this M4-008 Model A limitation.
+
+PLATFORM BOUNDARIES
+Windows Core owner exclusion and forced-exit recovery: PASS.
+Linux/macOS Core owner lock parity: NOT_PROVEN.
+Multiple simultaneous connections to the same live stdio JSONL Core:
+NOT_PROVEN / TRANSPORT BOUNDARY.
+Remote transport: DEFERRED.
+Multi-Pong replication: DEFERRED.
+
+QUALITY GATES
+cargo test --all --locked: FAIL
+failure: control_layer::three_provider_metadata_values_publish_to_isolated_workspaces
+cause observed: Windows sharing violation code 33 in direct Repository open
+classification: retained M4-008 Model A implementation limitation
+
+An earlier implementation diagnostic produced STATUS_ACCESS_VIOLATION and
+STATUS_HEAP_CORRUPTION while repeatedly dropping Core-access locks. The final
+implementation keeps one process-refcounted shared OS handle and releases the
+last reference by closing the File without a redundant explicit unlock.
+Isolated performance sanity, full agent_execution, Core ownership, and forced
+Core-exit tests passed after that correction.
+
+Final non-regression gates:
+cargo fmt --all -- --check: PASS, exit 0, 0.78s
+cargo check --locked: PASS, exit 0, 1.81s
+cargo clippy --all-targets --all-features --locked -- -D warnings:
+PASS, exit 0, 7.26s
+final Core ownership + process transport: 4 passed, 0 failed, 0 ignored,
+exit 0, 8.96s
+git diff --check: PASS, exit 0
+
+No HTTP, MCP, network dependency, provider coupling, cloud synchronization,
+replication, distributed lock service, database schema migration, tag, or push.
+Real Claude JSONL remains BLOCKED / ENVIRONMENT due provider quota and was not
+rerun.
+
+No M4-009 checkpoint was created because the required full regression is not
+green.
+
+SUBSEQUENT M4-011 DISPOSITION
+M4-011 froze Core-owned access as the supported external Runtime mode and kept
+direct multi-process external Repository access unsupported. Its final full
+regression passed with exit 0. This does not erase the M4-009 code 33
+observation; it establishes the supported Core-owned release gate.

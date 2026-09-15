@@ -105,6 +105,15 @@ impl Transport {
         let status = self.child.wait().expect("wait for transport");
         assert!(status.success(), "transport exit: {status}");
     }
+
+    fn terminate(mut self) {
+        self.child.kill().expect("terminate Core process");
+        let status = self.child.wait().expect("wait for terminated Core");
+        assert!(
+            !status.success(),
+            "terminated Core unexpectedly exited cleanly"
+        );
+    }
 }
 
 fn envelope(
@@ -223,7 +232,7 @@ fn json_lines_transport_rejects_bad_envelopes_and_unsafe_bindings() {
 }
 
 #[test]
-fn process_transport_completes_handoff_and_reconnects_without_session_state() {
+fn process_transport_completes_handoff_and_survives_core_termination() {
     let fixture = fixture();
     let mut transport =
         Transport::start(fixture.repository_dir.path(), fixture.workspace_root.path());
@@ -473,7 +482,7 @@ fn process_transport_completes_handoff_and_reconnects_without_session_state() {
         )),
         "checkpoint",
     );
-    transport.close();
+    transport.terminate();
 
     let mut reconnected =
         Transport::start(fixture.repository_dir.path(), fixture.workspace_root.path());

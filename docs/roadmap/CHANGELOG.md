@@ -1,5 +1,52 @@
 # Changelog
 
+## Unreleased - M4 Repository Access Policy (2026-09-15)
+
+- Froze Core-owned access as the supported external Runtime path, retained
+  direct `Repository` access for embedded/internal and offline maintenance use,
+  and marked direct multi-process external access `NOT_SUPPORTED`.
+- Added a real-process negative safety contract proving two direct clients are
+  rejected with `CONFLICT` while the Core owns the Repository and that cold
+  reopen remains healthy after owner shutdown.
+- Kept the M4-008 direct-writer diagnostics active. They now identify open
+  versus snapshot failures and verify cold-reopen Workspace heads before
+  reporting an unclassified result, without accepting Windows code `5`.
+- Recorded Windows codes `32`/`33` as defined sharing/lock conflicts, code `2`
+  as context-dependent namespace churn, and code `5` as `NOT_PROVEN` because
+  it can also represent a real ACL denial.
+- Passed the final full regression and the `137`-test M4-009/010/011 focused
+  matrix, making the Core-owned external Runtime path release-ready while
+  retaining Windows direct multi-process access as `PARTIAL` and unsupported.
+
+## Unreleased - M4 Local Core Broker Sessions (2026-09-15)
+
+- Defined Runtime Session as ephemeral transport context distinct from Core,
+  Runtime, Agent, Execution, Operation, and durable Repository state.
+- Added a test-only local multi-session harness using one real Core owner and
+  multiple real Runtime client processes without changing protocol v1.0.
+- Verified same-Agent and same-Execution concurrency, revision conflict,
+  Runtime crash isolation, invalidation, graceful drain/reject shutdown, Core
+  termination, replacement ownership, and durable reconnect.
+- Retained JSONL stdio as a single attached stream and recorded production
+  multi-client transport, rollback protocol exposure, and cross-platform parity
+  as unresolved boundaries.
+- Passed the focused ownership/broker aggregate (`135` tests) and retained the
+  full-regression failure from the active M4-008 Model A direct-handle
+  Workspace publication diagnostic (Windows raw OS error `5`) without
+  weakening or ignoring the test; no checkpoint was created.
+
+## Unreleased - M4 Single Core Ownership (2026-09-15)
+
+- Defined one long-lived local Core as the normal live owner of a Pong
+  Repository; Agent Runtimes reach storage through protocol and AgentControl.
+- Added an OS-held Core owner fence that rejects second-Core startup, new direct
+  Repository opens, and offline migration while the Core is active.
+- Added real process tests for owner exclusion, forced Core termination,
+  automatic lock release, replacement-Core startup, and durable handoff state
+  after reconnect.
+- Preserved M4-008's `PARTIAL` result for independent Windows Repository
+  writers and kept HTTP, MCP, remote sync, and replication deferred.
+
 ## Unreleased - M4 Local Multi-Runtime Concurrency (2026-09-15)
 
 - Defined local concurrent access separately from transport and multi-Pong

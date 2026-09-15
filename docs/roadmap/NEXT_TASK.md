@@ -8,12 +8,37 @@
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** M4-008 freezes local multi-Runtime concurrency semantics.
-Multiple Runtimes through one coordinating Core are supported by durable
-Operation identity, Workspace lease/epoch/expiry, optimistic revision/CAS, and
-SQLite transactions. General independent-process Workspace publication on
-Windows remains `PARTIAL` because active Repository scans intermittently fail
-closed with code 33 or transient code 2.
+**Current Task:** M4-011 freezes Repository access policy. Core-owned access is
+the supported external Runtime mode; direct `Repository` access remains the
+supported internal/embedded and offline-maintenance API; independent external
+Runtime processes directly opening Repository are explicitly `NOT_SUPPORTED`.
+
+The production JSONL adapter remains a single attached stdin/stdout stream. It
+is not relabeled as a multi-client daemon. Protocol v1.0 and the durable
+Operation schema remain unchanged.
+
+The M4-011 focused policy gate passes on Windows. Two real direct-access probe
+processes are rejected with `CONFLICT` while a Core owner is active, and the
+Repository cold-reopens unchanged after owner shutdown. The M4-008 direct
+writer diagnostic now identifies `OPEN` versus `SNAPSHOT` failure and verifies
+cold-reopen Workspace heads before reporting an unexpected OS result. Its
+accepted result set was not widened.
+
+Windows raw OS error `5` remains `NOT_PROVEN`: it may be an ACL denial or an
+access/share race, and Pong has native evidence for the ACL meaning. It is not
+globally reclassified as a conflict. Thirty diagnostic reruns did not reproduce
+code `5`; they observed successful publication, open-time code `33`, and one
+open-time code `2`.
+
+The final M4-011 full regression passed with all active tests green. The
+M4-009/010/011 focused matrix passed `137` tests with no failures or ignored
+tests. This establishes release readiness for the supported Core-owned external
+Runtime path without promoting direct multi-process external access.
+
+M4-008 concurrency semantics remain active: Operation identity, Workspace
+lease/epoch/expiry, optimistic revision/CAS, and SQLite transactions protect
+logical callers. General independent-process Workspace publication on Windows
+remains `PARTIAL`; it is outside the normal external-Runtime ownership path.
 
 Pong Core remains frozen as an offline-first, local-first,
 network-independent execution/state/control plane. M4-007 verified the complete
@@ -49,11 +74,11 @@ rollback suites remain regression gates. Ignored tests are never counted as
 passes. MCP, HTTP, SDK adapters, remote execution, and production authentication
 remain `NOT_PROVEN`.
 
-**Next Action:** Decide and test the local repository access contract: either
-one long-lived Core process brokers all Runtime access, or Repository startup
-and byte scanning are hardened for active multi-process SQLite/CAS writers on
-Windows, Linux, and macOS. Do not introduce remote sync, HTTP, MCP, consensus,
-or replication as a workaround.
+**Next Action:** Review the M4-011 policy checkpoint, then select the next local
+integration boundary separately. Production multi-client local transport and
+Linux/macOS parity remain unproven; direct external Repository access remains
+`NOT_SUPPORTED`. Do not introduce remote sync, HTTP, MCP, consensus, or
+replication as a workaround.
 
 ## M1 Historical Handoff
 

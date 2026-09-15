@@ -282,18 +282,18 @@ fn multi_process_child() {
             epoch: env::var(CHILD_EPOCH).unwrap().parse().unwrap(),
             expires_at_ms: env::var(CHILD_EXPIRY).unwrap().parse().unwrap(),
         };
-        let text = match Repository::open(root).and_then(|mut repository| {
-            WorkspaceManager::new(&mut repository, Redactor::default()).snapshot_local(
-                &workspace_id,
-                &lease,
-                SnapshotOptions::default(),
-                20,
-                "t2",
-            )
-        }) {
-            Ok(snapshot) => format!("WRITTEN:{}", snapshot.snapshot_id),
-            Err(error) => format!("FAILED:{error:?}"),
-        };
+        let text =
+            match Repository::open(root) {
+                Ok(mut repository) => {
+                    match WorkspaceManager::new(&mut repository, Redactor::default())
+                        .snapshot_local(&workspace_id, &lease, SnapshotOptions::default(), 20, "t2")
+                    {
+                        Ok(snapshot) => format!("WRITTEN:{}", snapshot.snapshot_id),
+                        Err(error) => format!("FAILED:SNAPSHOT:{error:?}"),
+                    }
+                }
+                Err(error) => format!("FAILED:OPEN:{error:?}"),
+            };
         fs::write(result, text).unwrap();
     }
 }
@@ -457,6 +457,7 @@ fn real_multi_process_workspace_publications_are_atomic_or_fail_closed() {
 
     let mut written = HashSet::new();
     let mut failed = Vec::new();
+    let mut unexpected = Vec::new();
     for (index, workspace_id, result, mut child) in children {
         assert!(child.wait().unwrap().success());
         let observed = fs::read_to_string(result).unwrap();
@@ -464,10 +465,9 @@ fn real_multi_process_workspace_publications_are_atomic_or_fail_closed() {
             written.insert(workspace_id);
         } else {
             failed.push(observed.clone());
-            assert!(
-                known_windows_contention(&observed),
-                "unexpected workspace writer {index} failure: {observed}"
-            );
+            if !known_windows_contention(&observed) {
+                unexpected.push((index, observed));
+            }
         }
     }
 
@@ -484,6 +484,10 @@ fn real_multi_process_workspace_publications_are_atomic_or_fail_closed() {
     assert!(
         !written.is_empty(),
         "at least one workspace writer must make progress"
+    );
+    assert!(
+        unexpected.is_empty(),
+        "unexpected workspace writer failures after successful cold-reopen validation: {unexpected:?}"
     );
     eprintln!("multi-process workspace writers: written={written:?}, failed={failed:?}");
 }

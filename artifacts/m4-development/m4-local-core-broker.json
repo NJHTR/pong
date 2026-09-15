@@ -1,0 +1,95 @@
+{
+  "slice": "M4-010",
+  "date": "2026-09-15",
+  "status": "PARTIAL / INTERNAL / FULL-REGRESSION-TEST-GATED",
+  "branch": "dev",
+  "base_head": "8cc153e",
+  "base_subject": "checkpoint: m4-local-concurrency",
+  "development_tree": "UNCOMMITTED_DEVELOPMENT_TREE",
+  "platform": "Windows 11 x86_64 NTFS SQLite WAL",
+  "architecture": {
+    "repository_authority": "one local Core owner",
+    "runtime_session": "ephemeral transport context",
+    "durable_session_schema_added": false,
+    "protocol_version": "1.0 FROZEN / UNCHANGED",
+    "production_jsonl": "single attached stdin/stdout stream",
+    "test_harness": "filesystem-multiplexed real Core and Runtime child processes",
+    "test_harness_is_production_transport": false
+  },
+  "identity_separation": {
+    "core_process": "ephemeral state authority process",
+    "runtime_process": "ephemeral Agent behavior process",
+    "runtime_session": "ephemeral harness-owned connection context",
+    "agent": "durable provider-neutral identity",
+    "execution": "durable Agent attempt identity",
+    "operation": "durable mutation and retry identity",
+    "operation_session_id_repurposed": false
+  },
+  "verified_scenarios": {
+    "three_runtime_processes_one_core": "PASS",
+    "distinct_agents_tasks_executions": "PASS",
+    "same_agent_multiple_runtimes": "PASS",
+    "same_execution_multiple_runtimes": "PASS",
+    "distinct_operations": "PASS",
+    "stale_lifecycle_transition": "PASS / REVISION_CONFLICT",
+    "runtime_exit_before_response_read": "PASS",
+    "operation_resolution_from_another_session": "PASS",
+    "session_invalidation": "PASS",
+    "graceful_drain_and_reject": "PASS",
+    "started_operation_not_falsely_completed": "PASS",
+    "forced_core_termination": "PASS",
+    "replacement_core_reconnect": "PASS"
+  },
+  "focused_aggregate": {
+    "status": "PASS",
+    "passed": 135,
+    "failed": 0,
+    "ignored": 0,
+    "targets": {
+      "core_ownership": 2,
+      "local_core_broker": 3,
+      "external_agent_protocol": 9,
+      "external_agent_protocol_transport": 2,
+      "protocol_lifecycle_reconnect": 16,
+      "local_concurrency": 8,
+      "cross_workspace_rollback": 47,
+      "handoff_checkpoint_rollback": 48
+    }
+  },
+  "full_regression": {
+    "command": "cargo test --all --locked",
+    "status": "FAIL",
+    "failed_test": "local_concurrency::real_multi_process_workspace_publications_are_atomic_or_fail_closed",
+    "observation": "workspace writer 2 failed closed with PermissionDeniedWithOsError raw_os_error 5",
+    "classification": "M4-008 MODEL A DIRECT-HANDLE PATH / UNEXPECTED WINDOWS RESULT",
+    "one_core_broker_path_failure": false,
+    "corruption_observed": false,
+    "silent_overwrite_observed": false,
+    "test_ignored_or_weakened": false
+  },
+  "quality_gates": {
+    "cargo_fmt_check": "PASS / exit 0",
+    "cargo_check_locked": "PASS / exit 0",
+    "cargo_clippy_all_targets_all_features_locked_deny_warnings": "PASS / exit 0",
+    "cargo_test_all_locked": "FAIL / exit 1 / Windows raw OS error 5 in active M4-008 Model A diagnostic",
+    "git_diff_check": "PASS / exit 0"
+  },
+  "boundaries": {
+    "production_multi_client_local_transport": "NOT_PROVEN",
+    "external_runtime_rollback": "NOT_PROVEN / PROTOCOL CAPABILITY GAP",
+    "linux_macos_parity": "NOT_PROVEN",
+    "remote_sync": "DEFERRED",
+    "mcp": "OPTIONAL ADAPTER / DEFERRED",
+    "http": "DEFERRED"
+  },
+  "real_claude_jsonl_e2e": "BLOCKED / ENVIRONMENT / PROVIDER QUOTA; NOT RERUN",
+  "subsequent_m4_011_disposition": {
+    "full_regression": "PASS / exit 0",
+    "m4_010_release_readiness": "PASS UNDER CORE-OWNED POLICY",
+    "direct_multi_process_external": "NOT_SUPPORTED",
+    "historical_code_5_observation_retained": true
+  },
+  "checkpoint_created": false,
+  "tag_created": false,
+  "pushed": false
+}

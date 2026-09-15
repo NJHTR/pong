@@ -1,0 +1,83 @@
+M4-011 Repository Access Policy Freeze
+date: 2026-09-15
+branch: dev
+base: 8cc153e checkpoint: m4-local-concurrency
+platform: Windows 11 x86_64 NTFS SQLite WAL
+
+STATUS
+PASS / POLICY-FROZEN
+
+ACCESS MODES
+MODE A CORE OWNED: SUPPORTED / PASS ON WINDOWS
+External Runtime -> External Agent Protocol -> AgentControl -> Core -> Repository
+
+MODE B EMBEDDED: SUPPORTED INTERNAL / EMBEDDED
+Rust library embedding, tests, cold reopen, offline tooling, migration, and
+maintenance may use Repository directly while no Core owner is active.
+
+MODE C DIRECT MULTI-PROCESS EXTERNAL: NOT_SUPPORTED
+Independent external Runtime processes do not directly open Repository.
+
+PRODUCTION PATH AUDIT
+pong-agent-protocol uses Repository::open_as_core_owner. No production-facing
+External Runtime path directly opens Repository or MetadataStore. The M4-010
+filesystem broker is a test harness and does not change JSONL transport.
+
+NEGATIVE SAFETY TEST
+repository_access_policy::unsupported_direct_multi_process_access_fails_closed
+PASS. Two real direct-access probe processes were rejected with CONFLICT while
+one Core owner held the Repository. After owner shutdown, cold reopen passed,
+the marker was unchanged, and no probe Operation existed.
+
+The existing M4-008 direct-writer diagnostics remain active. The Workspace
+publication diagnostic now records OPEN versus SNAPSHOT failure and validates
+cold-reopen Workspace heads before asserting that an OS result is classified.
+Its accepted error set was not widened and no test was ignored or serialized.
+
+OS ERROR CLASSIFICATION
+WouldBlock at owner lock: repository access CONFLICT.
+Windows 32: ERROR_SHARING_VIOLATION, access conflict.
+Windows 33: ERROR_LOCK_VIOLATION, access conflict.
+Windows 2: context-dependent transient namespace race, not a global conflict.
+Windows 5: ambiguous ACL denial or access/share race, NOT_PROVEN. It remains
+PERMISSION_DENIED at protected repository boundaries.
+Linux/macOS parity: NOT_PROVEN.
+
+CODE 5 INVESTIGATION
+The prior M4-010 full regression observed code 5 in a combined direct
+Repository open/snapshot child path. Thirty focused reruns after phase
+instrumentation did not reproduce code 5. They observed successful publication,
+open-time code 33, and one open-time code 2. No global reclassification was
+made because Pong also has native Windows ACL evidence for code 5.
+
+FOCUSED MATRIX
+core_ownership: 2 passed
+repository_access_policy: 2 passed
+local_core_broker: 3 passed
+external_agent_protocol: 9 passed
+external_agent_protocol_transport: 2 passed
+protocol_lifecycle_reconnect: 16 passed
+local_concurrency: 8 passed
+cross_workspace_rollback: 47 passed
+handoff_checkpoint_rollback: 48 passed
+total: 137 passed, 0 failed, 0 ignored
+
+QUALITY GATES
+cargo fmt --all -- --check: PASS, exit 0
+cargo check --locked: PASS, exit 0
+cargo clippy --all-targets --all-features --locked -- -D warnings: PASS, exit 0
+cargo test --all --locked: PASS, exit 0
+git diff --check: PASS, exit 0
+
+RELEASE DISPOSITION
+Core owner path: PASS.
+External Runtime via Core: PASS.
+M4-010 release readiness under frozen policy: PASS.
+Embedded direct access: SUPPORTED INTERNAL.
+Direct multi-process external access: NOT_SUPPORTED.
+Windows direct access: PARTIAL / IMPLEMENTATION LIMITATION.
+Unsupported direct-vs-direct error 5 classification: NOT_PROVEN.
+Remote transport and multi-Pong replication: DEFERRED.
+
+No HTTP, MCP, WebSocket, OAuth, JWT, cloud sync, replication, provider coupling,
+tag, push, or history rewrite was introduced. Real Claude JSONL was not rerun.

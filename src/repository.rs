@@ -15,10 +15,12 @@ use crate::redaction::Redactor;
 use fs2::FileExt;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 use std::fmt;
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 
 /// Repository format written by this crate.
 ///
@@ -52,6 +54,7 @@ const MIGRATIONS_DIRNAME: &str = "migrations";
 const LOCKS_DIRNAME: &str = "locks";
 const GENERATION_MANIFEST_FILENAME: &str = "generation.json";
 const REPOSITORY_LOCK_FILENAME: &str = "repository.lock";
+const CORE_OWNER_LOCK_FILENAME: &str = "core-owner.lock";
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct RepositorySelector {
@@ -321,6 +324,10 @@ impl RepositoryLayout {
         self.locks.join(REPOSITORY_LOCK_FILENAME)
     }
 
+    pub fn core_owner_lock_path(&self) -> PathBuf {
+        self.locks.join(CORE_OWNER_LOCK_FILENAME)
+    }
+
     pub fn generation_dir(&self, generation_id: &str) -> PathBuf {
         self.generations.join(generation_id)
     }
@@ -350,6 +357,123 @@ struct RepositoryLock {
     file: File,
 }
 
+/// Process ownership fence for the live Core serving a repository.
+///
+/// Embedded Repository callers retain shared access when no Core owner is
+/// active. A long-lived Core takes the exclusive side, preventing a second
+/// Core or a direct Repository handle from becoming another state authority.
+struct CoreAccessLock {
+    path: PathBuf,
+    mode: CoreAccessMode,
+}
+
+#[derive(Clone, Copy)]
+enum CoreAccessMode {
+    Shared,
+    Exclusive,
+}
+
+struct ProcessCoreAccess {
+    _file: File,
+    shared_count: usize,
+    exclusive: bool,
+}
+
+fn process_core_access() -> &'static Mutex<HashMap<PathBuf, ProcessCoreAccess>> {
+    static ACCESS: OnceLock<Mutex<HashMap<PathBuf, ProcessCoreAccess>>> = OnceLock::new();
+    ACCESS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+impl CoreAccessLock {
+    fn shared(layout: &RepositoryLayout) -> Result<Self, PongError> {
+        ensure_directory(&layout.locks)?;
+        let path = layout.core_owner_lock_path();
+        let mut access = process_core_access().lock().map_err(|_| {
+            PongError::RecoveryRequired("Core access lock registry is unavailable".into())
+        })?;
+        if let Some(existing) = access.get_mut(&path) {
+            if existing.exclusive {
+                return Err(PongError::Conflict(
+                    "repository is owned by an active Pong Core process".into(),
+                ));
+            }
+            existing.shared_count += 1;
+            return Ok(Self {
+                path,
+                mode: CoreAccessMode::Shared,
+            });
+        }
+        let file = open_lock_file(&path)?;
+        FileExt::try_lock_shared(&file).map_err(|error| {
+            core_access_lock_error(error, "repository is owned by an active Pong Core process")
+        })?;
+        access.insert(
+            path.clone(),
+            ProcessCoreAccess {
+                _file: file,
+                shared_count: 1,
+                exclusive: false,
+            },
+        );
+        Ok(Self {
+            path,
+            mode: CoreAccessMode::Shared,
+        })
+    }
+
+    fn exclusive(layout: &RepositoryLayout) -> Result<Self, PongError> {
+        ensure_directory(&layout.locks)?;
+        let path = layout.core_owner_lock_path();
+        let mut access = process_core_access().lock().map_err(|_| {
+            PongError::RecoveryRequired("Core access lock registry is unavailable".into())
+        })?;
+        if access.contains_key(&path) {
+            return Err(PongError::Conflict(
+                "repository already has active access; Core ownership requires exclusive startup"
+                    .into(),
+            ));
+        }
+        let file = open_lock_file(&path)?;
+        FileExt::try_lock_exclusive(&file).map_err(|error| {
+            core_access_lock_error(
+                error,
+                "repository already has active access; Core ownership requires exclusive startup",
+            )
+        })?;
+        access.insert(
+            path.clone(),
+            ProcessCoreAccess {
+                _file: file,
+                shared_count: 0,
+                exclusive: true,
+            },
+        );
+        Ok(Self {
+            path,
+            mode: CoreAccessMode::Exclusive,
+        })
+    }
+}
+
+impl Drop for CoreAccessLock {
+    fn drop(&mut self) {
+        let Ok(mut access) = process_core_access().lock() else {
+            return;
+        };
+        let remove = match (self.mode, access.get_mut(&self.path)) {
+            (CoreAccessMode::Shared, Some(existing)) if existing.shared_count > 1 => {
+                existing.shared_count -= 1;
+                false
+            }
+            (CoreAccessMode::Shared, Some(_)) | (CoreAccessMode::Exclusive, Some(_)) => true,
+            (_, None) => false,
+        };
+        if remove {
+            access.remove(&self.path);
+        }
+    }
+}
+
 impl RepositoryLock {
     fn shared(layout: &RepositoryLayout) -> Result<Self, PongError> {
         ensure_directory(&layout.locks)?;
@@ -372,12 +496,19 @@ impl Drop for RepositoryLock {
     }
 }
 
-/// A local Pong repository with its CAS and metadata store already opened.
+/// Local durable Repository handle.
+///
+/// Direct handles are supported for embedded/internal use, tests, and offline
+/// maintenance while no Core owner is active. External Agent Runtimes must use
+/// the protocol path through a single [`Repository::open_as_core_owner`] Core;
+/// multiple Runtime processes directly opening this type are not a supported
+/// concurrency mode.
 pub struct Repository {
     layout: RepositoryLayout,
     marker: RepositoryMarker,
     selector: Option<RepositorySelector>,
     generation_manifest: Option<RepositoryGenerationManifest>,
+    _core_access_lock: Option<CoreAccessLock>,
     _repository_lock: RepositoryLock,
     cas: Cas,
     metadata: MetadataStore,
@@ -459,9 +590,32 @@ impl Repository {
         )
     }
 
-    /// Open an existing repository with the default redaction profile.
+    /// Open an existing repository for embedded/internal direct access.
+    ///
+    /// This is not the supported entry point for an external Agent Runtime. A
+    /// Runtime uses the external Agent protocol, whose Core process owns the
+    /// Repository through [`Repository::open_as_core_owner`].
     pub fn open(root: impl AsRef<Path>) -> Result<Self, PongError> {
         Self::open_with_redactor(root, Redactor::default())
+    }
+
+    /// Open an existing repository as its single long-lived Core owner.
+    ///
+    /// The ownership fence is process-scoped and released automatically when
+    /// the Repository is dropped or the process exits. While held, a second
+    /// Core owner and ordinary direct Repository opens fail closed.
+    pub fn open_as_core_owner(root: impl AsRef<Path>) -> Result<Self, PongError> {
+        let root = existing_project_root(root.as_ref())?;
+        let layout = RepositoryLayout::from_root(root);
+        let mut repository = Self::open_layout(
+            layout.clone(),
+            Redactor::default(),
+            MetadataFailpoints::disabled(),
+            CasFailpoints::disabled(),
+        )?;
+        drop(repository._core_access_lock.take());
+        repository._core_access_lock = Some(CoreAccessLock::exclusive(&layout)?);
+        Ok(repository)
     }
 
     /// Open an existing repository with an explicit redaction profile.
@@ -518,6 +672,23 @@ impl Repository {
         redactor: Redactor,
         metadata_failpoints: MetadataFailpoints,
         cas_failpoints: CasFailpoints,
+    ) -> Result<Self, PongError> {
+        let core_access_lock = CoreAccessLock::shared(&layout)?;
+        Self::open_layout_with_core_access(
+            layout,
+            redactor,
+            metadata_failpoints,
+            cas_failpoints,
+            core_access_lock,
+        )
+    }
+
+    fn open_layout_with_core_access(
+        layout: RepositoryLayout,
+        redactor: Redactor,
+        metadata_failpoints: MetadataFailpoints,
+        cas_failpoints: CasFailpoints,
+        core_access_lock: CoreAccessLock,
     ) -> Result<Self, PongError> {
         let repository_lock = RepositoryLock::shared(&layout)?;
         let root_document = read_repository_root(&layout.marker)?;
@@ -626,6 +797,7 @@ impl Repository {
             marker,
             selector,
             generation_manifest,
+            _core_access_lock: Some(core_access_lock),
             _repository_lock: repository_lock,
             cas,
             metadata,
@@ -783,10 +955,22 @@ fn open_lock_file(path: &Path) -> Result<File, PongError> {
 }
 
 fn lock_error(error: std::io::Error) -> PongError {
-    if error.kind() == std::io::ErrorKind::WouldBlock {
+    if error.kind() == std::io::ErrorKind::WouldBlock
+        || cfg!(windows) && matches!(error.raw_os_error(), Some(32 | 33))
+    {
         PongError::Conflict(
             "repository lock is busy; migration requires an offline repository".into(),
         )
+    } else {
+        PongError::from(error)
+    }
+}
+
+fn core_access_lock_error(error: std::io::Error, busy_message: &str) -> PongError {
+    if error.kind() == std::io::ErrorKind::WouldBlock
+        || cfg!(windows) && matches!(error.raw_os_error(), Some(32 | 33))
+    {
+        PongError::Conflict(busy_message.into())
     } else {
         PongError::from(error)
     }
@@ -1631,12 +1815,14 @@ fn scan_owned_directory(path: &Path, redactor: &Redactor) -> Result<(), PongErro
     for entry in fs::read_dir(path).map_err(PongError::from_protected_io)? {
         let entry = entry.map_err(PongError::from_protected_io)?;
         let child = entry.path();
-        // The active byte-range lock is intentionally unreadable on Windows
-        // while held. It contains no repository data; excluding this one
-        // control file keeps the complete data scan fail-closed without
+        // Active byte-range locks are intentionally unreadable on Windows
+        // while held. They contain no repository data; excluding these
+        // control files keeps the complete data scan fail-closed without
         // confusing an OS lock violation with corruption.
-        if child.file_name().and_then(|name| name.to_str()) == Some(REPOSITORY_LOCK_FILENAME)
-            && path.file_name().and_then(|name| name.to_str()) == Some(LOCKS_DIRNAME)
+        let file_name = child.file_name().and_then(|name| name.to_str());
+        let is_control_lock = file_name == Some(REPOSITORY_LOCK_FILENAME)
+            || file_name == Some(CORE_OWNER_LOCK_FILENAME);
+        if is_control_lock && path.file_name().and_then(|name| name.to_str()) == Some(LOCKS_DIRNAME)
         {
             continue;
         }

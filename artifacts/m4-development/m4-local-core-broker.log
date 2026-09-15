@@ -1,0 +1,80 @@
+M4-010 Local Core Broker / Runtime Session Contract
+date: 2026-09-15
+branch: dev
+base: 8cc153e checkpoint: m4-local-concurrency
+platform: Windows 11 x86_64 NTFS SQLite WAL
+development state: UNCOMMITTED_DEVELOPMENT_TREE
+
+STATUS
+PARTIAL / INTERNAL / FULL-REGRESSION-TEST-GATED
+
+CONTRACT
+One local Core process owns Repository, MetadataStore/SQLite, CAS, Workspace
+filesystem mutation, Operation lifecycle, and recovery entry. Multiple local
+Runtime processes use ephemeral sessions to send unchanged external Agent
+protocol v1.0 requests. Runtime Session is not Agent, Execution, Operation, or
+durable state. Durable Operation.session_id was not repurposed.
+
+IMPLEMENTATION BOUNDARY
+The multi-session broker is a test-only filesystem multiplexing harness. The
+production JSONL process remains one attached stdin/stdout stream and is not a
+multi-client daemon. No HTTP, MCP, remote sync, durable session table, provider
+adapter, authentication service, or protocol v1.0 change was introduced.
+
+REAL-PROCESS SCENARIOS
+- three Runtime processes with distinct Agents, Tasks, and Executions: PASS
+- same Agent across multiple Runtime processes and Executions: PASS
+- same Execution across two Runtime processes: PASS
+- distinct concurrent Operations: PASS
+- one lifecycle winner and one stale REVISION_CONFLICT: PASS
+- Runtime exits after request publication without reading response: PASS
+- another session resolves the durable Operation: PASS
+- invalidated session rejects later requests: PASS
+- graceful stop drains queued request and rejects new connection: PASS
+- started Operation remains started and is not falsely completed: PASS
+- forced Core termination and owner release: PASS
+- replacement Core cold reopen and Runtime reconnect: PASS
+
+FOCUSED AGGREGATE
+command: cargo test --locked --test core_ownership --test local_core_broker
+  --test external_agent_protocol --test external_agent_protocol_transport
+  --test protocol_lifecycle_reconnect --test local_concurrency
+  --test cross_workspace_rollback --test handoff_checkpoint_rollback
+result: PASS, 135 passed, 0 failed, 0 ignored
+
+QUALITY GATES
+cargo fmt --all -- --check: PASS, exit 0
+cargo check --locked: PASS, exit 0
+cargo clippy --all-targets --all-features --locked -- -D warnings: PASS, exit 0
+cargo test --all --locked: FAIL, exit 1
+git diff --check: PASS, exit 0
+
+FULL REGRESSION FAILURE
+test: local_concurrency::real_multi_process_workspace_publications_are_atomic_or_fail_closed
+observation: workspace writer 2 failed closed with
+PermissionDeniedWithOsError raw_os_error 5.
+
+The failing path is the active M4-008 Model A diagnostic in which independent
+processes directly open Repository handles and publish separate Workspaces. It
+is outside the one-Core broker path. Other writers made durable progress; no
+corruption or silent overwrite was reported. Code 5 was not an accepted result
+in the diagnostic, so the test was not weakened, ignored, serialized, or
+reclassified as a pass.
+
+BOUNDARIES
+Production multi-client local transport: NOT_PROVEN.
+External Runtime rollback: NOT_PROVEN / PROTOCOL CAPABILITY GAP.
+Linux/macOS parity: NOT_PROVEN.
+Remote sync: DEFERRED.
+MCP: OPTIONAL ADAPTER / DEFERRED.
+HTTP: DEFERRED.
+Real Claude JSONL: BLOCKED / ENVIRONMENT / provider quota; not rerun.
+
+No checkpoint, tag, push, or history rewrite was performed.
+
+SUBSEQUENT M4-011 DISPOSITION
+M4-011 froze Core-owned access as the supported external Runtime mode, added a
+real-process direct-bypass rejection test, retained code 5 as NOT_PROVEN, and
+passed the final full regression. M4-010 release readiness is PASS under that
+policy. The earlier code 5 failure remains historical evidence for unsupported
+direct multi-process access.

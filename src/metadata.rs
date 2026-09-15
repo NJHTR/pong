@@ -1250,9 +1250,11 @@ fn inject_projection(
 
 /// Local-first transactional metadata and event store.
 ///
-/// The connection is intentionally owned by one repository handle. Callers that
-/// need concurrency must serialize commands at the repository boundary and use
-/// ref/lease compare-and-swap rather than sharing mutable state implicitly.
+/// The connection is intentionally owned by one repository handle. External
+/// Agent Runtimes do not open this store directly; the Core owns it through
+/// [`crate::Repository`]. Embedded/internal callers that need concurrency must
+/// serialize commands at the repository boundary and use ref/lease
+/// compare-and-swap rather than sharing mutable state implicitly.
 pub struct MetadataStore {
     connection: Connection,
     redactor: Redactor,

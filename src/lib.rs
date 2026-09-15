@@ -1,8 +1,9 @@
-//! Pong Core durable primitives.
+//! Pong Core durable state and control primitives.
 //!
-//! This crate intentionally stops below Workspace, Runtime, SDK, and CLI. The
-//! first milestone proves object integrity, transactional metadata, event
-//! ordering, and idempotent recovery before higher-level features depend on it.
+//! External Agent Runtimes use the provider-neutral protocol and a single Core
+//! owner. Direct [`Repository`] access is the embedded/internal Rust API for
+//! library integration, tests, and offline maintenance; it is not a supported
+//! multi-process Runtime transport.
 
 pub(crate) mod atomic_replace;
 pub mod canonical;
