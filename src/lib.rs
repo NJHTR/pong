@@ -9,8 +9,10 @@ pub(crate) mod atomic_replace;
 pub mod canonical;
 pub mod cas;
 pub mod control;
+pub mod core_service;
 pub mod environment;
 pub mod error;
+pub mod http_transport;
 pub mod metadata;
 pub mod protocol;
 pub mod redaction;
@@ -24,8 +26,14 @@ pub use control::{
     RegisterAgentRequest, ReleaseWorkspaceRequest, RenewWorkspaceRequest, SnapshotView, StateView,
     WorkspaceView,
 };
+pub use core_service::{AgentProtocolCore, ProtocolDispatch, ProtocolDispatchError};
 pub use environment::{EnvironmentFacts, ENVIRONMENT_SCHEMA_VERSION};
 pub use error::PongError;
+pub use http_transport::{
+    CredentialGrant, CredentialVerifier, HttpRemoteServer, HttpServerConfig, HttpServerError,
+    StaticCredentialVerifier, DEFAULT_HTTP_MAX_BODY_BYTES, DEFAULT_HTTP_SESSION_TTL_MS,
+    DEFAULT_HTTP_WORKER_THREADS, HTTP_PROTOCOL_PATH,
+};
 pub use metadata::{
     AgentIdentity, CheckpointCreation, CheckpointRecord, EnvironmentRecord, EventEnvelope,
     EventRecord, ExecutionCreation, ExecutionOperationRecord, ExecutionRecord, HandoffCreation,

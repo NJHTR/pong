@@ -8,11 +8,10 @@
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** M4-012 freezes the transport-neutral Remote Agent access
-contract before any HTTP, WebSocket, or MCP implementation. An authenticated
-transport hands an opaque Principal to an ephemeral session boundary, which
-authorizes the asserted Agent before dispatching the unchanged External Agent
-Protocol v1.0 through AgentControl and the single Core owner.
+**Current Task:** M4-013 implements HTTP as the first real remote carrier of the
+frozen External Agent Protocol v1.0. One authenticated `POST /v1/protocol`
+endpoint passes unchanged protocol envelopes through `RemoteAccessBoundary`,
+`ProtocolDispatch`, AgentControl, and the single Core owner.
 
 The contract keeps Connection, Session, Principal, Agent, Execution, and
 Operation identities distinct. Disconnect, timeout, client restart, and Core
@@ -26,6 +25,15 @@ no failures or ignored tests. The combined full regression remains
 `control_layer` diagnostic can still receive Windows lock violation code 33;
 an unchanged focused rerun passed. This does not promote that unsupported
 external access mode or claim a real remote network deployment.
+
+M4-013 adds a development HTTP binary and a synchronous fixed-worker adapter.
+It defaults to loopback, requires authentication, reads credentials from an
+external strict JSON source, rejects implicit non-loopback binding, and keeps
+HTTP status separate from protocol error codes. Sixteen active real TCP tests
+cover startup, authentication, authorization, JSONL equivalence, retry,
+uncertain outcome, reconnect, Core restart, multi-client access,
+lease/revision conflicts, graceful shutdown, and a complete
+Checkpoint/Handoff/Resume continuation.
 
 The production JSONL adapter remains a single attached stdin/stdout stream. It
 is not relabeled as a multi-client daemon. Protocol v1.0 and the durable
@@ -85,14 +93,20 @@ and [`external_agent_protocol.rs`](../../tests/external_agent_protocol.rs).
 binding traversal rejection, complete Runtime A to Runtime B continuation, and
 reconnect through a fresh process. Existing protocol, AgentControl, and M3
 rollback suites remain regression gates. Ignored tests are never counted as
-passes. MCP, HTTP, SDK adapters, remote execution, and production authentication
-remain `NOT_PROVEN`.
+passes. At that checkpoint, MCP, HTTP, SDK adapters, remote execution, and
+production authentication were `NOT_PROVEN`; M4-013 now supersedes only the
+HTTP transport item.
 
-**Next Action:** Review the M4-012 contract checkpoint, then evaluate the first
-concrete remote transport separately against this contract. Production
-credential verification, TLS, rate limits, v1.x negotiation, network behavior,
-and Linux/macOS adapter parity remain `NOT_PROVEN`. Do not infer a transport
-choice from the contract checkpoint; HTTP, WebSocket, and MCP remain deferred.
+**HTTP contract materials:** [`M4_HTTP_REMOTE_TRANSPORT.md`](../architecture/M4_HTTP_REMOTE_TRANSPORT.md),
+[`ADR-M4-013-http-remote-transport.md`](../decisions/ADR-M4-013-http-remote-transport.md),
+and [`http_remote_transport.rs`](../../tests/http_remote_transport.rs).
+
+**Next Action:** Review the M4-013 HTTP transport checkpoint before selecting
+another integration boundary. Production TLS, credential
+distribution/rotation, rate limits, hardened ingress timeouts, v1.x
+negotiation, and Linux/macOS HTTP parity remain `NOT_PROVEN`. WebSocket is
+deferred and MCP remains an optional adapter; neither enters Pong Core.
+
 
 ## M1 Historical Handoff
 

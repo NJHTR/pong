@@ -1,0 +1,108 @@
+{
+  "slice": "M4-013",
+  "date": "2026-09-16",
+  "status": "PASS / WINDOWS LOOPBACK TEST-GATED / PRODUCTION DEPLOYMENT PARTIAL",
+  "branch": "dev",
+  "base_head": "13e4cd9f7c002091b0fb4c5c58eb24834893ac24",
+  "base_subject": "checkpoint: m4-remote-transport-contract",
+  "platform": "Windows 11 x86_64 NTFS SQLite WAL",
+  "implementation": {
+    "endpoint": "POST /v1/protocol",
+    "external_agent_protocol_version": "1.0 unchanged exact match",
+    "http_stack": "tiny_http 0.12 synchronous",
+    "core_dispatch": "ProtocolDispatch -> AgentProtocolCore -> ExternalAgentProtocol",
+    "repository_owners_per_server": 1,
+    "default_listen": "127.0.0.1:8743",
+    "anonymous_mode": false,
+    "non_loopback_requires_explicit_opt_in": true,
+    "default_max_body_bytes": 1048576,
+    "default_worker_threads": 8,
+    "cors_enabled": false,
+    "tls_implemented": false,
+    "mcp_implemented": false,
+    "websocket_implemented": false,
+    "provider_specific_coupling": false
+  },
+  "authentication": {
+    "mechanism": "opaque bearer credential from strict external JSON source",
+    "principal_agent_separation": "PASS",
+    "credential_is_agent_id": false,
+    "credential_persisted_in_pong": false,
+    "expired_credential": "rejected",
+    "production_rotation_revocation_distribution": "NOT_PROVEN"
+  },
+  "status_matrix": {
+    "http_transport": "PASS on Windows loopback",
+    "http_protocol_equivalence": "PASS",
+    "authentication": "PASS for static credential verifier / production identity NOT_PROVEN",
+    "authorization": "PASS",
+    "reconnect": "PASS",
+    "core_restart": "PASS",
+    "multi_client": "PASS functional",
+    "security_defaults": "PASS for local development / production PARTIAL",
+    "provider_neutrality": "PASS",
+    "offline_core": "PASS",
+    "real_local_runtime_http_e2e": "PASS",
+    "real_provider_http_e2e": "NOT_PROVEN / provider environment unavailable",
+    "tls_rate_limits_hardened_ingress_timeout": "NOT_PROVEN",
+    "linux_macos_http_parity": "NOT_PROVEN",
+    "mcp": "OPTIONAL ADAPTER / DEFERRED"
+  },
+  "dedicated_tests": {
+    "command": "cargo test --locked --test http_remote_transport -- --nocapture",
+    "passed": 16,
+    "failed": 0,
+    "ignored": 0,
+    "real_tcp_client": true,
+    "real_http_process": true,
+    "full_checkpoint_handoff_resume": true,
+    "jsonl_equivalence": true
+  },
+  "focused_matrix": {
+    "status": "PASS",
+    "passed": 70,
+    "failed": 0,
+    "ignored": 0,
+    "targets": {
+      "http_remote_transport": 16,
+      "remote_transport_contract": 18,
+      "external_agent_protocol": 9,
+      "external_agent_protocol_transport": 2,
+      "protocol_lifecycle_reconnect": 16,
+      "core_ownership": 2,
+      "local_core_broker": 3,
+      "repository_access_policy": 2,
+      "offline_core_e2e": 1,
+      "security_boundaries": 1
+    }
+  },
+  "quality_gates": {
+    "cargo_fmt_all_check": "PASS / exit 0",
+    "cargo_check_locked": "PASS / exit 0",
+    "cargo_clippy_all_targets_all_features_locked_deny_warnings": "PASS / exit 0",
+    "cargo_test_all_locked": "PASS / exit 0 on final complete run",
+    "git_diff_check": "PASS / exit 0 including staged M4-013 diff"
+  },
+  "full_regression_observations": {
+    "first_attempt": "FAIL / retained M4-008 direct multi-process diagnostic observed Windows raw OS error 5 after successful cold-reopen validation",
+    "focused_local_concurrency_rerun": "PASS / 8 passed / 0 failed / 0 ignored; observed allowed fail-closed code 2 and code 33 outcomes",
+    "final_complete_run": "PASS / exit 0",
+    "tests_ignored_to_obtain_pass": false,
+    "test_concurrency_reduced": false,
+    "corruption_observed": false,
+    "silent_overwrite_observed": false,
+    "http_core_regression_observed": false
+  },
+  "limitations": {
+    "plain_http": "loopback or explicitly trusted development network only",
+    "production_tls_termination": "REQUIRED EXTERNALLY / NOT_PROVEN",
+    "slow_client_read_deadline": "NOT_PROVEN",
+    "streaming": "DEFERRED; durable Operation polling/reconnect is used",
+    "existing_direct_multi_process_repository_path": "NOT_SUPPORTED EXTERNALLY",
+    "real_claude_jsonl_e2e": "BLOCKED / ENVIRONMENT / PROVIDER QUOTA; NOT RERUN"
+  },
+  "checkpoint_subject": "checkpoint: m4-http-remote-transport",
+  "checkpoint_created": true,
+  "tag_created": false,
+  "pushed": false
+}

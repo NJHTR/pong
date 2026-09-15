@@ -60,6 +60,14 @@ pub struct RemoteAccessError {
 }
 
 impl RemoteAccessError {
+    pub fn authentication_required() -> Self {
+        Self::new(
+            RemoteAccessErrorCode::AuthenticationRequired,
+            "caller authentication is required",
+            false,
+        )
+    }
+
     pub fn authentication_failed() -> Self {
         Self::new(
             RemoteAccessErrorCode::AuthenticationFailed,

@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased - M4 HTTP Remote Transport (2026-09-16)
+
+- Added the first real remote transport as one `POST /v1/protocol` endpoint
+  carrying unchanged External Agent Protocol v1.0 requests and responses.
+- Added a synchronous `ProtocolDispatch` Core boundary and fixed-size HTTP
+  worker pool; concurrent clients share one Core-owned Repository rather than
+  opening independent handles.
+- Added external opaque credential verification, per-request Principal/Agent
+  authorization, loopback-only defaults, explicit non-loopback opt-in, bounded
+  request bodies, and wire-safe HTTP/access errors.
+- Added real TCP HTTP tests for protocol equivalence with JSONL, authentication,
+  authorization, retries, uncertain outcomes, reconnect, Core restart, second
+  Core rejection, multi-client access, lease/revision conflicts, graceful
+  shutdown, and full Checkpoint/Handoff/Resume continuation.
+- Did not add REST-shaped domain endpoints, TLS, OAuth/OIDC/JWT, CORS,
+  WebSocket, MCP, provider adapters, cloud sync, or replication.
+
 ## Unreleased - M4 Remote Agent Transport Contract (2026-09-15)
 
 - Added a transport-neutral ephemeral session boundary that accepts an already

@@ -1,0 +1,83 @@
+M4-013 HTTP Remote Transport
+Date: 2026-09-16
+Platform: Windows 11 / NTFS / SQLite WAL
+Base HEAD: 13e4cd9f7c002091b0fb4c5c58eb24834893ac24
+
+RESULT
+PASS / WINDOWS LOOPBACK TEST-GATED / PRODUCTION DEPLOYMENT PARTIAL
+
+IMPLEMENTATION
+- Added one POST /v1/protocol endpoint carrying unchanged External Agent
+  Protocol 1.0 request and response bodies.
+- Added ProtocolDispatch and AgentProtocolCore so HTTP workers never access
+  Repository, SQLite, WorkspaceManager, or Core internals directly.
+- Added a fixed eight-worker synchronous server using tiny_http 0.12.
+- Added an external strict JSON credential source and opaque bearer credential
+  verification that yields Principal plus explicit Agent grants.
+- Added per-request RemoteAccessBoundary authorization. HTTP connection,
+  Principal, Agent, Execution, request, and Operation identities remain distinct.
+- Default bind is 127.0.0.1:8743. Non-loopback binding requires explicit opt-in.
+- Anonymous mode and CORS are absent. Default request body limit is 1 MiB.
+- No HTTP-shaped domain API, TLS implementation, WebSocket, MCP, OAuth/OIDC/JWT,
+  cloud sync, replication, or provider adapter was added.
+
+DEDICATED HTTP SUITE
+PASS cargo test --locked --test http_remote_transport -- --nocapture
+  16 passed, 0 failed, 0 ignored
+  real TCP client: PASS
+  production HTTP child process: PASS
+  authentication and authorization: PASS
+  malformed request and protocol version mismatch: PASS
+  exact retry and uncertain outcome reconnect: PASS
+  Core restart and second Core rejection: PASS
+  three concurrent clients: PASS
+  same-Workspace lease and stale revision: PASS
+  graceful in-flight drain: PASS
+  JSONL semantic equivalence: PASS
+  Agent A -> Checkpoint -> Handoff -> Agent B Resume -> Checkpoint: PASS
+
+FOCUSED MATRIX
+PASS 70 passed, 0 failed, 0 ignored
+  http_remote_transport: 16
+  remote_transport_contract: 18
+  external_agent_protocol: 9
+  external_agent_protocol_transport: 2
+  protocol_lifecycle_reconnect: 16
+  core_ownership: 2
+  local_core_broker: 3
+  repository_access_policy: 2
+  offline_core_e2e: 1
+  security_boundaries: 1
+
+QUALITY GATES
+PASS cargo fmt --all -- --check
+PASS cargo check --locked
+PASS cargo clippy --all-targets --all-features --locked -- -D warnings
+PASS cargo test --all --locked on the final complete run
+PASS git diff --check including staged M4-013 diff
+
+FULL REGRESSION OBSERVATIONS
+- First attempt reached the retained M4-008 direct multi-process Workspace
+  publication diagnostic and observed Windows raw OS error 5. The diagnostic
+  had already verified a successful cold reopen; no corruption or silent
+  overwrite was observed.
+- An unchanged local_concurrency rerun passed 8/8 and retained real fail-closed
+  observations for Windows code 2 and code 33.
+- The subsequent complete cargo test --all --locked run passed with exit 0.
+- No test was ignored, serialized, disabled, or weakened to obtain that pass.
+- The HTTP path retained one Core-owned Repository and did not use unsupported
+  external direct multi-process Repository access.
+
+SECURITY AND DEPLOYMENT BOUNDARY
+- Local development defaults: PASS.
+- Static credential authentication: PASS.
+- Principal-to-Agent and protocol resource authorization: PASS.
+- Plain HTTP is restricted to loopback or explicit trusted-network opt-in.
+- External TLS termination, credential distribution/rotation/revocation, rate
+  limits, and hardened slow-client/read deadlines remain NOT_PROVEN.
+- Linux/macOS HTTP parity remains NOT_PROVEN.
+
+REAL PROVIDER
+Real Claude JSONL E2E remains BLOCKED / ENVIRONMENT because provider quota was
+exhausted. It was not rerun. The unrelated untracked provider test and evidence
+remain excluded from the M4-013 checkpoint.
