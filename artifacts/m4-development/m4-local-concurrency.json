@@ -1,0 +1,54 @@
+{
+  "slice": "M4-008",
+  "status": "PARTIAL / INTERNAL / TEST-GATED",
+  "date": "2026-09-15",
+  "branch": "dev",
+  "base_head": "b2ab8c7dfd1de1d8e4bce1e6c7acfc2da34fb9a0",
+  "base_subject": "checkpoint: m4-offline-first-core",
+  "platform": "Windows 11 x86_64 NTFS SQLite WAL",
+  "toolchain": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)"
+  },
+  "local_multi_runtime_single_core": "PASS",
+  "local_multi_runtime_overall": "PARTIAL",
+  "workspace_concurrency": "PASS semantics / PARTIAL independent-process availability",
+  "execution_concurrency": "PASS",
+  "operation_idempotency": "PASS",
+  "lease_recovery": "PASS",
+  "revision_cas": "PASS",
+  "crash_recovery": "PASS",
+  "multi_process_metadata": "PASS in focused run",
+  "multi_process_workspace": "PARTIAL / WINDOWS IMPLEMENTATION LIMITATION",
+  "remote_sync": "DEFERRED",
+  "focused_local_concurrency": {"passed": 8, "failed": 0, "ignored": 0},
+  "focused_regressions": {
+    "concurrent_execution_cas": "PASS",
+    "parallel_rollback_isolation": "PASS",
+    "handoff_exact_retry": "PASS",
+    "protocol_reconnect": "PASS"
+  },
+  "quality_gates": {
+    "cargo_fmt_check": {"exit_code": 0, "result": "PASS"},
+    "cargo_check_locked": {"exit_code": 0, "result": "PASS"},
+    "cargo_test_all_locked": {"exit_code": 0, "result": "PASS"},
+    "cargo_clippy_all_targets_all_features_locked_deny_warnings": {"exit_code": 0, "result": "PASS"},
+    "git_diff_check": {"exit_code": 0, "result": "PASS"}
+  },
+  "ignored_tests": "Existing development-only and stale contract placeholders remain ignored and were not counted as PASS; M4-008 local_concurrency has 0 ignored tests.",
+  "stress": {
+    "workspace_publication_rounds": 20,
+    "diagnostic_test_failures": 0,
+    "sharing_violation_rounds": 13,
+    "transient_not_found_rounds": 2,
+    "existing_control_test_rounds": 5,
+    "existing_control_test_passes": 4,
+    "existing_control_test_code33_failures": 1
+  },
+  "observed_integrity_failure": false,
+  "observed_silent_overwrite": false,
+  "linux_macos_multi_process_parity": "NOT_PROVEN",
+  "schema_migration": false,
+  "release_tag_created": false,
+  "pushed": false
+}

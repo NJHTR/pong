@@ -8,7 +8,14 @@
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** Pong Core is frozen as an offline-first, local-first,
+**Current Task:** M4-008 freezes local multi-Runtime concurrency semantics.
+Multiple Runtimes through one coordinating Core are supported by durable
+Operation identity, Workspace lease/epoch/expiry, optimistic revision/CAS, and
+SQLite transactions. General independent-process Workspace publication on
+Windows remains `PARTIAL` because active Repository scans intermittently fail
+closed with code 33 or transient code 2.
+
+Pong Core remains frozen as an offline-first, local-first,
 network-independent execution/state/control plane. M4-007 verified the complete
 local durable workflow without network, HTTP, MCP, cloud services, remote DB, or
 external authentication. Remote access remains an optional adapter.
@@ -42,10 +49,11 @@ rollback suites remain regression gates. Ignored tests are never counted as
 passes. MCP, HTTP, SDK adapters, remote execution, and production authentication
 remain `NOT_PROVEN`.
 
-**Next Action:** Specify remote synchronization and transport requirements only
-after the offline Core and security boundaries are reviewed. Do not make HTTP,
-MCP, provider-specific behavior, scheduling, orchestration, or network services
-Core dependencies.
+**Next Action:** Decide and test the local repository access contract: either
+one long-lived Core process brokers all Runtime access, or Repository startup
+and byte scanning are hardened for active multi-process SQLite/CAS writers on
+Windows, Linux, and macOS. Do not introduce remote sync, HTTP, MCP, consensus,
+or replication as a workaround.
 
 ## M1 Historical Handoff
 

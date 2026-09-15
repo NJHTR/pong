@@ -1,0 +1,42 @@
+M4-008 Local Multi-Runtime / Sync Semantics Audit
+date: 2026-09-15
+branch: dev
+base HEAD: b2ab8c7dfd1de1d8e4bce1e6c7acfc2da34fb9a0
+base subject: checkpoint: m4-offline-first-core
+platform: Windows 11 x86_64 NTFS SQLite WAL
+rustc: rustc 1.95.0 (59807616e 2026-04-14)
+cargo: cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+status: PARTIAL / INTERNAL / TEST-GATED
+
+Focused local_concurrency: 8 passed, 0 failed, 0 ignored.
+Execution CAS, rollback isolation, Handoff retry, and reconnect focused tests:
+PASS.
+
+Quality gates:
+cargo fmt --all -- --check: exit 0, PASS
+cargo check --locked: exit 0, PASS
+cargo test --all --locked: exit 0, PASS
+cargo clippy --all-targets --all-features --locked -- -D warnings: exit 0, PASS
+git diff --check: exit 0, PASS
+
+The full regression retained existing ignored development-only and stale
+contract placeholder tests. They were not counted as PASS. The active M4-008
+local_concurrency suite has 0 ignored tests.
+
+20 multi-process Workspace publication stress rounds:
+test failures=0
+sharing violation rounds (code 33)=13
+transient file-not-found rounds (code 2)=2
+
+Existing control_layer three-Workspace publication, 5 rounds:
+passes=4
+code 33 failures=1
+
+Conclusion: multiple Runtimes through one coordinating Core are supported.
+General independent-process Workspace/CAS publication on Windows is PARTIAL;
+writers fail closed and no corruption or silent overwrite was observed.
+Linux/macOS parity is NOT_PROVEN. Remote sync and multi-Pong replication are
+DEFERRED.
+
+No HTTP, MCP, cloud sync, replication, CRDT, consensus, remote DB, schema
+migration, tag, or push.

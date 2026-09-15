@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased - M4 Local Multi-Runtime Concurrency (2026-09-15)
+
+- Defined local concurrent access separately from transport and multi-Pong
+  replication, and froze lease, epoch, revision/CAS, and Operation roles.
+- Added active same-repository and real multi-process tests for lease takeover,
+  stale Execution revision, Operation replay, crash reopen, metadata writers,
+  and Workspace publication.
+- Recorded the Windows boundary honestly: multi-process Workspace/CAS writers
+  intermittently fail closed with sharing violation code 33 or transient code
+  2 during Repository startup scanning. No corruption or silent overwrite was
+  observed; multi-process Workspace availability remains `PARTIAL`.
+
 ## Unreleased - M4 Offline-First Core (2026-09-13)
 
 - Froze Pong Core as offline-first, local-first, self-contained, durable, and
