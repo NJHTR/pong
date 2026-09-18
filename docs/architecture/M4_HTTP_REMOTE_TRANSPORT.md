@@ -1,6 +1,6 @@
-# M4-013 HTTP Remote Transport
+# M4-013 HTTP Remote Transport / M4-014 Production Hardening
 
-**Status:** `IMPLEMENTED / WINDOWS TEST-GATED / PRODUCTION DEPLOYMENT PARTIAL`
+**Status:** `M4-013 IMPLEMENTED / M4-014 HARDENED ADAPTER / WINDOWS TEST-GATED / PRODUCTION DEPLOYMENT PARTIAL`
 
 M4-013 adds HTTP as the first remote carrier of the frozen External Agent
 Protocol v1.0. It does not add an HTTP-shaped domain API.
@@ -58,9 +58,19 @@ not a Pong Session. Reconnect and client restart therefore re-authenticate and
 reconstruct authorization without changing durable Agent, Execution, or
 Operation identity.
 
-This is a minimal static credential mechanism. Credential-file permissions,
-distribution, rotation, revocation, rate limiting, and production identity
-integration remain deployment concerns and are `NOT_PROVEN`.
+This is a minimal provider-neutral credential mechanism. `StaticCredentialVerifier`
+indexes SHA-256 digests in memory and never persists or logs bearer values. The
+development binary accepts only a regular, non-symlink credential file no larger
+than 1 MiB. Unix group/other permission bits must be clear; Windows ACL
+verification is not implemented and remains a deployment prerequisite.
+
+Credential replacement is an atomic in-memory operation. The control command
+`reload-credentials` fully parses and validates the replacement before swapping
+it in. A rotation can add B, then remove A, without cancelling or rewriting any
+durable Execution or Operation. HTTP requests authenticate independently, so new
+requests observe the replacement immediately; an already dispatched request is
+not forcibly cancelled. Production secret-manager distribution and Windows ACL
+parity remain `PARTIAL / NOT_PROVEN`.
 
 ## Network Security Defaults
 
@@ -75,10 +85,17 @@ development networks. Production remote deployment requires external TLS
 termination and policy controls. Pong does not implement cryptography, OAuth,
 OIDC, JWT, or certificate handling in Core.
 
-The selected synchronous HTTP library does not expose an adapter-level
-configurable slow-client/request-read deadline. Client deadlines and operation
-cancellation remain separate; hardened production ingress timeouts and
-backpressure are `NOT_PROVEN`.
+The adapter has configurable request-body and response-size limits, a fixed
+protocol-handler worker count, and an in-memory per-principal fixed-window rate
+limiter. Limiter state is intentionally ephemeral and resets with Core restart.
+The selected `tiny_http` 0.12 listener creates its own connection parser
+`TaskPool`: it starts four threads, grows when all are busy, and has an internal
+unbounded task queue that Pong cannot configure. It also exposes no safe
+adapter-level socket header/body read deadline. Therefore global connection
+concurrency, queue bounding, and slow-client/read-deadline protection are
+`NOT_PROVEN`; production ingress must enforce connection caps, bounded queues,
+header/body read timeouts, idle timeouts, and request deadlines before traffic
+reaches Pong.
 
 ## Error Layers
 
@@ -150,6 +167,11 @@ requests, closes the listener, drops the Core, and releases Repository
 ownership. Process termination relies on the OS owner-lock release and normal
 Repository cold-reopen recovery.
 
+The adapter catches panics at the protocol-handler boundary. A panicking
+request is failed closed and counted; subsequent requests continue through the
+remaining fixed workers. This does not change the `tiny_http` connection
+parser's independent resource behavior.
+
 Development invocation:
 
 ```text
@@ -176,15 +198,22 @@ continued work, and a second Checkpoint.
 | --- | --- |
 | HTTP transport | PASS on Windows loopback |
 | HTTP to Protocol equivalence | PASS |
-| Static credential authentication | PASS / deployment identity NOT_PROVEN |
+| Static credential authentication | PASS / production identity and Windows ACL PARTIAL |
 | Principal/Agent authorization | PASS |
+| Credential rotation/revocation | PASS at adapter contract; production secret operations PARTIAL |
 | Retry and uncertain outcome | PASS |
 | Reconnect | PASS |
 | Core restart | PASS |
 | Multi-client functional behavior | PASS |
 | Same-Workspace lease/revision protection | PASS |
 | Security defaults | PASS for local development / production PARTIAL |
-| TLS, rate limiting, hardened ingress timeout | NOT_PROVEN / deployment boundary |
+| Per-principal in-memory rate limit | PASS for one Core; state resets on restart |
+| Global connection bound / queue bound | NOT_PROVEN (`tiny_http` internal pool) |
+| Slow-client/read deadline | NOT_PROVEN / external ingress requirement |
+| Response-size limit | PASS at adapter boundary |
+| Handler panic isolation | PASS at adapter boundary |
+| Request correlation / metrics | PASS / PARTIAL (runtime snapshot; no durable or secret-bearing logs) |
+| TLS / HTTPS | NOT_PROVEN / external termination required |
 | Provider neutrality | PASS |
 | Offline Core | PASS; HTTP remains optional |
 | Linux/macOS HTTP parity | NOT_PROVEN |
@@ -192,14 +221,13 @@ continued work, and a second Checkpoint.
 
 ## Validation
 
-The dedicated HTTP suite passes 16 active tests with no failures or ignored
-tests. A focused Core/transport/security matrix passes 70 active tests with no
-failures or ignored tests. `cargo fmt`, locked compilation, Clippy with warnings
-denied, and `git diff --check` pass.
+The M4-014 hardening suite passes 10 active tests and the retained M4-013 HTTP
+suite passes 16 active tests, with no failures or ignored tests. `cargo fmt`,
+locked compilation, Clippy with warnings denied, and `git diff --check` pass.
 
-The first full regression attempt reached the retained M4-008 direct
-multi-process diagnostic and observed Windows raw OS error 5 after successful
-cold-reopen validation. An unchanged focused rerun passed while still observing
-defined code 2/code 33 fail-closed outcomes. The subsequent complete
-`cargo test --all --locked` run passed. No test was ignored, serialized, or
-weakened to obtain the final result.
+The M4-014 focused suites pass. A complete `cargo test --all --locked` rerun
+reached the unchanged `agent_execution` suite, then its test process exited
+with Windows `STATUS_HEAP_CORRUPTION (0xc0000374)`. The previously localized
+performance test passes when run unchanged in isolation; no M4-014 HTTP code
+participates in that test. This aggregate-process observation is retained as
+`PARTIAL / ENVIRONMENT` and is not hidden, ignored, serialized, or weakened.

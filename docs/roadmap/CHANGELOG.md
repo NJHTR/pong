@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased - M4 HTTP Production Hardening (2026-09-19)
+
+- Added configurable request-body and response-size limits, fixed protocol
+  handler workers, and a process-local per-principal fixed-window limiter.
+- Added handler panic isolation, runtime request counters, bounded correlation
+  snapshots, and stable secret-free transport errors.
+- Hardened credential loading against symlinks, oversized/invalid files, empty
+  or duplicate grants, and (on Unix) broad group/other permissions. Added
+  atomic `reload-credentials` replacement and explicit revocation semantics.
+- Added real independent-process rotation evidence: credential A is accepted,
+  B is added, A is revoked, and Core ownership plus durable state remain intact.
+- Documented the `tiny_http` connection parser boundary honestly: its internal
+  task pool grows and has no adapter-configurable read/idle deadline. Global
+  connection bounds, queue bounds, and slow-client protection remain
+  `NOT_PROVEN` and require production ingress controls.
+- Added M4-014 architecture and ADR materials without changing Protocol v1.0,
+  Core schema, MCP status, or TLS responsibilities.
+
 ## Unreleased - M4 HTTP Remote Transport (2026-09-16)
 
 - Added the first real remote transport as one `POST /v1/protocol` endpoint

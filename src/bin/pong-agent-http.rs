@@ -3,7 +3,9 @@
 use pong_core::protocol::{WorkspaceBindingError, WorkspaceBindingResolver};
 use pong_core::{
     AgentProtocolCore, CredentialGrant, HttpRemoteServer, HttpServerConfig, Repository,
-    StaticCredentialVerifier, DEFAULT_HTTP_MAX_BODY_BYTES, DEFAULT_HTTP_SESSION_TTL_MS,
+    StaticCredentialVerifier, DEFAULT_HTTP_MAX_BODY_BYTES, DEFAULT_HTTP_MAX_RESPONSE_BYTES,
+    DEFAULT_HTTP_RATE_LIMIT_REQUESTS, DEFAULT_HTTP_RATE_LIMIT_WINDOW_MS,
+    DEFAULT_HTTP_SESSION_TTL_MS, DEFAULT_HTTP_WORKER_THREADS,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -53,6 +55,10 @@ struct Arguments {
     listen_addr: SocketAddr,
     allow_remote_bind: bool,
     max_body_bytes: usize,
+    max_response_bytes: usize,
+    worker_threads: usize,
+    rate_limit_requests: usize,
+    rate_limit_window_ms: i64,
 }
 
 fn parse_arguments() -> Result<Arguments, String> {
@@ -62,6 +68,10 @@ fn parse_arguments() -> Result<Arguments, String> {
     let mut listen_addr = SocketAddr::from(([127, 0, 0, 1], 8743));
     let mut allow_remote_bind = false;
     let mut max_body_bytes = DEFAULT_HTTP_MAX_BODY_BYTES;
+    let mut max_response_bytes = DEFAULT_HTTP_MAX_RESPONSE_BYTES;
+    let mut worker_threads = DEFAULT_HTTP_WORKER_THREADS;
+    let mut rate_limit_requests = DEFAULT_HTTP_RATE_LIMIT_REQUESTS;
+    let mut rate_limit_window_ms = DEFAULT_HTTP_RATE_LIMIT_WINDOW_MS;
     let mut arguments = env::args_os().skip(1);
     while let Some(argument) = arguments.next() {
         match argument.to_str() {
@@ -83,6 +93,18 @@ fn parse_arguments() -> Result<Arguments, String> {
                     .ok_or_else(usage)?;
                 max_body_bytes = value.parse().map_err(|_| usage())?;
             }
+            Some("--max-response-bytes") => {
+                max_response_bytes = required_number(&mut arguments)?;
+            }
+            Some("--worker-threads") => {
+                worker_threads = required_number(&mut arguments)?;
+            }
+            Some("--rate-limit-requests") => {
+                rate_limit_requests = required_number(&mut arguments)?;
+            }
+            Some("--rate-limit-window-ms") => {
+                rate_limit_window_ms = required_number(&mut arguments)?;
+            }
             _ => return Err(usage()),
         }
     }
@@ -93,6 +115,10 @@ fn parse_arguments() -> Result<Arguments, String> {
         listen_addr,
         allow_remote_bind,
         max_body_bytes,
+        max_response_bytes,
+        worker_threads,
+        rate_limit_requests,
+        rate_limit_window_ms,
     })
 }
 
@@ -102,8 +128,18 @@ fn required_path(
     arguments.next().map(PathBuf::from).ok_or_else(usage)
 }
 
+fn required_number<T: std::str::FromStr>(
+    arguments: &mut impl Iterator<Item = std::ffi::OsString>,
+) -> Result<T, String> {
+    arguments
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .and_then(|value| value.parse().ok())
+        .ok_or_else(usage)
+}
+
 fn usage() -> String {
-    "usage: pong-agent-http --repository PATH --workspace-root PATH --credentials-file PATH [--listen IP:PORT] [--allow-remote-bind] [--max-body-bytes BYTES]".into()
+    "usage: pong-agent-http --repository PATH --workspace-root PATH --credentials-file PATH [--listen IP:PORT] [--allow-remote-bind] [--max-body-bytes BYTES] [--max-response-bytes BYTES] [--worker-threads COUNT] [--rate-limit-requests COUNT] [--rate-limit-window-ms MILLISECONDS]".into()
 }
 
 #[derive(Deserialize)]
@@ -121,11 +157,36 @@ struct CredentialFileEntry {
     expires_at_ms: Option<i64>,
 }
 
-fn load_credentials(path: &Path) -> Result<StaticCredentialVerifier, String> {
+const MAX_CREDENTIAL_FILE_BYTES: u64 = 1024 * 1024;
+
+fn load_credentials(path: &Path) -> Result<Vec<CredentialGrant>, String> {
+    let metadata =
+        fs::symlink_metadata(path).map_err(|_| "credential source is unavailable".to_string())?;
+    if !metadata.is_file()
+        || metadata.file_type().is_symlink()
+        || metadata.len() > MAX_CREDENTIAL_FILE_BYTES
+    {
+        return Err("credential source is invalid".into());
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if metadata.permissions().mode() & 0o077 != 0 {
+            return Err("credential source permissions are too broad".into());
+        }
+    }
     let bytes = fs::read(path).map_err(|_| "credential source is unavailable".to_string())?;
+    let grants = file_grants_from_bytes(&bytes)?;
+    StaticCredentialVerifier::new(grants.clone())
+        .map_err(|error| error.to_string())
+        .map(|_| ())?;
+    Ok(grants)
+}
+
+fn file_grants_from_bytes(bytes: &[u8]) -> Result<Vec<CredentialGrant>, String> {
     let file: CredentialFile =
-        serde_json::from_slice(&bytes).map_err(|_| "credential source is invalid".to_string())?;
-    let grants = file
+        serde_json::from_slice(bytes).map_err(|_| "credential source is invalid".to_string())?;
+    Ok(file
         .credentials
         .into_iter()
         .map(|entry| CredentialGrant {
@@ -134,12 +195,14 @@ fn load_credentials(path: &Path) -> Result<StaticCredentialVerifier, String> {
             agent_ids: entry.agent_ids,
             expires_at_ms: entry.expires_at_ms,
         })
-        .collect();
-    StaticCredentialVerifier::new(grants).map_err(|error| error.to_string())
+        .collect())
 }
 
 fn run(arguments: Arguments) -> Result<(), String> {
-    let verifier = Arc::new(load_credentials(&arguments.credentials_file)?);
+    let verifier = Arc::new(
+        StaticCredentialVerifier::new(load_credentials(&arguments.credentials_file)?)
+            .map_err(|error| error.to_string())?,
+    );
     let bindings = LocalBindings::new(&arguments.workspace_root)?;
     let repository = Repository::open_as_core_owner(&arguments.repository).map_err(|error| {
         format!(
@@ -154,9 +217,12 @@ fn run(arguments: Arguments) -> Result<(), String> {
             allow_non_loopback: arguments.allow_remote_bind,
             max_body_bytes: arguments.max_body_bytes,
             session_ttl_ms: DEFAULT_HTTP_SESSION_TTL_MS,
-            worker_threads: pong_core::DEFAULT_HTTP_WORKER_THREADS,
+            worker_threads: arguments.worker_threads,
+            max_response_bytes: arguments.max_response_bytes,
+            rate_limit_requests: arguments.rate_limit_requests,
+            rate_limit_window_ms: arguments.rate_limit_window_ms,
         },
-        verifier,
+        Arc::clone(&verifier) as Arc<dyn pong_core::CredentialVerifier>,
         dispatcher,
     )
     .map_err(|error| error.to_string())?;
@@ -175,6 +241,22 @@ fn run(arguments: Arguments) -> Result<(), String> {
         let line = line.map_err(|_| "HTTP control input could not be read".to_string())?;
         if line.trim().eq_ignore_ascii_case("shutdown") {
             break;
+        }
+        if line.trim().eq_ignore_ascii_case("reload-credentials") {
+            let status = match load_credentials(&arguments.credentials_file).and_then(|grants| {
+                verifier
+                    .replace_grants(grants)
+                    .map_err(|error| error.to_string())
+            }) {
+                Ok(()) => json!({"status": "credentials_reloaded"}),
+                Err(_) => json!({"status": "error", "code": "CREDENTIAL_RELOAD_FAILED"}),
+            };
+            serde_json::to_writer(&mut stdout, &status)
+                .map_err(|_| "HTTP control response could not be written".to_string())?;
+            stdout
+                .write_all(b"\n")
+                .and_then(|_| stdout.flush())
+                .map_err(|_| "HTTP control response could not be written".to_string())?;
         }
     }
     server.shutdown().map_err(|error| error.to_string())

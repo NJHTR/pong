@@ -1,0 +1,94 @@
+M4-014 HTTP Remote Production Hardening
+Date: 2026-09-19
+Platform: Windows 11 10.0.26200.0 / NTFS / SQLite WAL
+Rust: rustc 1.95.0 (59807616e 2026-04-14)
+Cargo: cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+Base HEAD: d37c92f5ee6e67e0b33381c5cbf3bb860c1ea31a
+
+RESULT
+PASS / ADAPTER HARDENED / PRODUCTION DEPLOYMENT PARTIAL
+
+IMPLEMENTED
+- External Agent Protocol v1.0 and the Pong Core schema remain unchanged.
+- Default binding remains loopback; remote binding requires explicit opt-in.
+- Request and response sizes are configurable and bounded.
+- Protocol handlers use a configurable fixed worker count (default 8).
+- A process-local per-principal fixed-window rate limiter protects admitted
+  authenticated traffic and intentionally resets on process restart.
+- Protocol-handler panics are caught, counted, and isolated from later clients.
+- Runtime counters and a bounded 64-entry correlation snapshot cover request,
+  Operation, Principal, Agent, Execution, Workspace, status, and latency.
+- Opaque credentials are indexed by SHA-256 digest and never enter Pong Core.
+- Credential replacement validates first and swaps atomically. New requests see
+  rotation or revocation immediately; admitted requests and durable work are not
+  cancelled or rewritten.
+- The credential file must be a regular non-symlink no larger than 1 MiB. Unix
+  group/other permissions are rejected. Windows ACL enforcement is NOT_PROVEN.
+
+DEPLOYMENT BOUNDARY
+- Plain HTTP is LOCAL DEVELOPMENT / EXPLICITLY TRUSTED NETWORK ONLY.
+- Production remote deployment REQUIRES EXTERNAL TLS TERMINATION.
+- tiny_http 0.12 has an internal dynamically growing connection parser pool
+  and no exposed socket read/idle deadline.
+- Global connection count, parser queue bound, slow-header/body defense, and an
+  end-to-end adapter deadline are NOT_PROVEN.
+- Production ingress must enforce TLS, connection limits, bounded queues,
+  header/body/idle timeouts, and request deadlines.
+
+FOCUSED VERIFICATION
+PASS cargo test --test http_hardening --locked
+  10 passed, 0 failed, 0 ignored
+  Includes real independent pong-agent-http credential rotation and revocation.
+
+PASS cargo test --test http_remote_transport --locked
+  16 passed, 0 failed, 0 ignored
+  Covers authentication, authorization, retry, reconnect, Core restart,
+  concurrency, graceful shutdown, lifecycle, conflicts, and JSONL equivalence.
+
+PASS cargo test --test agent_execution development_performance_sanity_counts_and_depth --locked -- --nocapture
+  1 passed, 0 failed, 42 filtered out
+  DEVELOPMENT_PERFORMANCE_SANITY elapsed_ms=22523
+
+QUALITY GATES
+PASS cargo fmt --all -- --check
+PASS cargo check --locked
+PASS cargo clippy --all-targets --all-features --locked -- -D warnings
+PASS git diff --check
+PARTIAL / ENVIRONMENT cargo test --all --locked
+
+FULL REGRESSION OBSERVATION
+- The full locked regression reached the unchanged agent_execution suite and
+  then its Windows process exited with 0xc0000374 STATUS_HEAP_CORRUPTION.
+- The previously localized unchanged performance test passed in isolation.
+- M4-014 HTTP code does not participate in that test.
+- No test was ignored, serialized, weakened, or deleted.
+
+PRODUCTION READINESS MATRIX
+HTTP CORE: PASS
+PROTOCOL COMPATIBILITY: PASS
+AUTHENTICATION: PASS / PARTIAL
+AUTHORIZATION: PASS
+CREDENTIAL ROTATION: PASS at adapter contract / production operations PARTIAL
+RATE LIMIT: PASS for one Core process
+RESPONSE LIMIT: PASS
+GLOBAL CONNECTION / QUEUE BOUND: NOT_PROVEN
+SLOW CLIENT PROTECTION: NOT_PROVEN
+ERROR LEAKAGE: PASS
+FAILURE ISOLATION: PASS / PARTIAL
+OBSERVABILITY: PASS / PARTIAL
+TLS / HTTPS: NOT_PROVEN / EXTERNAL REQUIREMENT
+WINDOWS: focused HTTP gates PASS; aggregate environment observation retained
+LINUX: NOT_PROVEN
+MACOS: NOT_PROVEN
+REMOTE INTERNET DEPLOYMENT: NOT_PROVEN
+MCP: OPTIONAL ADAPTER / DEFERRED
+
+REAL PROVIDER
+Real Claude JSONL E2E remains BLOCKED / ENVIRONMENT because provider quota was
+exhausted. It was not rerun. The unrelated provider test and evidence remain
+excluded from this checkpoint.
+
+CHECKPOINT
+Subject: checkpoint: m4-http-production-hardening
+Tag: not created
+Push: not performed

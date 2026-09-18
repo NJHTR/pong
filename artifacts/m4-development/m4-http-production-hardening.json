@@ -1,0 +1,157 @@
+{
+  "slice": "M4-014",
+  "date": "2026-09-19",
+  "status": "PASS / ADAPTER HARDENED / PRODUCTION DEPLOYMENT PARTIAL",
+  "branch": "dev",
+  "base_head": "d37c92f5ee6e67e0b33381c5cbf3bb860c1ea31a",
+  "base_subject": "checkpoint: m4-http-remote-transport",
+  "platform": "Windows 11 x86_64 NTFS SQLite WAL",
+  "protocol": {
+    "external_agent_protocol_version": "1.0 unchanged",
+    "http_endpoint": "POST /v1/protocol unchanged",
+    "http_specific_protocol_fields_added": false,
+    "core_schema_changed": false,
+    "provider_specific_coupling_added": false
+  },
+  "status_matrix": {
+    "http_core": "PASS",
+    "protocol_compatibility": "PASS",
+    "authentication": "PASS / production identity and Windows ACL PARTIAL",
+    "authorization": "PASS",
+    "credential_rotation": "PASS at adapter contract / production secret operations PARTIAL",
+    "rate_limit": "PASS for one Core in-memory fixed-window limiter",
+    "response_limit": "PASS",
+    "global_connection_and_queue_bound": "NOT_PROVEN / tiny_http internal connection parser pool",
+    "slow_client_protection": "NOT_PROVEN / production ingress requirement",
+    "error_leakage": "PASS",
+    "failure_isolation": "PASS at protocol-handler boundary / connection parser isolation NOT_PROVEN",
+    "observability": "PASS / PARTIAL / runtime snapshot without production exporter",
+    "tls_https": "NOT_PROVEN / external termination required",
+    "windows": "PASS for focused HTTP gates / aggregate regression environment observation retained",
+    "linux": "NOT_PROVEN",
+    "macos": "NOT_PROVEN",
+    "remote_internet_deployment": "NOT_PROVEN",
+    "mcp": "OPTIONAL ADAPTER / DEFERRED"
+  },
+  "security_boundary": {
+    "default_bind": "127.0.0.1",
+    "non_loopback_bind": "requires explicit allow_non_loopback or --allow-remote-bind",
+    "plain_http": "LOCAL DEVELOPMENT / EXPLICITLY TRUSTED NETWORK ONLY",
+    "production_remote": "REQUIRES EXTERNAL TLS TERMINATION",
+    "authentication_layer": "HTTP credential verifier",
+    "authorization_layer": "RemoteAccessBoundary",
+    "domain_layer": "External Agent Protocol and Pong Core"
+  },
+  "credentials": {
+    "type": "opaque bearer",
+    "in_memory_lookup": "SHA-256 digest",
+    "durable_core_persistence": false,
+    "rotation": "atomic full replacement; add and revoke APIs also available",
+    "rotation_effect": "new requests use replacement immediately; admitted requests continue",
+    "file_limit_bytes": 1048576,
+    "file_rules": "regular non-symlink; strict JSON; nonempty unique valid grants",
+    "unix_permissions": "group and other permission bits rejected",
+    "windows_acl_validation": "NOT_PROVEN",
+    "secret_manager_integration": "NOT_PROVEN"
+  },
+  "resource_boundary": {
+    "default_protocol_workers": 8,
+    "protocol_worker_model": "fixed configurable threads",
+    "default_request_body_limit_bytes": 1048576,
+    "default_response_limit_bytes": 4194304,
+    "default_rate_limit": "120 requests per principal per 60000 ms",
+    "rate_limit_durability": "process-local; resets on restart",
+    "tiny_http_connection_pool": "dynamically growing internal parser TaskPool",
+    "global_connection_limit": "NOT_PROVEN",
+    "listener_queue_bound": "NOT_PROVEN",
+    "read_idle_request_deadlines": "NOT_PROVEN"
+  },
+  "observability": {
+    "counters": [
+      "requests_total",
+      "error_responses",
+      "auth_rejections",
+      "authorization_rejections",
+      "rate_limit_rejections",
+      "payload_rejections",
+      "active_requests",
+      "handler_panics"
+    ],
+    "correlation_capacity": 64,
+    "correlation_fields": [
+      "request_id",
+      "operation_id",
+      "principal_id",
+      "agent_id",
+      "execution_id",
+      "workspace_id",
+      "status",
+      "latency_ms"
+    ],
+    "secret_logging": false,
+    "production_exporter": "NOT_PROVEN"
+  },
+  "focused_tests": {
+    "http_hardening": {
+      "command": "cargo test --test http_hardening --locked",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    "http_remote_transport": {
+      "command": "cargo test --test http_remote_transport --locked",
+      "passed": 16,
+      "failed": 0,
+      "ignored": 0
+    },
+    "localized_windows_test": {
+      "command": "cargo test --test agent_execution development_performance_sanity_counts_and_depth --locked -- --nocapture",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "elapsed_ms_reported": 22523
+    }
+  },
+  "real_process_evidence": {
+    "transport": "independent pong-agent-http process over Windows loopback TCP",
+    "credential_a_initially_accepted": true,
+    "credential_b_added_and_accepted": true,
+    "credential_a_revoked_and_rejected": true,
+    "credential_b_remained_accepted": true,
+    "core_ownership_preserved_during_rotation": true,
+    "ownership_released_after_graceful_shutdown": true,
+    "public_internet_deployment_claimed": false
+  },
+  "quality_gates": {
+    "cargo_fmt_all_check": "PASS / exit 0",
+    "cargo_check_locked": "PASS / exit 0",
+    "cargo_clippy_all_targets_all_features_locked_deny_warnings": "PASS / exit 0",
+    "git_diff_check": "PASS / exit 0",
+    "cargo_test_all_locked": "PARTIAL / ENVIRONMENT / Windows test process exited 0xc0000374"
+  },
+  "full_regression_observation": {
+    "command": "cargo test --all --locked",
+    "result": "PARTIAL / ENVIRONMENT",
+    "process": "tests/agent_execution.rs",
+    "exit": "0xc0000374 STATUS_HEAP_CORRUPTION",
+    "prior_localization": "development_performance_sanity_counts_and_depth",
+    "isolated_rerun": "PASS unchanged / 1 passed / 0 failed / 42 filtered out",
+    "m4_014_http_code_participates": false,
+    "test_ignored_or_weakened": false
+  },
+  "deferred": [
+    "TLS implementation and deployment",
+    "production secret manager",
+    "Windows credential-file ACL validation",
+    "global connection and listener queue bounds",
+    "slow-client and end-to-end request deadlines",
+    "Linux and macOS parity",
+    "Internet deployment",
+    "MCP adapter"
+  ],
+  "real_claude_jsonl": "BLOCKED / ENVIRONMENT / PROVIDER QUOTA; NOT RERUN",
+  "checkpoint_subject": "checkpoint: m4-http-production-hardening",
+  "checkpoint_created": true,
+  "tag_created": false,
+  "pushed": false
+}
