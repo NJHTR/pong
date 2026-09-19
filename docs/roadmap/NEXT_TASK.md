@@ -2,7 +2,7 @@
 
 **Current Phase:** M4 - provider-neutral external protocol boundary
 
-**Current Milestone:** Real remote process validation
+**Current Milestone:** Remote operability and failure semantics
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
@@ -55,6 +55,13 @@ Operation, exact retry, and reconnect semantics.
 Rollback remains `NOT_PROVEN / PROTOCOL CAPABILITY GAP`: External Agent
 Protocol v1.0 has no rollback operation, and this checkpoint does not change
 the frozen contract to expose the internal Core capability.
+
+M4-016 freezes transport, Protocol, durable Operation, and Core failure
+semantics. It adds a bounded 64-entry secret-free diagnostic ring, bounded
+rate-limiter principal tracking, and best-effort shutdown diagnostics without
+changing Protocol v1.0 or Core schema. Operation failure remains a Protocol
+result rather than HTTP 500; disconnect remains unknown/recovery-required
+rather than cancellation.
 
 The `tiny_http` connection parser still uses a dynamically growing internal
 task pool and exposes no configurable socket read/idle deadline. Global
@@ -132,7 +139,7 @@ HTTP transport item.
 [`http_hardening.rs`](../../tests/http_hardening.rs), and
 [`real_remote_e2e.rs`](../../tests/real_remote_e2e.rs).
 
-**Next Action:** Review the M4-015 real remote E2E checkpoint before selecting
+**Next Action:** Review the M4-016 remote operability checkpoint before selecting
 another integration boundary. Production TLS termination, secret-manager
 integration, Windows credential-file ACL validation, global connection/parser
 queue limits, slow-client deadlines, production observability export, Internet

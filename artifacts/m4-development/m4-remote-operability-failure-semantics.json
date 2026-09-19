@@ -1,0 +1,65 @@
+{
+  "slice": "M4-016",
+  "date": "2026-09-20",
+  "status": "PASS / WINDOWS PROCESS-GATED / DEPLOYMENT PARTIAL",
+  "head_before_checkpoint": "11dff8fe3d4227e84460a9a63bae2dea9634cc24",
+  "protocol": "External Agent Protocol v1.0 unchanged",
+  "core_schema_changed": false,
+  "tests": {
+    "remote_failure_semantics": "PASS / 6 tests",
+    "real_remote_e2e": "PASS / 8 tests",
+    "http_hardening": "PASS / 10 tests",
+    "http_remote_transport": "PASS / 16 tests",
+    "focused_matrix": "PASS / 91 tests / 0 failed / 0 ignored",
+    "full_regression": "PARTIAL / pre-existing Windows raw OS code 33",
+    "isolated_control_layer_rerun": "PASS / 1 test"
+  },
+  "proven": {
+    "failure_semantics": "PASS",
+    "unknown_outcome_recovery": "PASS via M4-015 durable resolution",
+    "retry_idempotency": "PASS",
+    "resource_bounds": "PASS for adapter-owned state / global tiny_http bounds NOT_PROVEN",
+    "diagnostic_secret_safety": "PASS",
+    "graceful_shutdown": "PASS",
+    "core_restart": "PASS",
+    "second_core_protection": "PASS",
+    "provider_neutrality": "PASS",
+    "windows": "PASS"
+  },
+  "full_regression_observation": {
+    "test": "control_layer::three_provider_metadata_values_publish_to_isolated_workspaces",
+    "result": "parallel Repository open failed closed",
+    "windows_raw_os_code": 33,
+    "classification": "PRE-EXISTING M4-008 DIRECT-HANDLE ENVIRONMENT BOUNDARY",
+    "isolated_rerun": "PASS",
+    "m4_016_supported_topology_affected": false,
+    "test_weakened_or_ignored": false
+  },
+  "partial_or_not_proven": {
+    "tiny_http_parser_queue": "NOT_PROVEN",
+    "slow_client_deadline": "NOT_PROVEN",
+    "tls_deployment": "NOT_PROVEN",
+    "production_secret_manager": "NOT_PROVEN",
+    "windows_credential_acl": "NOT_PROVEN",
+    "linux": "NOT_PROVEN",
+    "macos": "NOT_PROVEN",
+    "public_internet": "NOT_PROVEN",
+    "mcp": "DEFERRED",
+    "sdk": "DEFERRED"
+  },
+  "commands": [
+    "cargo test --locked --test remote_failure_semantics -- --nocapture",
+    "cargo test --locked --test http_hardening -- --nocapture",
+    "cargo test --locked --test http_remote_transport -- --nocapture",
+    "cargo test --locked --test real_remote_e2e -- --nocapture",
+    "cargo fmt --all -- --check",
+    "cargo check --locked",
+    "cargo clippy --all-targets --all-features --locked -- -D warnings",
+    "git diff --check",
+    "cargo test --all --locked"
+  ],
+  "pushed": false,
+  "tag_created": false,
+  "historical_evidence_overwritten": false,
+  "provider_files_modified": false
+}

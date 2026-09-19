@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased - M4 Remote Operability & Failure Semantics (2026-09-20)
+
+- Froze transport, Protocol, durable Operation, and Core failure semantics
+  without changing External Agent Protocol v1.0 or the Core schema.
+- Added a fixed 64-entry secret-free diagnostic ring with stable auth, authz,
+  rate-limit, malformed, conflict, operation, Core, unknown-outcome, and
+  shutdown categories.
+- Added a configurable capacity for in-memory rate-limiter principal tracking;
+  capacity exhaustion fails closed and is observable in runtime metrics.
+- Added operation-failure, rejection-recovery, bounded-state, secret-safety,
+  and shutdown diagnostic tests.
+- Kept tiny_http slow-client/parser limits, TLS, production secret managers,
+  Linux/macOS, and public Internet deployment explicitly NOT_PROVEN.
+
 ## Unreleased - M4 Real Remote E2E (2026-09-20)
 
 - Added independent `pong-agent-http-client` and `pong-agent-http` process

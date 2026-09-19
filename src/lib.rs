@@ -30,11 +30,13 @@ pub use core_service::{AgentProtocolCore, ProtocolDispatch, ProtocolDispatchErro
 pub use environment::{EnvironmentFacts, ENVIRONMENT_SCHEMA_VERSION};
 pub use error::PongError;
 pub use http_transport::{
-    CredentialGrant, CredentialVerifier, HttpMetricsSnapshot, HttpRemoteServer,
-    HttpRequestCorrelation, HttpServerConfig, HttpServerError, StaticCredentialVerifier,
-    DEFAULT_HTTP_MAX_BODY_BYTES, DEFAULT_HTTP_MAX_RESPONSE_BYTES, DEFAULT_HTTP_RATE_LIMIT_REQUESTS,
-    DEFAULT_HTTP_RATE_LIMIT_WINDOW_MS, DEFAULT_HTTP_SESSION_TTL_MS, DEFAULT_HTTP_WORKER_THREADS,
-    HTTP_PROTOCOL_PATH, MIN_HTTP_MAX_RESPONSE_BYTES,
+    CredentialGrant, CredentialVerifier, HttpDiagnosticEvent, HttpDiagnosticOutcome,
+    HttpMetricsSnapshot, HttpRemoteServer, HttpRequestCorrelation, HttpServerConfig,
+    HttpServerError, StaticCredentialVerifier, DEFAULT_HTTP_MAX_BODY_BYTES,
+    DEFAULT_HTTP_MAX_RESPONSE_BYTES, DEFAULT_HTTP_RATE_LIMIT_MAX_PRINCIPALS,
+    DEFAULT_HTTP_RATE_LIMIT_REQUESTS, DEFAULT_HTTP_RATE_LIMIT_WINDOW_MS,
+    DEFAULT_HTTP_SESSION_TTL_MS, DEFAULT_HTTP_WORKER_THREADS, HTTP_PROTOCOL_PATH,
+    MIN_HTTP_MAX_RESPONSE_BYTES,
 };
 pub use metadata::{
     AgentIdentity, CheckpointCreation, CheckpointRecord, EnvironmentRecord, EventEnvelope,

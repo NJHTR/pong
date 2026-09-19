@@ -1,0 +1,49 @@
+M4-016 REMOTE OPERABILITY & FAILURE SEMANTICS
+Date: 2026-09-20
+Base HEAD: 11dff8fe3d4227e84460a9a63bae2dea9634cc24
+Platform: Windows / loopback TCP / SQLite WAL
+
+RESULT
+PASS / WINDOWS PROCESS-GATED / DEPLOYMENT PARTIAL
+
+IMPLEMENTATION
+- Protocol v1.0 and Core schema unchanged.
+- Transport/protocol/Operation/Core failures retain separate meanings.
+- 64-entry correlation and diagnostic rings are bounded.
+- Per-principal limiter tracking is explicitly bounded and fails closed.
+- Shutdown diagnostics are best-effort and do not block Core owner release.
+
+FOCUSED TESTS
+PASS remote_failure_semantics: 6 passed
+PASS http_hardening: 10 passed
+PASS http_remote_transport: 16 passed
+PASS real_remote_e2e: 8 passed
+PASS external_agent_protocol: 9 passed
+PASS remote_transport_contract: 18 passed
+PASS protocol_lifecycle_reconnect: 16 passed
+PASS core_ownership: 2 passed
+PASS local_core_broker: 3 passed
+PASS repository_access_policy: 2 passed
+PASS offline_core_e2e: 1 passed
+Total: 91 passed, 0 failed, 0 ignored
+
+QUALITY
+PASS cargo fmt --all -- --check
+PASS cargo check --locked
+PASS cargo clippy --all-targets --all-features --locked -- -D warnings
+PASS git diff --check
+
+FULL REGRESSION
+PARTIAL / PRE-EXISTING WINDOWS ENVIRONMENT
+The unchanged M4-008 direct-handle diagnostic
+control_layer::three_provider_metadata_values_publish_to_isolated_workspaces
+received Windows raw OS code 33 during a parallel Repository open. The exact
+unchanged isolated rerun passed 1/1. No test was ignored, deleted, serialized,
+weakened, or assigned to M4-016.
+
+BOUNDARIES
+Linux/macOS, TLS deployment, public Internet, production secret manager,
+Windows credential ACL, tiny_http global parser queue, and slow-client deadline
+remain NOT_PROVEN. MCP and SDK remain DEFERRED.
+
+Provider interoperability untracked files were preserved and not committed.

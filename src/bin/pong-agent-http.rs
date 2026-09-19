@@ -4,8 +4,8 @@ use pong_core::protocol::{WorkspaceBindingError, WorkspaceBindingResolver};
 use pong_core::{
     AgentProtocolCore, CredentialGrant, HttpRemoteServer, HttpServerConfig, Repository,
     StaticCredentialVerifier, DEFAULT_HTTP_MAX_BODY_BYTES, DEFAULT_HTTP_MAX_RESPONSE_BYTES,
-    DEFAULT_HTTP_RATE_LIMIT_REQUESTS, DEFAULT_HTTP_RATE_LIMIT_WINDOW_MS,
-    DEFAULT_HTTP_SESSION_TTL_MS, DEFAULT_HTTP_WORKER_THREADS,
+    DEFAULT_HTTP_RATE_LIMIT_MAX_PRINCIPALS, DEFAULT_HTTP_RATE_LIMIT_REQUESTS,
+    DEFAULT_HTTP_RATE_LIMIT_WINDOW_MS, DEFAULT_HTTP_SESSION_TTL_MS, DEFAULT_HTTP_WORKER_THREADS,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -59,6 +59,7 @@ struct Arguments {
     worker_threads: usize,
     rate_limit_requests: usize,
     rate_limit_window_ms: i64,
+    rate_limit_max_principals: usize,
 }
 
 fn parse_arguments() -> Result<Arguments, String> {
@@ -72,6 +73,7 @@ fn parse_arguments() -> Result<Arguments, String> {
     let mut worker_threads = DEFAULT_HTTP_WORKER_THREADS;
     let mut rate_limit_requests = DEFAULT_HTTP_RATE_LIMIT_REQUESTS;
     let mut rate_limit_window_ms = DEFAULT_HTTP_RATE_LIMIT_WINDOW_MS;
+    let mut rate_limit_max_principals = DEFAULT_HTTP_RATE_LIMIT_MAX_PRINCIPALS;
     let mut arguments = env::args_os().skip(1);
     while let Some(argument) = arguments.next() {
         match argument.to_str() {
@@ -105,6 +107,9 @@ fn parse_arguments() -> Result<Arguments, String> {
             Some("--rate-limit-window-ms") => {
                 rate_limit_window_ms = required_number(&mut arguments)?;
             }
+            Some("--rate-limit-max-principals") => {
+                rate_limit_max_principals = required_number(&mut arguments)?;
+            }
             _ => return Err(usage()),
         }
     }
@@ -119,6 +124,7 @@ fn parse_arguments() -> Result<Arguments, String> {
         worker_threads,
         rate_limit_requests,
         rate_limit_window_ms,
+        rate_limit_max_principals,
     })
 }
 
@@ -139,7 +145,7 @@ fn required_number<T: std::str::FromStr>(
 }
 
 fn usage() -> String {
-    "usage: pong-agent-http --repository PATH --workspace-root PATH --credentials-file PATH [--listen IP:PORT] [--allow-remote-bind] [--max-body-bytes BYTES] [--max-response-bytes BYTES] [--worker-threads COUNT] [--rate-limit-requests COUNT] [--rate-limit-window-ms MILLISECONDS]".into()
+    "usage: pong-agent-http --repository PATH --workspace-root PATH --credentials-file PATH [--listen IP:PORT] [--allow-remote-bind] [--max-body-bytes BYTES] [--max-response-bytes BYTES] [--worker-threads COUNT] [--rate-limit-requests COUNT] [--rate-limit-window-ms MILLISECONDS] [--rate-limit-max-principals COUNT]".into()
 }
 
 #[derive(Deserialize)]
@@ -221,6 +227,7 @@ fn run(arguments: Arguments) -> Result<(), String> {
             max_response_bytes: arguments.max_response_bytes,
             rate_limit_requests: arguments.rate_limit_requests,
             rate_limit_window_ms: arguments.rate_limit_window_ms,
+            rate_limit_max_principals: arguments.rate_limit_max_principals,
         },
         Arc::clone(&verifier) as Arc<dyn pong_core::CredentialVerifier>,
         dispatcher,
@@ -269,7 +276,18 @@ fn run(arguments: Arguments) -> Result<(), String> {
                 .map_err(|_| "HTTP control response could not be written".to_string())?;
         }
     }
-    server.shutdown().map_err(|error| error.to_string())
+    let metrics = server
+        .shutdown_with_metrics()
+        .map_err(|error| error.to_string())?;
+    if serde_json::to_writer(
+        &mut stdout,
+        &json!({"status": "stopped", "metrics": metrics}),
+    )
+    .is_ok()
+    {
+        let _ = stdout.write_all(b"\n").and_then(|_| stdout.flush());
+    }
+    Ok(())
 }
 
 fn main() -> ExitCode {
