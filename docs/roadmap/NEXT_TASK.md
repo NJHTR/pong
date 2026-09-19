@@ -2,16 +2,18 @@
 
 **Current Phase:** M4 - provider-neutral external protocol boundary
 
-**Current Milestone:** External Agent Protocol and local process transport
+**Current Milestone:** Real remote process validation
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** M4-014 hardens the M4-013 HTTP adapter without changing the
-frozen External Agent Protocol v1.0. One authenticated `POST /v1/protocol`
-endpoint passes unchanged protocol envelopes through `RemoteAccessBoundary`,
-`ProtocolDispatch`, AgentControl, and the single Core owner.
+**Current Task:** M4-015 proves the M4-014 adapter through independent OS
+processes without changing the frozen External Agent Protocol v1.0. Separate
+`pong-agent-http-client` processes use real loopback TCP to reach an independent
+`pong-agent-http` process, then pass unchanged envelopes through
+`RemoteAccessBoundary`, `ProtocolDispatch`, AgentControl, and the single Core
+owner.
 
 The contract keeps Connection, Session, Principal, Agent, Execution, and
 Operation identities distinct. Disconnect, timeout, client restart, and Core
@@ -40,6 +42,19 @@ workers, an in-memory per-principal limiter, panic isolation, safe errors,
 runtime correlation/metrics, strict credential-file validation, and atomic
 credential reload. A real independent HTTP process proves credential A -> B
 rotation and A revocation without disturbing Core ownership or durable state.
+
+M4-015 adds eight active process-gated tests using temporary Repository,
+Workspace, and credential directories plus OS-selected loopback ports. The
+suite proves authentication, authorization, failure isolation, resource
+limits, retry, revision refresh, lease conflict, multi-client access, graceful
+shutdown, forced Core restart, second-Core rejection, credential rotation, and
+the complete Version/Checkpoint/Handoff/Resume continuation. A separate HTTP
+and JSONL process scenario compares success, failure, conflicts, missing
+Operation, exact retry, and reconnect semantics.
+
+Rollback remains `NOT_PROVEN / PROTOCOL CAPABILITY GAP`: External Agent
+Protocol v1.0 has no rollback operation, and this checkpoint does not change
+the frozen contract to expose the internal Core capability.
 
 The `tiny_http` connection parser still uses a dynamically growing internal
 task pool and exposes no configurable socket read/idle deadline. Global
@@ -111,14 +126,18 @@ HTTP transport item.
 **HTTP contract materials:** [`M4_HTTP_REMOTE_TRANSPORT.md`](../architecture/M4_HTTP_REMOTE_TRANSPORT.md),
 [`ADR-M4-013-http-remote-transport.md`](../decisions/ADR-M4-013-http-remote-transport.md),
 [`ADR-M4-014-http-production-hardening.md`](../decisions/ADR-M4-014-http-production-hardening.md),
-[`http_remote_transport.rs`](../../tests/http_remote_transport.rs), and
-[`http_hardening.rs`](../../tests/http_hardening.rs).
+[`M4_REAL_REMOTE_E2E.md`](../architecture/M4_REAL_REMOTE_E2E.md),
+[`ADR-M4-015-real-remote-e2e.md`](../decisions/ADR-M4-015-real-remote-e2e.md),
+[`http_remote_transport.rs`](../../tests/http_remote_transport.rs),
+[`http_hardening.rs`](../../tests/http_hardening.rs), and
+[`real_remote_e2e.rs`](../../tests/real_remote_e2e.rs).
 
-**Next Action:** Review the M4-014 HTTP production-hardening checkpoint before
-selecting another integration boundary. Production TLS termination, secret
-manager integration, Windows credential-file ACL validation, global connection
-limits, hardened ingress timeouts, Internet deployment, and Linux/macOS HTTP
-parity remain `NOT_PROVEN`. WebSocket is deferred and MCP remains an optional
+**Next Action:** Review the M4-015 real remote E2E checkpoint before selecting
+another integration boundary. Production TLS termination, secret-manager
+integration, Windows credential-file ACL validation, global connection/parser
+queue limits, slow-client deadlines, production observability export, Internet
+deployment, and Linux/macOS parity remain `NOT_PROVEN`. Rollback remains a
+Protocol v1.0 capability gap. WebSocket is deferred and MCP remains an optional
 adapter; neither enters Pong Core.
 
 

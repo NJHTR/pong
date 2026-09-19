@@ -1,0 +1,132 @@
+M4-015 REAL REMOTE E2E
+Date: 2026-09-20
+Platform: Microsoft Windows NT 10.0.26200.0 / NTFS / SQLite WAL
+Rust: rustc 1.95.0 (59807616e 2026-04-14)
+Cargo: cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+Base HEAD: f8b4212510594133c1fe584172d0867117dd8ee9
+Base subject: checkpoint: m4-http-production-hardening
+
+RESULT
+PASS / WINDOWS PROCESS-GATED / DEPLOYMENT PARTIAL
+
+PROCESS TOPOLOGY
+- The test process owns only temporary fixtures and bounded child supervision.
+- Independent pong-agent-http-client processes open real TCP connections.
+- An independent pong-agent-http process parses HTTP and authenticates each
+  request, then dispatches through RemoteAccessBoundary and unchanged External
+  Agent Protocol v1.0.
+- All HTTP workers share one AgentProtocolCore, one Core owner, and one
+  Repository.
+- No M4-015 request calls a handler, dispatcher, or Core Rust function from the
+  test process.
+
+FOCUSED RUN PORTS
+127.0.0.1:58047
+127.0.0.1:58048
+127.0.0.1:58049
+127.0.0.1:58050
+127.0.0.1:58051
+127.0.0.1:58052
+127.0.0.1:58053
+127.0.0.1:58054
+127.0.0.1:52829
+127.0.0.1:52833
+127.0.0.1:52836
+127.0.0.1:52852
+
+ISOLATION
+- Every case uses a temporary Repository/SQLite database, Workspace root, and
+  credential directory.
+- The server binds 127.0.0.1:0 and reports the selected address after bind.
+- No user Pong data, working Repository, real credential, or user-home file is
+  read or modified.
+- Child stdin is closed first; each process is bounded-waited and reaped. A
+  forced terminate-and-wait exists only as cleanup fallback or an explicit
+  crash-recovery scenario.
+
+REAL PROCESS VERIFICATION
+PASS cargo test --locked --test real_remote_e2e -- --nocapture
+  8 passed, 0 failed, 0 ignored
+  - startup/readiness plus real authenticated HTTP
+  - invalid authentication and Principal/Agent authorization rejection
+  - malformed HTTP, malformed protocol JSON, oversized request isolation
+  - stable secret-free 400/401/403/409/500-class responses
+  - retry/idempotency, revision refresh/retry, lease conflict, missing Operation
+  - three concurrent independent client processes sharing one Core
+  - full Version/Checkpoint/Handoff/Resume/materialize/continuation lifecycle
+  - forced Core restart and durable recovery queries
+  - graceful shutdown, old-listener closure, and ownership release
+  - second independent Core rejection while Core A remains healthy
+  - credential rotation/revocation without cancelling durable work
+  - HTTP/JSONL semantic equivalence through separate processes
+  - transport-local correlation without credentials or Authorization headers
+  - body, response, rate, and fixed protocol-worker limits
+
+PROTOCOL LIFECYCLE
+Agent -> Task -> Execution A -> Operation -> Workspace A -> Snapshot/Version A
+-> Checkpoint A -> Interrupt -> Resume Execution B -> Handoff -> materialize
+-> continuation Version B -> Checkpoint B -> Core restart -> durable queries
+
+Rollback over External Agent Protocol v1.0:
+NOT_PROVEN / PROTOCOL CAPABILITY GAP
+The frozen Protocol v1.0 has no rollback command. No HTTP-specific protocol
+operation or DTO field was added to manufacture a PASS.
+
+FOCUSED REGRESSION MATRIX
+PASS cargo test --locked --test http_hardening -- --nocapture
+  10 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test http_remote_transport -- --nocapture
+  16 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test external_agent_protocol -- --nocapture
+  9 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test remote_transport_contract -- --nocapture
+  18 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test protocol_lifecycle_reconnect -- --nocapture
+  16 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test core_ownership -- --nocapture
+  2 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test local_core_broker -- --nocapture
+  3 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test repository_access_policy -- --nocapture
+  2 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test offline_core_e2e -- --nocapture
+  1 passed, 0 failed, 0 ignored
+
+QUALITY GATES
+PASS cargo fmt --all -- --check
+PASS cargo check --locked
+PASS cargo clippy --all-targets --all-features --locked -- -D warnings
+PASS git diff --check
+
+FULL REGRESSION
+PARTIAL / PRE-EXISTING WINDOWS ENVIRONMENT
+cargo test --all --locked reached the unchanged
+control_layer::three_provider_metadata_values_publish_to_isolated_workspaces
+direct-handle diagnostic. One parallel Repository open failed closed with
+Windows raw OS code 33 (sharing violation). The unchanged isolated rerun passed:
+
+PASS cargo test --locked --test control_layer \
+  three_provider_metadata_values_publish_to_isolated_workspaces -- --nocapture
+  1 passed, 0 failed
+
+No test was deleted, ignored, serialized, weakened, or assigned to M4-015.
+The M4-015 supported single-Core process topology passed all focused gates.
+
+DEPLOYMENT BOUNDARY
+- Plain HTTP: LOCAL DEVELOPMENT / EXPLICITLY TRUSTED NETWORK ONLY.
+- Production remote: REQUIRES EXTERNAL TLS TERMINATION and ingress connection,
+  queue, header/body/idle timeout, and request-deadline controls.
+- Global tiny_http connection/parser queue bound: NOT_PROVEN.
+- Slow-client deadline: NOT_PROVEN.
+- Production secret manager: NOT_PROVEN.
+- Windows credential ACL validation: NOT_PROVEN.
+- Production observability exporter: NOT_PROVEN.
+- Linux parity: NOT_PROVEN.
+- macOS parity: NOT_PROVEN.
+- Public Internet deployment: NOT_PROVEN.
+- MCP: OPTIONAL ADAPTER / DEFERRED.
+
+CHECKPOINT
+Subject: checkpoint: m4-real-remote-e2e
+Tag: not created
+Push: not performed

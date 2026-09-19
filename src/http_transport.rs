@@ -235,6 +235,8 @@ pub struct HttpMetricsSnapshot {
     pub rate_limit_rejections: u64,
     pub payload_rejections: u64,
     pub active_requests: u64,
+    pub peak_active_requests: u64,
+    pub worker_threads: usize,
     pub handler_panics: u64,
     pub recent_requests: Vec<HttpRequestCorrelation>,
 }
@@ -247,12 +249,14 @@ struct HttpMetrics {
     rate_limit_rejections: AtomicU64,
     payload_rejections: AtomicU64,
     active_requests: AtomicU64,
+    peak_active_requests: AtomicU64,
+    worker_threads: usize,
     handler_panics: AtomicU64,
     recent_requests: Mutex<VecDeque<HttpRequestCorrelation>>,
 }
 
 impl HttpMetrics {
-    fn new() -> Self {
+    fn new(worker_threads: usize) -> Self {
         Self {
             requests_total: AtomicU64::new(0),
             error_responses: AtomicU64::new(0),
@@ -261,6 +265,8 @@ impl HttpMetrics {
             rate_limit_rejections: AtomicU64::new(0),
             payload_rejections: AtomicU64::new(0),
             active_requests: AtomicU64::new(0),
+            peak_active_requests: AtomicU64::new(0),
+            worker_threads,
             handler_panics: AtomicU64::new(0),
             recent_requests: Mutex::new(VecDeque::with_capacity(64)),
         }
@@ -275,6 +281,8 @@ impl HttpMetrics {
             rate_limit_rejections: self.rate_limit_rejections.load(Ordering::Relaxed),
             payload_rejections: self.payload_rejections.load(Ordering::Relaxed),
             active_requests: self.active_requests.load(Ordering::Relaxed),
+            peak_active_requests: self.peak_active_requests.load(Ordering::Relaxed),
+            worker_threads: self.worker_threads,
             handler_panics: self.handler_panics.load(Ordering::Relaxed),
             recent_requests: self
                 .recent_requests
@@ -290,6 +298,22 @@ impl HttpMetrics {
                 items.pop_front();
             }
             items.push_back(correlation);
+        }
+    }
+
+    fn request_started(&self) {
+        let active = self.active_requests.fetch_add(1, Ordering::Relaxed) + 1;
+        let mut peak = self.peak_active_requests.load(Ordering::Relaxed);
+        while active > peak {
+            match self.peak_active_requests.compare_exchange_weak(
+                peak,
+                active,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            ) {
+                Ok(_) => break,
+                Err(actual) => peak = actual,
+            }
         }
     }
 }
@@ -375,7 +399,7 @@ impl HttpRemoteServer {
                 config.rate_limit_requests,
                 config.rate_limit_window_ms,
             )),
-            metrics: Arc::new(HttpMetrics::new()),
+            metrics: Arc::new(HttpMetrics::new(config.worker_threads)),
         });
         let stopping = Arc::new(AtomicBool::new(false));
         let workers = (0..config.worker_threads)
@@ -467,10 +491,7 @@ fn validate_config(config: &HttpServerConfig) -> Result<(), HttpServerError> {
 fn handle_request(mut request: Request, state: &HttpState) {
     let started = Instant::now();
     state.metrics.requests_total.fetch_add(1, Ordering::Relaxed);
-    state
-        .metrics
-        .active_requests
-        .fetch_add(1, Ordering::Relaxed);
+    state.metrics.request_started();
     let _active = ActiveRequest {
         metrics: Arc::clone(&state.metrics),
     };

@@ -258,6 +258,16 @@ fn run(arguments: Arguments) -> Result<(), String> {
                 .and_then(|_| stdout.flush())
                 .map_err(|_| "HTTP control response could not be written".to_string())?;
         }
+        if line.trim().eq_ignore_ascii_case("metrics") {
+            let metrics = serde_json::to_value(server.metrics())
+                .map_err(|_| "HTTP metrics could not be serialized".to_string())?;
+            serde_json::to_writer(&mut stdout, &metrics)
+                .map_err(|_| "HTTP control response could not be written".to_string())?;
+            stdout
+                .write_all(b"\n")
+                .and_then(|_| stdout.flush())
+                .map_err(|_| "HTTP control response could not be written".to_string())?;
+        }
     }
     server.shutdown().map_err(|error| error.to_string())
 }

@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased - M4 Real Remote E2E (2026-09-20)
+
+- Added independent `pong-agent-http-client` and `pong-agent-http` process
+  validation over real OS-selected loopback TCP ports. The validation client is
+  binary-private and is not an SDK.
+- Added eight active temporary-fixture E2E tests covering authentication,
+  authorization, malformed input isolation, body/response/rate/worker limits,
+  retry, revision refresh, lease conflict, concurrent clients, reconnect,
+  Core restart, second-Core rejection, graceful shutdown, and credential
+  rotation.
+- Proved the complete Version/Checkpoint/Handoff/Resume/materialize/
+  continuation lifecycle survives a real Core process restart.
+- Added independent HTTP/JSONL process comparison for success, failure,
+  revision and lease conflicts, missing Operations, exact retry, and reconnect.
+- Kept External Agent Protocol v1.0 and the Core schema unchanged. Rollback is
+  recorded as `NOT_PROVEN / PROTOCOL CAPABILITY GAP` because v1.0 exposes no
+  rollback operation.
+- Retained TLS, public Internet, production secret manager, Windows credential
+  ACL, slow-client deadline, tiny_http global parser queue, production metrics
+  exporter, and Linux/macOS parity as explicit `NOT_PROVEN` boundaries. MCP
+  remains optional and deferred.
+
 ## Unreleased - M4 HTTP Production Hardening (2026-09-19)
 
 - Added configurable request-body and response-size limits, fixed protocol
