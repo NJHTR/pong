@@ -2,30 +2,31 @@
 
 **Current Phase:** M4 - provider-neutral external protocol boundary
 
-**Current Milestone:** Windows regression gate stabilization (M4-019)
+**Current Milestone:** Cross-platform / native runtime regression gate (M4-020)
 
-**Current Task:** M4-019 restores the Windows full-regression gate without
-changing Pong's supported ownership architecture. The supported path remains
-one Core owner serving multiple Runtime clients through Protocol v1.0.
-Independent direct Repository access remains `NOT_SUPPORTED`; its negative
-tests now separate deterministic Core-owner rejection from opt-in
-`direct-access-stress` characterization. Startup handles are prepared before
-the in-process publication barrier, child processes are waited before cleanup,
-and cold reopen verifies durable state after every negative scenario. The
-default full suite and current explicit stress run pass on Windows. Exact
-syscall attribution for historical raw code 2 and causality for earlier native
-crash observations remain `NOT_PROVEN`. See
-[`M4_WINDOWS_REGRESSION_GATE.md`](../architecture/M4_WINDOWS_REGRESSION_GATE.md)
-and [`ADR-M4-019-windows-regression-gate.md`](../decisions/ADR-M4-019-windows-regression-gate.md).
+**Current Task:** M4-020 verifies that the frozen Core-owned contract is
+reproducible on native Linux and macOS: Core ownership, lifecycle, durable
+state, lease/revision/CAS, Operation recovery, Protocol v1.0, HTTP remote
+transport, authorization, reconnect, restart, and failure semantics. The
+native workflow is prepared, but this Windows-only session cannot execute
+Linux or macOS jobs. Windows remains PASS; Linux and macOS remain
+`NOT_PROVEN`, so no M4-020 checkpoint is created. See
+[`M4_CROSS_PLATFORM_NATIVE_RUNTIME.md`](../architecture/M4_CROSS_PLATFORM_NATIVE_RUNTIME.md)
+and
+[`ADR-M4-020-cross-platform-native-runtime.md`](../decisions/ADR-M4-020-cross-platform-native-runtime.md).
 
-**Next Action:** Keep the supported Core-owned path as the release gate.
-Treat direct-access stress as characterization only, and do not promote Model
-A to supported architecture. Any future change to Windows ownership or
-cross-platform deployment requires a new scoped task and evidence.
+**Next Action:** Execute `.github/workflows/m4-cross-platform-regression.yml`
+on both native runners, retain complete artifacts, and compare semantic
+outcomes with the Windows matrix. Do not promote Linux/macOS to PASS from
+workflow configuration alone.
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
+
+**Prior task:** M4-019 restored the Windows regression gate without changing
+the single-Core ownership architecture. Model A direct Repository access
+remains `NOT_SUPPORTED`.
 
 **Prior task:** M4-018 froze the existing single trusted collaboration
 domain: registered Agents share Task, detailed Workspace, Version, Checkpoint,

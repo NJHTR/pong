@@ -1,0 +1,72 @@
+{
+  "slice": "M4-020",
+  "date": "2026-09-24",
+  "base_head": "b71798d7b3be144f449deac6fa0ff39eca5fb234",
+  "base_subject": "checkpoint: m4-windows-regression-gate",
+  "status": "BLOCKED / ENVIRONMENT",
+  "production_code_changed": false,
+  "workflow_prepared": true,
+  "workflow_executed_in_this_session": false,
+  "windows_local_validation": {
+    "fmt": "PASS",
+    "check_all_targets_locked": "PASS",
+    "clippy_all_targets_all_features_locked": "PASS",
+    "focused_m4_matrix": "PASS / 94 tests / 0 failed / 0 newly ignored",
+    "full_regression": "PASS / cargo test --all --locked / exit 0"
+  },
+  "platforms": {
+    "windows": {
+      "result": "PASS",
+      "evidence": "M4-019 checkpoint b71798d7b3be144f449deac6fa0ff39eca5fb234"
+    },
+    "linux": {
+      "result": "NOT_PROVEN",
+      "reason": "No native Linux runner is available in the current Windows session"
+    },
+    "macos": {
+      "result": "NOT_PROVEN",
+      "reason": "No native macOS runner is available in the current Windows session"
+    }
+  },
+  "capability_inventory": {
+    "core_owner_lock": "fs2 shared/exclusive lock plus process-local registry",
+    "repository_lock": "shared normal handle and exclusive migration fence",
+    "atomic_replace": {
+      "windows": "MoveFileExW",
+      "linux": "renameat2 RENAME_NOREPLACE",
+      "macos": "renamex_np RENAME_EXCL"
+    },
+    "process_lifecycle": "std::process::Command with platform-specific child termination",
+    "sqlite": "bundled rusqlite WAL and sidecar integrity scans",
+    "http": "tiny_http server and bounded TcpStream client"
+  },
+  "required_commands": [
+    "cargo fmt --all -- --check",
+    "cargo check --all-targets --locked",
+    "cargo clippy --all-targets --all-features --locked -- -D warnings",
+    "focused M4 ownership/lifecycle/protocol/HTTP/authorization matrix",
+    "cargo test --all --locked"
+  ],
+  "semantic_contract": {
+    "protocol_version": "1.0 unchanged",
+    "core_ownership": "one exclusive Core owner; second Core rejected",
+    "cold_reopen": "durable state must remain consistent",
+    "model_a_direct_repository": "NOT_SUPPORTED",
+    "failure_layers": [
+      "transport",
+      "protocol",
+      "authorization",
+      "lease_conflict",
+      "revision_conflict",
+      "operation_failure",
+      "core_unavailable",
+      "shutdown"
+    ]
+  },
+  "historical_native_artifacts": "retained but not accepted as M4-020 current evidence",
+  "mcp": "DEFERRED",
+  "checkpoint_created": false,
+  "pushed": false,
+  "tag_created": false,
+  "provider_untracked_files_preserved": true
+}

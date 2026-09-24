@@ -1,0 +1,30 @@
+M4-020 CROSS-PLATFORM / NATIVE RUNTIME REGRESSION GATE
+Date: 2026-09-24
+Base HEAD: b71798d7b3be144f449deac6fa0ff39eca5fb234
+Base checkpoint: m4-windows-regression-gate
+
+Preparation completed on the Windows host:
+- audited lock, atomic replacement, process lifecycle, SQLite, loopback TCP,
+  HTTP, credentials, and temporary-fixture boundaries
+- added .github/workflows/m4-cross-platform-regression.yml
+- workflow matrix: ubuntu-24.04 and macos-14
+- workflow captures platform/toolchain identity, focused M4 matrix, and full
+  cargo test --all --locked artifacts
+
+Windows local validation at the M4-020 baseline:
+- cargo fmt --all -- --check: PASS
+- cargo check --all-targets --locked: PASS
+- cargo clippy --all-targets --all-features --locked -- -D warnings: PASS
+- focused M4 matrix: PASS, 94 tests, 0 failed, 0 newly ignored
+- cargo test --all --locked: PASS, exit 0
+
+Current platform disposition:
+- Windows: PASS from M4-019 checkpoint
+- Linux: NOT_PROVEN; no native Linux runner executed in this session
+- macOS: NOT_PROVEN; no native macOS runner executed in this session
+
+No production code, Protocol v1.0 DTO, Core schema, or ownership semantics
+changed. Historical M1 native artifacts remain retained but are not relabeled
+as current M4-020 evidence.
+
+Checkpoint: none. Status: BLOCKED / ENVIRONMENT.

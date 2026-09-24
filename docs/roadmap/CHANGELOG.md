@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased - M4 Cross-Platform Native Runtime Regression Gate (2026-09-24)
+
+- Added a dedicated Ubuntu/macOS workflow for the M4 Core ownership,
+  lifecycle, protocol, HTTP, authorization, reconnect, restart, cold-reopen,
+  and full-regression matrix.
+- Recorded the platform capability inventory and kept platform-specific lock,
+  atomic rename, process termination, and cleanup details separate from the
+  frozen semantic contract.
+- Windows remains `PASS` from M4-019. Linux and macOS remain
+  `NOT_PROVEN` because no native runner executed in this Windows-only session.
+- No production code, Protocol v1.0 DTO, Core schema, Model A boundary, MCP,
+  SDK, TLS, or public Internet capability changed. No M4-020 checkpoint was
+  created.
+
 ## Unreleased - M4 Windows Regression Gate (2026-09-24)
 
 - Audited Windows test topology and separated the supported single-Core

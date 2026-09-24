@@ -1,0 +1,201 @@
+name: M4 cross-platform native regression
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "src/**"
+      - "tests/**"
+      - "docs/architecture/M4_CROSS_PLATFORM_NATIVE_RUNTIME.md"
+      - "docs/decisions/ADR-M4-020-cross-platform-native-runtime.md"
+      - ".github/workflows/m4-cross-platform-regression.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  native-regression:
+    name: ${{ matrix.platform }} / stable
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-native
+            artifact: m4-linux-native-regression
+          - os: macos-14
+            platform: macos-native
+            artifact: m4-macos-native-regression
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Capture platform capability inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/platform evidence/logs
+          {
+            printf 'runner_os=%s\n' "${RUNNER_OS}"
+            printf 'runner_arch=%s\n' "${RUNNER_ARCH}"
+            printf 'os_version=%s\n' "$(uname -sr)"
+            printf 'architecture=%s\n' "$(uname -m)"
+            printf 'filesystem_type=%s\n' "$(df -T "${GITHUB_WORKSPACE}" 2>/dev/null | awk 'NR==2 {print $2}' || stat -f '%T' "${GITHUB_WORKSPACE}" 2>/dev/null || printf unknown)"
+            printf 'workspace=%s\n' "${GITHUB_WORKSPACE}"
+            printf 'commit=%s\n' "${GITHUB_SHA}"
+            printf 'run_id=%s\n' "${GITHUB_RUN_ID}"
+            printf 'run_attempt=%s\n' "${GITHUB_RUN_ATTEMPT}"
+          } | tee evidence/platform/platform.txt
+          rustc --version --verbose | tee evidence/platform/rustc.txt
+          cargo --version | tee evidence/platform/cargo.txt
+
+      - name: Run quality gates
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p evidence/build
+          overall=0
+          run_record() {
+            local label="$1"
+            local command="$2"
+            printf '%s\t%s\n' "${label}" "${command}" >> evidence/commands.tsv
+            set +e
+            bash -c "${command}" 2>&1 | tee "evidence/build/${label}.log"
+            local status=${PIPESTATUS[0]}
+            set -e
+            printf '%s\n' "${status}" > "evidence/build/${label}.exit"
+            if [[ "${status}" -ne 0 ]]; then overall=1; fi
+          }
+          run_record fmt 'cargo fmt --all -- --check'
+          run_record check 'cargo check --all-targets --locked'
+          run_record clippy 'cargo clippy --all-targets --all-features --locked -- -D warnings'
+          exit "${overall}"
+
+      - name: Run M4 focused native matrix
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p evidence/logs
+          set +e
+          cargo test --locked \
+            --test core_ownership \
+            --test control_layer \
+            --test local_core_broker \
+            --test local_concurrency \
+            --test repository_access_policy \
+            --test offline_core_e2e \
+            --test operation_ledger \
+            --test handoff_checkpoint_rollback \
+            --test cross_workspace_materialization \
+            --test cross_workspace_diff_restore \
+            --test cross_workspace_rollback \
+            --test version_reference \
+            --test workspace_lifecycle_operation \
+            --test workspace_diff_reconciliation \
+            --test workspace_snapshot \
+            --test workspace_status \
+            --test workspace_version \
+            --test protocol_lifecycle_reconnect \
+            --test external_agent_protocol_transport \
+            --test remote_transport_contract \
+            --test http_remote_transport \
+            --test http_hardening \
+            --test resource_authorization \
+            --test real_remote_e2e \
+            -- --nocapture 2>&1 | tee evidence/logs/m4-focused.log
+          status=${PIPESTATUS[0]}
+          set -e
+          printf '%s\n' "${status}" > evidence/logs/m4-focused.exit
+          exit "${status}"
+
+      - name: Run full native regression
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p evidence/logs
+          set +e
+          cargo test --all --locked 2>&1 | tee evidence/logs/cargo-test-all.log
+          status=${PIPESTATUS[0]}
+          set -e
+          printf '%s\n' "${status}" > evidence/logs/cargo-test-all.exit
+          exit "${status}"
+
+      - name: Build M4 evidence manifest
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("evidence")
+          identity = {}
+          for line in (root / "platform" / "platform.txt").read_text().splitlines():
+              key, value = line.split("=", 1)
+              identity[key] = value
+
+          commands = []
+          command_file = root / "commands.tsv"
+          if command_file.exists():
+              for line in command_file.read_text().splitlines():
+                  label, command = line.split("\t", 1)
+                  exit_path = next(root.rglob(f"{label}.exit"), None)
+                  commands.append({
+                      "label": label,
+                      "command": command,
+                      "exit_code": int(exit_path.read_text().strip()) if exit_path else None,
+                  })
+          for label, path in [
+              ("m4-focused", root / "logs" / "m4-focused.exit"),
+              ("cargo-test-all", root / "logs" / "cargo-test-all.exit"),
+          ]:
+              if path.exists():
+                  commands.append({
+                      "label": label,
+                      "command": "see corresponding workflow step",
+                      "exit_code": int(path.read_text().strip()),
+                  })
+
+          metadata = {
+              "record_version": "m4-cross-platform-native-regression-0.1",
+              "slice": "M4-020",
+              "platform": identity,
+              "rustc": (root / "platform" / "rustc.txt").read_text(),
+              "cargo": (root / "platform" / "cargo.txt").read_text(),
+              "commit": identity.get("commit"),
+              "workflow_run_id": identity.get("run_id"),
+              "workflow_run_attempt": identity.get("run_attempt"),
+              "commands": commands,
+              "contract": {
+                  "core_owner": "one exclusive Core owner; second Core rejected",
+                  "durability": "cold reopen preserves durable state",
+                  "protocol": "External Agent Protocol v1.0 unchanged",
+                  "model_a": "direct multi-process Repository access NOT_SUPPORTED",
+              },
+          }
+          (root / "platform" / "m4-metadata.json").write_text(
+              json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+          )
+          PY
+
+      - name: Upload M4 native evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: evidence
+          if-no-files-found: error
