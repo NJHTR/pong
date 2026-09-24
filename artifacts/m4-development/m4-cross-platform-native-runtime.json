@@ -3,6 +3,8 @@
   "date": "2026-09-24",
   "base_head": "b71798d7b3be144f449deac6fa0ff39eca5fb234",
   "base_subject": "checkpoint: m4-windows-regression-gate",
+  "prepared_head": "36aba9e976065fada8148fddb302cf1554563c75",
+  "prepared_subject": "audit: prepare m4 cross-platform native runtime gate",
   "status": "BLOCKED / ENVIRONMENT",
   "production_code_changed": false,
   "workflow_prepared": true,

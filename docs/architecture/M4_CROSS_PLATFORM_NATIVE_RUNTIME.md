@@ -2,6 +2,7 @@
 
 **Date:** 2026-09-24  
 **Baseline:** `b71798d7b3be144f449deac6fa0ff39eca5fb234`  
+**Preparation commit:** `36aba9e976065fada8148fddb302cf1554563c75`
 **Status:** `BLOCKED / ENVIRONMENT` for Linux and macOS in this local
 Windows-only session.
 

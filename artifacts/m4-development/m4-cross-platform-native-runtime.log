@@ -2,6 +2,7 @@ M4-020 CROSS-PLATFORM / NATIVE RUNTIME REGRESSION GATE
 Date: 2026-09-24
 Base HEAD: b71798d7b3be144f449deac6fa0ff39eca5fb234
 Base checkpoint: m4-windows-regression-gate
+Preparation commit: 36aba9e976065fada8148fddb302cf1554563c75
 
 Preparation completed on the Windows host:
 - audited lock, atomic replacement, process lifecycle, SQLite, loopback TCP,
