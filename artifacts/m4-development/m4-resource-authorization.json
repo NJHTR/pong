@@ -1,0 +1,96 @@
+{
+  "slice": "M4-018",
+  "date": "2026-09-24",
+  "base_head": "28fb4125885955ea50e18f9652eac2502ed88bba",
+  "base_subject": "audit: m4 external capability surface and read authorization gap",
+  "status": "PARTIAL / AUTHORIZATION CONTRACT FROZEN / FULL REGRESSION OPEN",
+  "checkpoint_created": false,
+  "checkpoint_reason": "The full cargo test --all --locked gate failed twice on Windows. One isolated legacy direct-handle concurrency test also failed twice. No green full regression is claimed.",
+  "protocol_version": "1.0 unchanged",
+  "production_code_changed": false,
+  "core_schema_changed": false,
+  "resource_visibility": {
+    "scope": "one trusted collaboration domain per Core, not multi-tenant",
+    "shared_observation": ["agent", "task", "detailed_workspace_and_lease", "version", "checkpoint", "handoff", "relative_path_diff"],
+    "agent_scoped": ["execution_get_and_inspect", "operation_get_and_resolve"],
+    "workspace_owner_agent_persisted": false,
+    "project_membership_grant_persisted": false,
+    "cross_agent_workspace_metadata": "PASS / intentionally shared including head, revision, version head and active lease authority, not only identity",
+    "cross_agent_diff": "PASS / shared relative paths, hashes, sizes and types, no content",
+    "untrusted_multi_tenant_isolation": "NOT_SUPPORTED"
+  },
+  "authorization": {
+    "read": "PASS within declared trusted collaboration domain; no private Workspace read claim",
+    "write": "PASS for foreign Execution/Operation rejection and target-bound lease/revision; Workspace itself has no Agent owner",
+    "control": "PASS for foreign Execution, checkpoint, handoff and materialization rejection; cross-Agent checkpoint Resume intentionally creates a caller-owned Execution",
+    "recovery": "PASS for scoped Operation reconciliation and checkpoint Resume; rollback and arbitrary Restore INTERNAL / external DEFERRED",
+    "diff": "PASS / shared read within trusted domain",
+    "lease": "PASS / mutation coordination, not read ACL",
+    "path_and_info_disclosure": "PASS for internal physical locator/driver and contents omission; relative filenames and caller-authored text are shared, not secret",
+    "capability_discovery": "PASS / global Protocol support, not per-Principal grant",
+    "http_jsonl_authz_equivalence": "PASS / same asserted Agent Protocol outcomes, independent process; JSONL relies on local OS trust, HTTP on credential Principal binding"
+  },
+  "quality_gates": {
+    "cargo_fmt_all_check": "PASS",
+    "cargo_check_locked": "PASS",
+    "cargo_clippy_all_targets_all_features_locked_deny_warnings": "PASS",
+    "git_diff_check": "PASS / only line-ending conversion warnings",
+    "focused_protocol_http_jsonl": "PASS / 72 passed / 0 failed / 0 newly ignored",
+    "focused_security_core_broker_hardening": "PASS / 34 passed / 0 failed / 0 ignored",
+    "new_resource_authorization": "PASS / 9 passed",
+    "real_remote_e2e": "PASS / 9 passed, including 1 new cross-Agent independent-process scenario",
+    "full_regression": "PARTIAL / failed twice on Windows",
+    "agent_execution_isolated_rerun": "PASS / 37 passed / 6 pre-existing ignored",
+    "control_layer_isolated_reruns": "FAIL / raw Windows OS code 2 then code 33"
+  },
+  "full_regression_observations": [
+    {
+      "command": "cargo test --all --locked",
+      "result": "FAIL",
+      "target": "agent_execution",
+      "exit": "0xc0000005 STATUS_ACCESS_VIOLATION",
+      "notes": "Ordinary test output preceding the process exit reported no assertion failure; causation NOT_PROVEN."
+    },
+    {
+      "command": "cargo test --all --locked",
+      "result": "FAIL",
+      "target": "control_layer::three_provider_metadata_values_publish_to_isolated_workspaces",
+      "error": "parallel Repository open: Io(Os { code: 33, kind: Uncategorized, message: Windows file lock })",
+      "notes": "Unchanged M4-008 unsupported independent direct-handle concurrency path."
+    },
+    {
+      "command": "cargo test --locked --test control_layer three_provider_metadata_values_publish_to_isolated_workspaces -- --nocapture",
+      "result": "FAIL on each of two isolated reruns",
+      "raw_os_codes": [2, 33],
+      "notes": "Code 2 is context-dependent and not universally classified as a sharing violation."
+    }
+  ],
+  "commands": [
+    "cargo test --locked --test resource_authorization --test real_remote_e2e -- --nocapture",
+    "cargo fmt --all -- --check",
+    "git diff --check",
+    "cargo check --locked",
+    "cargo clippy --all-targets --all-features --locked -- -D warnings",
+    "cargo test --locked --test resource_authorization --test protocol_capability_matrix --test external_agent_protocol --test external_agent_protocol_transport --test real_remote_e2e --test http_remote_transport --test remote_failure_semantics --test protocol_lifecycle_reconnect -- --nocapture",
+    "cargo test --all --locked",
+    "cargo test --locked --test agent_execution -- --nocapture",
+    "cargo test --all --locked",
+    "cargo test --locked --test control_layer three_provider_metadata_values_publish_to_isolated_workspaces -- --nocapture",
+    "cargo test --locked --test control_layer three_provider_metadata_values_publish_to_isolated_workspaces -- --nocapture",
+    "cargo test --locked --test security_boundaries --test core_ownership --test local_core_broker --test http_hardening --test remote_transport_contract -- --nocapture"
+  ],
+  "platform": {
+    "windows_authorization_focus": "PASS",
+    "windows_full_regression": "PARTIAL",
+    "linux": "NOT_PROVEN",
+    "macos": "NOT_PROVEN",
+    "tls_deployment": "NOT_PROVEN",
+    "public_internet": "NOT_PROVEN"
+  },
+  "mcp": "OPTIONAL / DEFERRED",
+  "sdk": "DEFERRED",
+  "existing_untracked_provider_files_preserved": true,
+  "historical_evidence_overwritten": false,
+  "pushed": false,
+  "tag_created": false
+}

@@ -2093,3 +2093,380 @@ fn real_process_http_jsonl_semantics_cover_conflicts_retry_and_reconnect() {
     assert!(reconnected_jsonl.finish().success());
     assert!(server.graceful_shutdown().success());
 }
+
+fn run_resource_authorization_scenario(
+    workspace_root: &Path,
+    send: &mut impl FnMut(SemanticActor, &Value) -> Value,
+) -> Vec<Value> {
+    let mut outcomes = Vec::new();
+    let mut perform = |actor, request: Value| {
+        let result = send(actor, &request);
+        outcomes.push(protocol_semantics(&result));
+        result
+    };
+    for (actor, agent) in [(SemanticActor::A, AGENT_A), (SemanticActor::B, AGENT_B)] {
+        assert_eq!(
+            perform(
+                actor,
+                request(
+                    Some(agent),
+                    &format!("authz-register-{agent}"),
+                    None,
+                    "register_agent",
+                    Some(json!({
+                        "agent_id": agent,
+                        "provider_metadata": null,
+                        "display_name": null
+                    }))
+                )
+            )["status"],
+            "ok"
+        );
+    }
+    for (id, operation, payload) in [
+        (
+            "task",
+            "create_task",
+            json!({"task_id": TASK, "project_id": PROJECT, "goal_ref": "shared", "context_ref": null}),
+        ),
+        (
+            "workspace",
+            "create_workspace",
+            json!({"workspace_id": WORKSPACE_A, "project_id": PROJECT, "binding_ref": WORKSPACE_A, "branch_ref": null, "environment_id": ENVIRONMENT}),
+        ),
+        (
+            "execution",
+            "create_execution",
+            json!({"execution_id": EXECUTION_A, "task_id": TASK, "parent_execution_id": null, "workspace_id": WORKSPACE_A, "base_version_id": null}),
+        ),
+        (
+            "start",
+            "start_execution",
+            json!({"execution_id": EXECUTION_A, "expected_revision": 0}),
+        ),
+    ] {
+        assert_eq!(
+            perform(
+                SemanticActor::A,
+                request(
+                    Some(AGENT_A),
+                    &format!("authz-{id}"),
+                    None,
+                    operation,
+                    Some(payload)
+                )
+            )["status"],
+            "ok"
+        );
+    }
+    let lease = perform(
+        SemanticActor::A,
+        request(
+            Some(AGENT_A),
+            "authz-lease-a",
+            None,
+            "acquire_workspace_lease",
+            Some(
+                json!({"execution_id": EXECUTION_A, "workspace_id": WORKSPACE_A, "ttl_ms": 60000}),
+            ),
+        ),
+    )["result"]["data"]["authority"]
+        .clone();
+    fs::write(
+        workspace_root.join(WORKSPACE_A).join("authz.txt"),
+        "shared source",
+    )
+    .unwrap();
+    let publication = perform(
+        SemanticActor::A,
+        request(
+            Some(AGENT_A),
+            "authz-publish",
+            Some("authz-publish-operation"),
+            "publish_version",
+            Some(json!({
+                "execution_id": EXECUTION_A,
+                "workspace_id": WORKSPACE_A,
+                "lease": lease,
+                "expected_workspace_revision": 0,
+                "parent_version_id": null,
+                "update_version_head": true
+            })),
+        ),
+    );
+    assert_eq!(publication["status"], "ok", "{publication}");
+    let version = publication["result"]["data"]["version"]["version_id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert_eq!(
+        perform(
+            SemanticActor::A,
+            request(
+                Some(AGENT_A),
+                "authz-checkpoint",
+                None,
+                "create_checkpoint",
+                Some(json!({
+                    "checkpoint_id": CHECKPOINT_A,
+                    "task_id": TASK,
+                    "execution_id": EXECUTION_A,
+                    "workspace_id": WORKSPACE_A,
+                    "version_id": version,
+                    "source_operation_id": "authz-publish-operation",
+                    "reason_code": "ready"
+                }))
+            )
+        )["status"],
+        "ok"
+    );
+    fs::write(
+        workspace_root.join(WORKSPACE_A).join("authz.txt"),
+        "shared changed",
+    )
+    .unwrap();
+    for (id, operation, payload, expected) in [
+        ("task", "get_task", json!({"id": TASK}), "ok"),
+        (
+            "workspace",
+            "get_workspace",
+            json!({"id": WORKSPACE_A}),
+            "ok",
+        ),
+        ("version", "get_version", json!({"id": version}), "ok"),
+        (
+            "checkpoint",
+            "get_checkpoint",
+            json!({"id": CHECKPOINT_A}),
+            "ok",
+        ),
+        (
+            "checkpoints",
+            "list_checkpoints",
+            json!({"task_id": TASK}),
+            "ok",
+        ),
+        ("handoffs", "list_handoffs", json!({"task_id": TASK}), "ok"),
+        (
+            "diff",
+            "diff_workspace_version",
+            json!({"workspace_id": WORKSPACE_A, "source_version_id": version}),
+            "ok",
+        ),
+        (
+            "execution",
+            "get_execution",
+            json!({"id": EXECUTION_A}),
+            "error",
+        ),
+        (
+            "inspect",
+            "inspect_execution",
+            json!({"id": EXECUTION_A}),
+            "error",
+        ),
+        (
+            "operation",
+            "get_operation",
+            json!({"id": "authz-publish-operation"}),
+            "error",
+        ),
+        (
+            "write",
+            "start_execution",
+            json!({"execution_id": EXECUTION_A, "expected_revision": 1}),
+            "error",
+        ),
+        (
+            "lease",
+            "acquire_workspace_lease",
+            json!({"execution_id": EXECUTION_A, "workspace_id": WORKSPACE_A, "ttl_ms": 60000}),
+            "error",
+        ),
+        (
+            "checkpoint-write",
+            "create_checkpoint",
+            json!({
+                "checkpoint_id": "foreign-checkpoint",
+                "task_id": TASK,
+                "execution_id": EXECUTION_A,
+                "workspace_id": WORKSPACE_A,
+                "version_id": version,
+                "source_operation_id": null,
+                "reason_code": "foreign"
+            }),
+            "error",
+        ),
+        (
+            "handoff-write",
+            "create_handoff",
+            json!({
+                "handoff_id": "foreign-handoff",
+                "task_id": TASK,
+                "from_execution_id": EXECUTION_A,
+                "to_execution_id": "missing",
+                "source_version_id": version,
+                "checkpoint_id": CHECKPOINT_A,
+                "reason_code": "foreign"
+            }),
+            "error",
+        ),
+        (
+            "materialize",
+            "materialize_version",
+            json!({
+                "execution_id": EXECUTION_A,
+                "workspace_id": WORKSPACE_A,
+                "source_version_id": version,
+                "lease": lease,
+                "expected_workspace_revision": 2
+            }),
+            "error",
+        ),
+    ] {
+        let response = perform(
+            SemanticActor::B,
+            request(
+                Some(AGENT_B),
+                &format!("authz-{id}-b"),
+                None,
+                operation,
+                Some(payload),
+            ),
+        );
+        assert_eq!(response["status"], expected, "{id}: {response}");
+        if expected == "error" {
+            assert_eq!(response["error"]["code"], "FORBIDDEN", "{id}: {response}");
+        }
+        if id == "workspace" {
+            assert_eq!(response["result"]["data"]["workspace"]["revision"], 2);
+            assert_eq!(
+                response["result"]["data"]["lease"]["authority"]["agent_id"],
+                AGENT_A
+            );
+        }
+        if id == "diff" {
+            assert_eq!(
+                response["result"]["data"]["entries"][0]["path"],
+                "authz.txt"
+            );
+            let rendered = response.to_string();
+            assert!(!rendered.contains(&workspace_root.to_string_lossy().to_string()));
+            assert!(!rendered.contains("shared changed"));
+        }
+    }
+    let forbidden_state = perform(
+        SemanticActor::B,
+        request(
+            Some(AGENT_B),
+            "authz-foreign-checkpoint-query",
+            None,
+            "get_checkpoint",
+            Some(json!({"id": "foreign-checkpoint"})),
+        ),
+    );
+    assert_eq!(forbidden_state["error"]["code"], "NOT_FOUND");
+    let healthy = perform(
+        SemanticActor::A,
+        request(
+            Some(AGENT_A),
+            "authz-owner-after-denials",
+            None,
+            "inspect_execution",
+            Some(json!({"id": EXECUTION_A})),
+        ),
+    );
+    assert_eq!(healthy["status"], "ok");
+    assert_eq!(healthy["result"]["data"]["execution"]["revision"], 1);
+    let resumed = perform(
+        SemanticActor::B,
+        request(
+            Some(AGENT_B),
+            "authz-resume-b",
+            None,
+            "resume_from_checkpoint",
+            Some(json!({
+                "execution_id": EXECUTION_B,
+                "task_id": TASK,
+                "parent_execution_id": EXECUTION_A,
+                "workspace_id": WORKSPACE_A,
+                "checkpoint_id": CHECKPOINT_A
+            })),
+        ),
+    );
+    assert_eq!(resumed["status"], "ok", "{resumed}");
+    let handoff = perform(
+        SemanticActor::A,
+        request(
+            Some(AGENT_A),
+            "authz-owner-handoff",
+            None,
+            "create_handoff",
+            Some(json!({
+                "handoff_id": HANDOFF,
+                "task_id": TASK,
+                "from_execution_id": EXECUTION_A,
+                "to_execution_id": EXECUTION_B,
+                "source_version_id": version,
+                "checkpoint_id": CHECKPOINT_A,
+                "reason_code": "continuation"
+            })),
+        ),
+    );
+    assert_eq!(handoff["status"], "ok", "{handoff}");
+    let shared_handoff = perform(
+        SemanticActor::B,
+        request(
+            Some(AGENT_B),
+            "authz-read-handoff-b",
+            None,
+            "get_handoff",
+            Some(json!({"id": HANDOFF})),
+        ),
+    );
+    assert_eq!(shared_handoff["status"], "ok", "{shared_handoff}");
+    let own_continuation = perform(
+        SemanticActor::B,
+        request(
+            Some(AGENT_B),
+            "authz-own-continuation-b",
+            None,
+            "get_execution",
+            Some(json!({"id": EXECUTION_B})),
+        ),
+    );
+    assert_eq!(own_continuation["status"], "ok", "{own_continuation}");
+    outcomes
+}
+
+#[test]
+fn real_process_cross_agent_authorization_matches_http_and_jsonl() {
+    let http_fixture = Fixture::new();
+    let mut server = ServerProcess::start(&http_fixture, &[]);
+    let mut client_a = ClientProcess::start(server.addr, &http_fixture.credential_a);
+    let mut client_b = ClientProcess::start(server.addr, &http_fixture.credential_b);
+    let http = run_resource_authorization_scenario(
+        http_fixture.workspace_path(),
+        &mut |actor, request| {
+            response(match actor {
+                SemanticActor::A => client_a.send(request),
+                SemanticActor::B => client_b.send(request),
+            })
+        },
+    );
+    assert!(server.is_alive());
+    assert!(client_a.finish().success());
+    assert!(client_b.finish().success());
+    assert!(server.graceful_shutdown().success());
+
+    let jsonl_fixture = Fixture::new();
+    let mut jsonl = JsonlProcess::start(&jsonl_fixture);
+    let jsonl = run_resource_authorization_scenario(
+        jsonl_fixture.workspace_path(),
+        &mut |_actor, request| jsonl.send(request),
+    );
+    assert_eq!(
+        http, jsonl,
+        "HTTP and JSONL diverged on resource authorization"
+    );
+}

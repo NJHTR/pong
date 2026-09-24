@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased - M4 Resource Authorization Closure (2026-09-24)
+
+- Froze registered-Agent shared observation within one trusted Core:
+  `get_workspace` exposes detailed logical state and lease metadata; diff
+  exposes relative names/hash/size metadata, not file content or physical
+  locator. This is not per-Agent Workspace privacy or tenant isolation.
+- Preserved Agent-owned Execution/Operation read and control, target-bound
+  lease/revision mutation, source-owned Handoff and legitimate cross-Agent
+  Checkpoint Resume. `hello` remains global support discovery, not a grant.
+- Added focused authorization tests and independent-process cross-Agent
+  HTTP/JSONL semantic-equivalence coverage. Protocol v1.0, Core schema and
+  production implementation remain unchanged; MCP/SDK remain deferred.
+- Focused tests passed, while full regression remains `PARTIAL` on Windows:
+  one `STATUS_ACCESS_VIOLATION` run and a repeatable unchanged direct-handle
+  `control_layer` failure with raw OS codes 33/2. No checkpoint was created.
+
 ## Unreleased - M4 External Capability Surface Audit (2026-09-24)
 
 - Inventoried Core, AgentControl, Protocol v1.0, JSONL, HTTP, and external

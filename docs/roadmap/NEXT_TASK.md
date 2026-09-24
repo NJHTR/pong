@@ -2,13 +2,30 @@
 
 **Current Phase:** M4 - provider-neutral external protocol boundary
 
-**Current Milestone:** External capability surface closure (M4-017, partial)
+**Current Milestone:** Resource authorization closure (M4-018)
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** M4-017 inventories Core, AgentControl, Protocol v1.0, JSONL,
+**Current Task:** M4-018 freezes the existing single trusted collaboration
+domain: registered Agents share Task, detailed Workspace, Version, Checkpoint,
+Handoff and diff observation, while Execution/Operation visibility and
+control remain Agent-scoped. No per-project tenant isolation or Workspace
+creator/owner is claimed. Cross-Agent reads expose relative diff file names
+and lease metadata, not physical Workspace locator or file contents. HTTP
+and JSONL use the same Protocol authorization, with different ingress trust
+boundaries. See
+[`M4_RESOURCE_AUTHORIZATION.md`](../architecture/M4_RESOURCE_AUTHORIZATION.md)
+and
+[`ADR-M4-018-resource-authorization.md`](../decisions/ADR-M4-018-resource-authorization.md).
+Focused authorization and adjacent matrices pass, but full regression remains
+`PARTIAL` on Windows (`STATUS_ACCESS_VIOLATION` in one run, and the existing
+direct-handle concurrency test's raw OS codes 33/2 in subsequent runs).
+No M4-018 checkpoint is created until the full regression gate is resolved;
+do not weaken, serialize or ignore the failing test to force a green result.
+
+**Prior task:** M4-017 inventories Core, AgentControl, Protocol v1.0, JSONL,
 HTTP, and Runtime capabilities. Rollback remains Core-owned/internal with
 external exposure deferred; arbitrary-destination Restore is internal;
 Version materialization, read-only diff, guarded lease control, and durable
@@ -20,8 +37,9 @@ client/server processes. However, Protocol v1.0 permits any registered Agent
 to read several resource records and perform compatible Workspace diffs by
 ID, without a project-membership or resource-owner read grant. Execution and
 Operation writes remain ownership/lease/revision guarded. The broad OBSERVE
-scope is an explicit `PARTIAL` authorization gate; M4-017's conditional
-checkpoint is not created until that authority is designed and tested.
+scope was an explicit `PARTIAL` authorization gate at M4-017; M4-018 now
+freezes trusted-domain sharing without claiming tenant isolation. M4-017's
+conditional checkpoint remains absent.
 See [`M4_EXTERNAL_CAPABILITY_SURFACE.md`](../architecture/M4_EXTERNAL_CAPABILITY_SURFACE.md)
 and [`ADR-M4-017-external-capability-surface.md`](../decisions/ADR-M4-017-external-capability-surface.md).
 

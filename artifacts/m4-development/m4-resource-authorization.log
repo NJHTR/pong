@@ -1,0 +1,49 @@
+M4-018 EXTERNAL RESOURCE AUTHORIZATION
+Date: 2026-09-24
+Base HEAD: 28fb4125885955ea50e18f9652eac2502ed88bba
+Result: PARTIAL / AUTHORIZATION CONTRACT FROZEN / FULL REGRESSION OPEN
+
+Read-only audit: no persisted Workspace creator/owner or project membership.
+GetWorkspace returns detailed head/revision/state/environment and active lease
+authority. Diff returns relative names, hashes, sizes and types, not contents.
+GetTask, GetVersion, GetCheckpoint, GetHandoff and lists are registered-Agent
+shared observation. Execution/Operation inspect is Agent-scoped. The Core
+does not expose physical Workspace driver/locator on Protocol v1.0 DTOs.
+Decision: one trusted collaboration domain; no untrusted multi-tenant claim.
+No production, Protocol DTO, Core schema, HTTP or JSONL implementation changes.
+
+PASS cargo fmt --all -- --check
+PASS cargo check --locked
+PASS cargo clippy --all-targets --all-features --locked -- -D warnings
+PASS git diff --check (line-ending conversion warnings only)
+
+PASS cargo test --locked --test resource_authorization --test protocol_capability_matrix --test external_agent_protocol --test external_agent_protocol_transport --test real_remote_e2e --test http_remote_transport --test remote_failure_semantics --test protocol_lifecycle_reconnect -- --nocapture
+  72 passed / 0 failed / 0 newly ignored.
+  New resource_authorization: 9 passed.
+  real_remote_e2e: 9 passed, including independent HTTP server, HTTP client
+  processes, JSONL process, cross-Agent shared reads, foreign write/control
+  rejection, continuation Resume/Handoff, and protocol-level outcome comparison.
+
+PASS cargo test --locked --test security_boundaries --test core_ownership --test local_core_broker --test http_hardening --test remote_transport_contract -- --nocapture
+  34 passed / 0 failed / 0 ignored.
+
+FAIL cargo test --all --locked (first run)
+  agent_execution process exited 0xc0000005 STATUS_ACCESS_VIOLATION after
+  normal test output; no assertion failure had been emitted. Cause NOT_PROVEN.
+PASS cargo test --locked --test agent_execution -- --nocapture
+  37 passed / 0 failed / 6 pre-existing ignored.
+
+FAIL cargo test --all --locked (second run)
+  control_layer::three_provider_metadata_values_publish_to_isolated_workspaces
+  parallel Repository open: Windows raw OS code 33 (file sharing lock).
+FAIL cargo test --locked --test control_layer three_provider_metadata_values_publish_to_isolated_workspaces -- --nocapture
+  isolated rerun 1: Windows raw OS code 2 (NotFound).
+FAIL same isolated command
+  isolated rerun 2: Windows raw OS code 33.
+  This test and direct-handle path are unchanged; code 2 is context-dependent.
+  No test was deleted, newly ignored, serialized or run at reduced concurrency.
+
+No m4-resource-authorization-closure checkpoint: full regression gate failed.
+Linux/macOS, actual TLS and public Internet deployment remain NOT_PROVEN.
+MCP and SDK remain DEFERRED. Existing three untracked provider/Windows files
+were preserved. No push; no tag; no historical checkpoint modification.
