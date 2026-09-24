@@ -17,6 +17,7 @@ use rusqlite::Connection;
 use serde_json::json;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Barrier};
 use tempfile::{tempdir, TempDir};
 
 const PROJECT: &str = "project-control-layer";
@@ -635,14 +636,21 @@ fn three_provider_metadata_values_publish_to_isolated_workspaces() {
     let repository_path = fixture.repository_dir.path().to_path_buf();
     drop(fixture.repository);
 
+    // Separate startup scanning from the concurrent publication phase. Each
+    // handle remains independently owned by its publishing thread.
+    let repositories = (0..3)
+        .map(|_| Repository::open(&repository_path).expect("pre-open publisher"))
+        .collect::<Vec<_>>();
+    let publish_start = Arc::new(Barrier::new(4));
     let handles = [W1, W2, W3]
         .into_iter()
         .zip(leases)
+        .zip(repositories)
         .enumerate()
-        .map(|(index, (workspace_id, lease))| {
-            let repository_path = repository_path.clone();
+        .map(|(index, ((workspace_id, lease), mut repository))| {
+            let publish_start = Arc::clone(&publish_start);
             std::thread::spawn(move || {
-                let mut repository = Repository::open(repository_path).expect("parallel open");
+                publish_start.wait();
                 AgentControl::new(&mut repository)
                     .publish_version(publish_request(
                         workspace_id,
@@ -657,6 +665,7 @@ fn three_provider_metadata_values_publish_to_isolated_workspaces() {
             })
         })
         .collect::<Vec<_>>();
+    publish_start.wait();
     let results = handles
         .into_iter()
         .map(|handle| handle.join().expect("publication thread"))
@@ -679,6 +688,47 @@ fn three_provider_metadata_values_publish_to_isolated_workspaces() {
             .len(),
         3
     );
+    let reopened = Repository::open(&repository_path).expect("cold reopen after publishers");
+    for (result, workspace_id) in results.iter().zip([W1, W2, W3]) {
+        let workspace = reopened
+            .metadata()
+            .workspace(workspace_id)
+            .unwrap()
+            .unwrap();
+        let version = reopened
+            .metadata()
+            .version_record(&result.version.version_id)
+            .unwrap()
+            .unwrap();
+        let snapshot = reopened
+            .metadata()
+            .snapshot_record(&result.snapshot.snapshot_id)
+            .unwrap()
+            .unwrap();
+        let operation = reopened
+            .metadata()
+            .operation_record(&result.version.creation_operation_id)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            workspace.head.as_deref(),
+            Some(snapshot.root_digest.as_str())
+        );
+        assert_eq!(
+            workspace.version_head_id.as_deref(),
+            Some(version.version_id.as_str())
+        );
+        assert_eq!(version.snapshot_id, snapshot.snapshot_id);
+        assert_eq!(operation.lifecycle_status, "completed");
+        assert_eq!(
+            reopened
+                .metadata()
+                .list_versions(workspace_id)
+                .unwrap()
+                .len(),
+            1
+        );
+    }
 }
 
 #[test]

@@ -14,6 +14,9 @@ resolver = "2"
 name = "pong_core"
 path = "src/lib.rs"
 
+[features]
+direct-access-stress = []
+
 [dependencies]
 fs2 = "0.4"
 libc = "0.2"

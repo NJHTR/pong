@@ -1,0 +1,85 @@
+{
+  "slice": "M4-019",
+  "date": "2026-09-24",
+  "base_head": "7a12ed2b4dac2170f5dae64156c9bc58cc7e3b0b",
+  "base_subject": "audit: freeze m4 resource authorization trusted-domain contract",
+  "status": "PASS / WINDOWS REGRESSION GATE RESTORED",
+  "checkpoint_created": true,
+  "checkpoint_reason": "All M4-019 quality gates passed on Windows; checkpoint commit is created after this evidence update.",
+  "checkpoint_commit_message": "checkpoint: m4-windows-regression-gate",
+  "supported_product_path": "single Core owner -> Protocol -> multiple Runtime clients -> Repository",
+  "model_a_direct_repository_access": "NOT_SUPPORTED",
+  "changes": [
+    "pre-open Repository handles before the control-layer publication barrier",
+    "retain simultaneous publication to three isolated Workspaces",
+    "add cold-reopen integrity assertions for Workspace/Version/Snapshot/Operation",
+    "add deterministic direct-writer rejection with an active Core owner",
+    "add child wait/cleanup guard and OPEN/WRITE/SNAPSHOT failure-stage evidence",
+    "make unsupported direct-access stress opt-in via direct-access-stress feature"
+  ],
+  "environment": {
+    "os": "Windows NT 10.0.26200.0",
+    "rustc": "1.95.0 (59807616e 2026-04-14)",
+    "cargo": "1.95.0 (f2d3ce0bd 2026-03-21)"
+  },
+  "test_isolation": {
+    "repository": "per-test tempfile",
+    "sqlite": "inside per-test repository",
+    "workspace": "per-test tempfile",
+    "children": "waited before cold reopen and cleanup",
+    "fixed_production_path_used": false
+  },
+  "results": {
+    "focused_control_core_ownership_local_concurrency_policy": "PASS",
+    "focused_remote_http_security_broker_matrix": "PASS",
+    "direct_access_stress_current": {
+      "command": "cargo test --locked --features direct-access-stress --test local_concurrency -- --nocapture",
+      "result": "PASS",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0,
+      "observed_writer_outcome": "all four writers durable; all three workspace publications durable"
+    },
+    "full_regression": {
+      "command": "cargo test --all --locked",
+      "result": "PASS",
+      "exit_code": 0,
+      "concurrency": "default Cargo test concurrency"
+    }
+  },
+  "historical_observations": {
+    "code_2": "observed historically at Repository OPEN during direct-handle contention; exact syscall NOT_PROVEN",
+    "code_5": "not reproduced in the M4-019 reruns; ACL denial versus access/share race remains NOT_PROVEN",
+    "code_32": "known Windows sharing violation in prior evidence; not globally accepted",
+    "code_33": "observed historically at OPEN/scan contention; not globally accepted",
+    "status_access_violation": "historical M4-018 full-run observation; isolated rerun passed; causality NOT_PROVEN",
+    "status_heap_corruption": "historical M4-009/M4-014 evidence; not reproduced in the M4-019 full regression; causality NOT_PROVEN"
+  },
+  "matrix": {
+    "single_repository_open": "PASS",
+    "same_process_concurrent_handles": "PASS",
+    "single_core_owner": "PASS",
+    "multiple_runtime_via_core": "PASS",
+    "second_core": "REJECT",
+    "direct_access_fail_closed_with_core_owner": "PASS",
+    "direct_access_stress": "CHARACTERIZATION / PASS THIS RUN",
+    "core_restart": "PASS",
+    "runtime_restart": "PASS",
+    "windows": "PASS",
+    "linux": "NOT_PROVEN",
+    "macos": "NOT_PROVEN",
+    "tls_deployment": "NOT_PROVEN",
+    "public_internet": "NOT_PROVEN",
+    "mcp": "DEFERRED"
+  },
+  "quality_gates": {
+    "fmt": "PASS",
+    "check": "PASS",
+    "clippy": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "provider_untracked_files_preserved": true,
+  "historical_evidence_overwritten": false,
+  "pushed": false,
+  "tag_created": false
+}

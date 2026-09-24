@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased - M4 Windows Regression Gate (2026-09-24)
+
+- Audited Windows test topology and separated the supported single-Core
+  ownership path from unsupported direct Repository multi-process access.
+- Prepared independent Repository handles before the control-layer publication
+  barrier, retained true simultaneous publication, and added cold-reopen
+  Workspace/Version/Snapshot/Operation integrity assertions.
+- Added deterministic Core-owner rejection coverage with child wait/cleanup
+  guards and explicit `OPEN`/`WRITE`/`SNAPSHOT` failure-stage reporting.
+- Kept direct-access race diagnostics active behind the explicit
+  `direct-access-stress` feature; the current run passed 9/9, while historical
+  Windows code 2/33 and native crash observations remain characterized rather
+  than reclassified.
+- `cargo test --all --locked` passed with default concurrency on Windows.
+  Linux/macOS parity, TLS, public Internet deployment and MCP remain
+  `NOT_PROVEN`/`DEFERRED` as previously documented.
+
 ## Unreleased - M4 Resource Authorization Closure (2026-09-24)
 
 - Froze registered-Agent shared observation within one trusted Core:

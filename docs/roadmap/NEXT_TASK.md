@@ -2,13 +2,32 @@
 
 **Current Phase:** M4 - provider-neutral external protocol boundary
 
-**Current Milestone:** Resource authorization closure (M4-018)
+**Current Milestone:** Windows regression gate stabilization (M4-019)
+
+**Current Task:** M4-019 restores the Windows full-regression gate without
+changing Pong's supported ownership architecture. The supported path remains
+one Core owner serving multiple Runtime clients through Protocol v1.0.
+Independent direct Repository access remains `NOT_SUPPORTED`; its negative
+tests now separate deterministic Core-owner rejection from opt-in
+`direct-access-stress` characterization. Startup handles are prepared before
+the in-process publication barrier, child processes are waited before cleanup,
+and cold reopen verifies durable state after every negative scenario. The
+default full suite and current explicit stress run pass on Windows. Exact
+syscall attribution for historical raw code 2 and causality for earlier native
+crash observations remain `NOT_PROVEN`. See
+[`M4_WINDOWS_REGRESSION_GATE.md`](../architecture/M4_WINDOWS_REGRESSION_GATE.md)
+and [`ADR-M4-019-windows-regression-gate.md`](../decisions/ADR-M4-019-windows-regression-gate.md).
+
+**Next Action:** Keep the supported Core-owned path as the release gate.
+Treat direct-access stress as characterization only, and do not promote Model
+A to supported architecture. Any future change to Windows ownership or
+cross-platform deployment requires a new scoped task and evidence.
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** M4-018 freezes the existing single trusted collaboration
+**Prior task:** M4-018 froze the existing single trusted collaboration
 domain: registered Agents share Task, detailed Workspace, Version, Checkpoint,
 Handoff and diff observation, while Execution/Operation visibility and
 control remain Agent-scoped. No per-project tenant isolation or Workspace

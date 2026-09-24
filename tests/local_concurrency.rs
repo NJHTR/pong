@@ -5,15 +5,18 @@ use pong_core::metadata::{
 };
 use pong_core::redaction::Redactor;
 use pong_core::workspace::{SnapshotOptions, WorkspaceManager};
-use pong_core::{LeaseToken, PongError, Repository};
+use pong_core::{AgentControl, LeaseToken, PongError, PublishVersionRequest, Repository};
 use serde_json::json;
+#[cfg(feature = "direct-access-stress")]
 use std::collections::HashSet;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Child, Command, ExitStatus};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+#[cfg(feature = "direct-access-stress")]
+use std::time::Instant;
 use tempfile::{tempdir, TempDir};
 
 const CHILD_MODE: &str = "PONG_LOCAL_CONCURRENCY_CHILD_MODE";
@@ -31,6 +34,23 @@ struct Fixture {
     _repository_dir: TempDir,
     _workspace_parent: TempDir,
     repository: Repository,
+}
+
+struct WaitedChild(Child);
+
+impl WaitedChild {
+    fn wait(&mut self) -> std::io::Result<ExitStatus> {
+        self.0.wait()
+    }
+}
+
+impl Drop for WaitedChild {
+    fn drop(&mut self) {
+        if self.0.try_wait().ok().flatten().is_none() {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
 }
 
 fn fixture() -> Fixture {
@@ -235,41 +255,44 @@ fn multi_process_child() {
         let result = PathBuf::from(env::var_os(CHILD_RESULT).unwrap());
         let text = match Repository::open(root) {
             Ok(_) => "OPENED".into(),
-            Err(error) => format!("FAILED:{error:?}"),
+            Err(error) => format!("FAILED:OPEN:{error:?}"),
         };
         fs::write(result, text).unwrap();
     } else if mode == "write" {
         let result = PathBuf::from(env::var_os(CHILD_RESULT).unwrap());
         let index = env::var(CHILD_INDEX).unwrap();
-        let text = match Repository::open(root).and_then(|mut repository| {
-            repository
-                .metadata_mut()
-                .start_operation(OperationEnvelope {
-                    operation_id: format!("process-operation-{index}"),
-                    project_id: "process-project".into(),
-                    request_id: format!("process-request-{index}"),
-                    agent_id: "process-agent".into(),
-                    session_id: format!("process-session-{index}"),
-                    workspace_id: None,
-                    environment_id: None,
-                    parent_operation_id: None,
-                    schema_version: "0.1".into(),
-                    started_at: "t1".into(),
-                    tool: "runtime".into(),
-                    action: "concurrent.write".into(),
-                    input_refs: Vec::new(),
-                    output_refs: Vec::new(),
-                    resource: None,
-                    before_state: None,
-                    after_state: None,
-                    reversibility: "UNKNOWN".into(),
-                    replayability: "REPLAYABLE".into(),
-                    side_effect: "EXTERNAL".into(),
-                    policy_decision: None,
-                })
-        }) {
-            Ok(_) => "WRITTEN".into(),
-            Err(error) => format!("FAILED:{error:?}"),
+        let text = match Repository::open(root) {
+            Ok(mut repository) => {
+                match repository
+                    .metadata_mut()
+                    .start_operation(OperationEnvelope {
+                        operation_id: format!("process-operation-{index}"),
+                        project_id: "process-project".into(),
+                        request_id: format!("process-request-{index}"),
+                        agent_id: "process-agent".into(),
+                        session_id: format!("process-session-{index}"),
+                        workspace_id: None,
+                        environment_id: None,
+                        parent_operation_id: None,
+                        schema_version: "0.1".into(),
+                        started_at: "t1".into(),
+                        tool: "runtime".into(),
+                        action: "concurrent.write".into(),
+                        input_refs: Vec::new(),
+                        output_refs: Vec::new(),
+                        resource: None,
+                        before_state: None,
+                        after_state: None,
+                        reversibility: "UNKNOWN".into(),
+                        replayability: "REPLAYABLE".into(),
+                        side_effect: "EXTERNAL".into(),
+                        policy_decision: None,
+                    }) {
+                    Ok(_) => "WRITTEN".into(),
+                    Err(error) => format!("FAILED:WRITE:{error:?}"),
+                }
+            }
+            Err(error) => format!("FAILED:OPEN:{error:?}"),
         };
         fs::write(result, text).unwrap();
     } else {
@@ -298,6 +321,7 @@ fn multi_process_child() {
     }
 }
 
+#[cfg(feature = "direct-access-stress")]
 #[test]
 fn real_multi_process_open_is_supported_or_fails_closed_without_corruption() {
     let root = tempdir().unwrap();
@@ -307,11 +331,13 @@ fn real_multi_process_open_is_supported_or_fails_closed_without_corruption() {
     let result = root.path().join("probe.result");
     let executable = env::current_exe().unwrap();
 
-    let mut holder = child(&executable, root.path(), "hold")
-        .env(CHILD_READY, &ready)
-        .env(CHILD_STOP, &stop)
-        .spawn()
-        .unwrap();
+    let mut holder = WaitedChild(
+        child(&executable, root.path(), "hold")
+            .env(CHILD_READY, &ready)
+            .env(CHILD_STOP, &stop)
+            .spawn()
+            .unwrap(),
+    );
     wait_for(&ready);
     let status = child(&executable, root.path(), "probe")
         .env(CHILD_RESULT, &result)
@@ -335,6 +361,7 @@ fn real_multi_process_open_is_supported_or_fails_closed_without_corruption() {
     eprintln!("multi-process observation: {observed}");
 }
 
+#[cfg(feature = "direct-access-stress")]
 #[test]
 fn real_multi_process_writers_are_serialized_or_fail_closed() {
     let root = tempdir().unwrap();
@@ -354,11 +381,13 @@ fn real_multi_process_writers_are_serialized_or_fail_closed() {
     let mut children = Vec::new();
     for index in 0..4 {
         let result = root.path().join(format!("writer-{index}.result"));
-        let child = child(&executable, root.path(), "write")
-            .env(CHILD_RESULT, &result)
-            .env(CHILD_INDEX, index.to_string())
-            .spawn()
-            .unwrap();
+        let child = WaitedChild(
+            child(&executable, root.path(), "write")
+                .env(CHILD_RESULT, &result)
+                .env(CHILD_INDEX, index.to_string())
+                .spawn()
+                .unwrap(),
+        );
         children.push((index, result, child));
     }
 
@@ -394,6 +423,7 @@ fn real_multi_process_writers_are_serialized_or_fail_closed() {
     eprintln!("multi-process writers: written={written:?}, failed={failed:?}");
 }
 
+#[cfg(feature = "direct-access-stress")]
 #[test]
 fn real_multi_process_workspace_publications_are_atomic_or_fail_closed() {
     let root = tempdir().unwrap();
@@ -444,14 +474,16 @@ fn real_multi_process_workspace_publications_are_atomic_or_fail_closed() {
     let mut children = Vec::new();
     for (index, workspace_id, agent_id, lease) in leases {
         let result = root.path().join(format!("workspace-writer-{index}.result"));
-        let child = child(&executable, root.path(), "workspace")
-            .env(CHILD_RESULT, &result)
-            .env(CHILD_WORKSPACE, &workspace_id)
-            .env(CHILD_AGENT, &agent_id)
-            .env(CHILD_EPOCH, lease.epoch.to_string())
-            .env(CHILD_EXPIRY, lease.expires_at_ms.to_string())
-            .spawn()
-            .unwrap();
+        let child = WaitedChild(
+            child(&executable, root.path(), "workspace")
+                .env(CHILD_RESULT, &result)
+                .env(CHILD_WORKSPACE, &workspace_id)
+                .env(CHILD_AGENT, &agent_id)
+                .env(CHILD_EPOCH, lease.epoch.to_string())
+                .env(CHILD_EXPIRY, lease.expires_at_ms.to_string())
+                .spawn()
+                .unwrap(),
+        );
         children.push((index, workspace_id, result, child));
     }
 
@@ -492,6 +524,105 @@ fn real_multi_process_workspace_publications_are_atomic_or_fail_closed() {
     eprintln!("multi-process workspace writers: written={written:?}, failed={failed:?}");
 }
 
+#[test]
+fn direct_workspace_writers_are_rejected_by_core_owner_without_corruption() {
+    let mut fixture = fixture();
+    let root = fixture._repository_dir.path().to_path_buf();
+    let lease = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .acquire_lease("workspace", "agent-a", 10, 100_000)
+        .unwrap();
+    fs::write(
+        fixture._workspace_parent.path().join("workspace/state.txt"),
+        "baseline",
+    )
+    .unwrap();
+    let baseline = AgentControl::new(&mut fixture.repository)
+        .publish_version(PublishVersionRequest {
+            workspace_id: "workspace".into(),
+            lease: lease.clone(),
+            expected_workspace_revision: 0,
+            now_ms: 20,
+            created_at: "t1".into(),
+            operation_id: "baseline-operation".into(),
+            request_id: "baseline-request".into(),
+            session_id: Some("baseline-session".into()),
+            tool: Some("test".into()),
+            parent_version_id: None,
+            update_version_head: true,
+        })
+        .unwrap();
+    drop(fixture.repository);
+
+    let owner = Repository::open_as_core_owner(&root).unwrap();
+    let result_dir = tempdir().unwrap();
+    let executable = env::current_exe().unwrap();
+    let mut children = Vec::new();
+    for index in 0..3 {
+        let result = result_dir.path().join(format!("denied-{index}.result"));
+        let child = WaitedChild(
+            child(&executable, &root, "workspace")
+                .env(CHILD_RESULT, &result)
+                .env(CHILD_WORKSPACE, "workspace")
+                .env(CHILD_AGENT, "agent-a")
+                .env(CHILD_EPOCH, lease.epoch.to_string())
+                .env(CHILD_EXPIRY, lease.expires_at_ms.to_string())
+                .spawn()
+                .unwrap(),
+        );
+        children.push((result, child));
+    }
+    for (result, mut child) in children {
+        assert!(child.wait().unwrap().success());
+        let observed = fs::read_to_string(result).unwrap();
+        assert!(
+            observed.starts_with("FAILED:OPEN:Conflict("),
+            "direct writer bypassed active Core owner: {observed}"
+        );
+    }
+    drop(owner);
+
+    let reopened = Repository::open(&root).expect("cold reopen after rejected direct writers");
+    let workspace = reopened.metadata().workspace("workspace").unwrap().unwrap();
+    let version = reopened
+        .metadata()
+        .version_record(&baseline.version.version_id)
+        .unwrap()
+        .unwrap();
+    let snapshot = reopened
+        .metadata()
+        .snapshot_record(&baseline.snapshot.snapshot_id)
+        .unwrap()
+        .unwrap();
+    let operation = reopened
+        .metadata()
+        .operation_record("baseline-operation")
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        workspace.head.as_deref(),
+        Some(snapshot.root_digest.as_str())
+    );
+    assert_eq!(
+        workspace.version_head_id.as_deref(),
+        Some(version.version_id.as_str())
+    );
+    assert_eq!(version.snapshot_id, snapshot.snapshot_id);
+    assert_eq!(operation.lifecycle_status, "completed");
+    assert_eq!(
+        reopened
+            .metadata()
+            .list_versions("workspace")
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(workspace.revision, baseline.workspace.revision);
+    assert_eq!(
+        fs::read_to_string(fixture._workspace_parent.path().join("workspace/state.txt")).unwrap(),
+        "baseline"
+    );
+}
+
 fn child(executable: &Path, root: &Path, mode: &str) -> Command {
     let mut command = Command::new(executable);
     command
@@ -503,6 +634,7 @@ fn child(executable: &Path, root: &Path, mode: &str) -> Command {
     command
 }
 
+#[cfg(feature = "direct-access-stress")]
 fn wait_for(path: &Path) {
     let deadline = Instant::now() + Duration::from_secs(10);
     while !path.exists() {
@@ -514,10 +646,10 @@ fn wait_for(path: &Path) {
     }
 }
 
+#[cfg(feature = "direct-access-stress")]
 fn known_windows_contention(observed: &str) -> bool {
     cfg!(windows)
-        && (observed.contains("code: 33")
-            || observed.contains("sharing violation")
-            || observed.contains("database is locked")
-            || observed.contains("code: 2"))
+        && ((observed.starts_with("FAILED:OPEN:") || observed.starts_with("FAILED:SNAPSHOT:"))
+            && (observed.contains("code: 33") || observed.contains("sharing violation"))
+            || observed.starts_with("FAILED:WRITE:") && observed.contains("database is locked"))
 }

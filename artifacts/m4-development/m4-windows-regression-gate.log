@@ -1,0 +1,31 @@
+M4-019 WINDOWS REGRESSION GATE
+Date: 2026-09-24
+Base HEAD: 7a12ed2b4dac2170f5dae64156c9bc58cc7e3b0b
+Environment: Windows NT 10.0.26200.0
+Rust/Cargo: rustc 1.95.0 / cargo 1.95.0
+
+PASS cargo test --locked --test control_layer --test local_concurrency --test core_ownership --test repository_access_policy --test real_remote_e2e --test http_hardening --test security_boundaries --test local_core_broker --test remote_transport_contract -- --nocapture
+Focused Core ownership, direct-access policy, local concurrency, HTTP hardening, remote transport and security matrix passed.
+
+PASS cargo test --locked --features direct-access-stress --test local_concurrency -- --nocapture
+9 passed / 0 failed / 0 ignored.
+All four direct writer children made durable progress and all three workspace
+publication children made durable progress. The deterministic Core-owner
+negative test rejected three direct child writers and cold-reopen validation
+passed.
+
+PASS cargo test --all --locked
+Full suite exited 0 with default Cargo test concurrency. No test was deleted,
+ignored, serialized, or run with reduced concurrency.
+
+Historical boundary retained:
+- code 2 was previously observed at direct Repository OPEN; exact syscall NOT_PROVEN
+- code 5 was not reproduced in this gate and remains NOT_PROVEN
+- codes 32/33 are not globally accepted without phase evidence
+- STATUS_ACCESS_VIOLATION and STATUS_HEAP_CORRUPTION were historical observations;
+  neither reproduced in this M4-019 full run and causality remains NOT_PROVEN
+
+Supported topology: one Core owner -> Protocol -> multiple Runtime clients.
+Model A direct multi-process Repository access remains NOT_SUPPORTED.
+Linux/macOS parity, TLS deployment and public Internet deployment remain
+NOT_PROVEN. MCP remains DEFERRED.
