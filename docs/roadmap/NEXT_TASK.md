@@ -2,13 +2,30 @@
 
 **Current Phase:** M4 - provider-neutral external protocol boundary
 
-**Current Milestone:** Remote operability and failure semantics
+**Current Milestone:** External capability surface closure (M4-017, partial)
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
 immutable.
 
-**Current Task:** M4-015 proves the M4-014 adapter through independent OS
+**Current Task:** M4-017 inventories Core, AgentControl, Protocol v1.0, JSONL,
+HTTP, and Runtime capabilities. Rollback remains Core-owned/internal with
+external exposure deferred; arbitrary-destination Restore is internal;
+Version materialization, read-only diff, guarded lease control, and durable
+Operation reconciliation retain their existing external shape. No command or
+Core schema is changed.
+
+The normal external workflow is already proven through independent HTTP
+client/server processes. However, Protocol v1.0 permits any registered Agent
+to read several resource records and perform compatible Workspace diffs by
+ID, without a project-membership or resource-owner read grant. Execution and
+Operation writes remain ownership/lease/revision guarded. The broad OBSERVE
+scope is an explicit `PARTIAL` authorization gate; M4-017's conditional
+checkpoint is not created until that authority is designed and tested.
+See [`M4_EXTERNAL_CAPABILITY_SURFACE.md`](../architecture/M4_EXTERNAL_CAPABILITY_SURFACE.md)
+and [`ADR-M4-017-external-capability-surface.md`](../decisions/ADR-M4-017-external-capability-surface.md).
+
+**Prior task:** M4-015 proves the M4-014 adapter through independent OS
 processes without changing the frozen External Agent Protocol v1.0. Separate
 `pong-agent-http-client` processes use real loopback TCP to reach an independent
 `pong-agent-http` process, then pass unchanged envelopes through
@@ -139,8 +156,10 @@ HTTP transport item.
 [`http_hardening.rs`](../../tests/http_hardening.rs), and
 [`real_remote_e2e.rs`](../../tests/real_remote_e2e.rs).
 
-**Next Action:** Review the M4-016 remote operability checkpoint before selecting
-another integration boundary. Production TLS termination, secret-manager
+**Next Action:** Decide the intended read-sharing/project membership policy for
+registered Agents, then gate OBSERVE queries and diff without breaking the
+frozen Protocol v1.0 wire shape. SDK and MCP remain deferred. Production TLS
+termination, secret-manager
 integration, Windows credential-file ACL validation, global connection/parser
 queue limits, slow-client deadlines, production observability export, Internet
 deployment, and Linux/macOS parity remain `NOT_PROVEN`. Rollback remains a

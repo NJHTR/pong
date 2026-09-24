@@ -1,0 +1,47 @@
+M4-017 EXTERNAL CAPABILITY SURFACE AUDIT
+Date: 2026-09-24
+Base HEAD: 0b17cc1920df6347466b573539e8ab58f4b8764f
+Result: PARTIAL / CAPABILITY INVENTORY FROZEN / AUTHORIZATION GATE OPEN
+
+No Protocol v1.0, Core schema, HTTP, Repository, or production code changed.
+Rollback: INTERNAL / external DEFERRED.
+Arbitrary-destination Restore: INTERNAL.
+Diff: EXTERNAL OBSERVE / cross-resource read authority PARTIAL.
+Lease: EXTERNAL CONTROL, guarded by owned Execution and lease authority.
+Recovery: external Operation reconciliation and checkpoint Resume; internal
+Repository startup recovery and rollback.
+
+PASS cargo fmt --all -- --check
+PASS cargo check --locked
+PASS cargo clippy --all-targets --all-features --locked -- -D warnings
+PASS git diff --check
+PASS cargo test --locked --test protocol_capability_matrix -- --nocapture
+  5 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test external_agent_protocol -- --nocapture
+  9 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test protocol_lifecycle_reconnect -- --nocapture
+  16 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test remote_transport_contract -- --nocapture
+  18 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test real_remote_e2e -- --nocapture
+  8 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test http_remote_transport -- --nocapture
+  16 passed, 0 failed, 0 ignored
+PASS cargo test --locked --test remote_failure_semantics -- --nocapture
+  6 passed, 0 failed, 0 ignored
+Focused total: 78 passed, 0 failed, 0 ignored.
+
+PARTIAL cargo test --all --locked
+  control_layer::three_provider_metadata_values_publish_to_isolated_workspaces
+  parallel Repository open: Windows raw OS code 2 (NotFound).
+  This is the unchanged M4-008 direct-handle concurrency diagnostic. Code 2
+  remains context-dependent; it is not reclassified as a universal conflict.
+PASS cargo test --locked --test control_layer \
+  three_provider_metadata_values_publish_to_isolated_workspaces -- --nocapture
+  1 passed, 0 failed.
+
+The conditional m4-external-capability-surface checkpoint is NOT CREATED.
+Read authorization lacks resource-owner/project-membership scope, so the
+explicit checkpoint gate cannot truthfully be marked PASS. No tests were
+deleted, ignored, weakened, or serialized. Existing untracked provider files
+were not touched. No push or tag was performed.

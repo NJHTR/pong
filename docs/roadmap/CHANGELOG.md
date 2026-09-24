@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased - M4 External Capability Surface Audit (2026-09-24)
+
+- Inventoried Core, AgentControl, Protocol v1.0, JSONL, HTTP, and external
+  Runtime capabilities. Kept rollback internal/external deferred, arbitrary
+  destination Restore internal, and guarded materialization distinct.
+- Frozen diff as read-only OBSERVE, lease acquire/renew/release as bound
+  CONTROL, and durable Operation resolution as limited external RECOVERY.
+- Added five active contract tests for exact `hello` discovery, strict
+  unknown-command/version behavior, existing write guards, and broad
+  registered-Agent read scope. No Protocol or Core code changed.
+- Recorded an open authorization gate: several read queries and Workspace
+  diff lack owner/project membership checks. No M4-017 checkpoint is created
+  while this gate remains partial. MCP and SDK remain deferred.
+
 ## Unreleased - M4 Remote Operability & Failure Semantics (2026-09-20)
 
 - Froze transport, Protocol, durable Operation, and Core failure semantics
