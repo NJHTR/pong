@@ -1,11 +1,11 @@
 # M4-020 Cross-Platform / Native Runtime Regression Gate
 
-**Date:** 2026-09-24  
+**Date:** 2026-09-26
 **Baseline:** `b71798d7b3be144f449deac6fa0ff39eca5fb234`  
 **Preparation/evidence commit:** `cad20cd51979addba5811f28266994f514d1edd5`
-**Status:** `BLOCKED / NATIVE REGRESSION FAILURES` after the first native
-Ubuntu/macOS workflow run. Windows remains passing; remediation is prepared
-for a rerun.
+**Status:** `BLOCKED / NATIVE REGRESSION FAILURES` after native workflow runs
+`36168364866` and `36173494807`. Windows remains passing; the next
+test-only fixture remediation is prepared for another rerun.
 
 ## Scope
 
@@ -71,8 +71,8 @@ placeholders are not counted as passes.
 | Platform | Result | Evidence |
 | --- | --- | --- |
 | Windows | `PASS` | M4-019 checkpoint and current repository baseline |
-| Linux | `FAIL` | GitHub Actions run `36168364866`, Ubuntu 24.04 focused/full regression |
-| macOS | `FAIL` | GitHub Actions run `36168364866`, macOS 14 focused/full regression |
+| Linux | `FAIL` | GitHub Actions run `36173494807`, Ubuntu 24.04 focused/full regression |
+| macOS | `FAIL` | GitHub Actions run `36173494807`, macOS 14 focused/full regression |
 | Protocol v1.0 | `PASS / unchanged` | No DTO or wire-shape change |
 | HTTP transport | `PASS on Windows` / native parity `NOT_PROVEN` | Existing M4-015/M4-019 evidence |
 | Authorization | `PASS on Windows` / native parity `NOT_PROVEN` | M4-018 evidence |
@@ -95,6 +95,23 @@ These changes do not alter production code, Protocol v1.0, Core schema, or
 durable semantics. The complete run record is retained in
 [`m4-020-github-actions-run-36168364866.json`](../../artifacts/m4-development/m4-020-github-actions-run-36168364866.json)
 and its companion log.
+
+## Second Native Run
+
+Run `36173494807` executed commit `a6bfc1eb38ab5875caa6244d737d1500286254c6`
+on Ubuntu 24.04 and macOS 14. Format, check, and clippy passed on both
+platforms. The four M7 materialization reopen tests still failed on both
+platforms because the run commit did not yet contain the pending fixture
+lifetime fix. The macOS focused matrix also recorded one isolated Core
+ownership conflict; the same ownership test passed in that run's full
+regression, so it remains an unclassified native observation rather than a
+production fix target.
+
+The immutable run record and artifact hashes are retained in
+[`m4-020-github-actions-run-36173494807.json`](../../artifacts/m4-development/m4-020-github-actions-run-36173494807.json)
+and its companion log. The current unpushed worktree validates the
+test-only fixture fix, but Linux and macOS remain `FAIL` until a new native
+rerun passes both focused and full matrices.
 
 Historical M1 Linux/macOS artifacts are retained, but they do not close this
 slice: they were produced by different workflows, commits, and matrices.

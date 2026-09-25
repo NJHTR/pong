@@ -1,0 +1,41 @@
+M4-020 GitHub Actions native regression run
+Run: 36173494807 (#2)
+URL: https://github.com/NJHTR/pong/actions/runs/36173494807
+HEAD: a6bfc1eb38ab5875caa6244d737d1500286254c6
+Date: 2026-09-26
+
+Both native jobs completed the quality gates:
+- cargo fmt --all -- --check: exit 0
+- cargo check --all-targets --locked: exit 0
+- cargo clippy --all-targets --all-features --locked -- -D warnings: exit 0
+
+Linux native (ubuntu-24.04, x86_64, ext4):
+- focused matrix: exit 101
+- full cargo test --all --locked: exit 101
+- both failed the same four cross_workspace_materialization M7 reopen tests
+- error: NotFound("project root does not exist")
+- the run commit predates the pending fixture-lifetime fix
+
+macOS native (macos-14, arm64):
+- focused matrix: exit 101
+- focused failure: core_owner_is_exclusive_and_blocks_direct_repository_access
+- error: Conflict("repository already has active access; Core ownership requires exclusive startup")
+- the focused ownership failure was not reproduced in the full regression in the same run
+- full cargo test --all --locked: exit 101
+- full-suite failures were the same four cross_workspace_materialization M7 reopen tests
+
+Windows local validation after the pending test-only fix:
+- cargo fmt --all -- --check: PASS
+- cargo check --all-targets --locked: PASS
+- cargo clippy --all-targets --all-features --locked -- -D warnings: PASS
+- cross_workspace_materialization: 43 passed, 0 failed
+- core_ownership: 2 passed, 0 failed
+
+Disposition:
+- Windows: PASS
+- Linux: FAIL, real native evidence
+- macOS: FAIL, real native evidence
+- Protocol v1.0: PASS / unchanged
+- production code: unchanged
+- M4-020: BLOCKED / NATIVE REGRESSION FAILURES
+- no checkpoint, push, or tag was created

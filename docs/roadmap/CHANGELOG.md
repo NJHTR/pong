@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased - M4-020 native rerun evidence (2026-09-26)
+
+- Retained GitHub Actions run `36173494807` at HEAD
+  `a6bfc1eb38ab5875caa6244d737d1500286254c6`: Ubuntu 24.04 and macOS 14
+  passed format/check/clippy but failed the focused and full regression.
+- Both platforms reported the same four M7 materialization reopen failures
+  because the run predates the pending test-only fixture-lifetime fix.
+- macOS also recorded one focused-only Core ownership conflict that passed in
+  the same run's full suite; it remains unclassified and is not dismissed.
+- M4-020 remains `BLOCKED / NATIVE REGRESSION FAILURES`; no production code,
+  Protocol v1.0, Core schema, checkpoint, push, or tag changed.
+
 ## Unreleased - M4-020 native failure remediation (2026-09-25)
 
 - Retained real GitHub Actions run `36168364866` at HEAD

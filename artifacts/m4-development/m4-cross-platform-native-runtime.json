@@ -10,12 +10,12 @@
   "workflow_prepared": true,
   "workflow_executed_in_this_session": true,
   "latest_workflow_run": {
-    "run_id": 36168364866,
-    "run_number": 1,
-    "head_sha": "bf28943f8d841a1373411abac460a027248a824b",
+    "run_id": 36173494807,
+    "run_number": 2,
+    "head_sha": "a6bfc1eb38ab5875caa6244d737d1500286254c6",
     "conclusion": "failure",
-    "url": "https://github.com/NJHTR/pong/actions/runs/36168364866",
-    "evidence": "m4-020-github-actions-run-36168364866.json"
+    "url": "https://github.com/NJHTR/pong/actions/runs/36173494807",
+    "evidence": "m4-020-github-actions-run-36173494807.json"
   },
   "supplementary_probes": [
     {
@@ -45,15 +45,15 @@
     },
     "linux": {
       "result": "FAIL",
-      "reason": "Native Ubuntu 24.04 run 36168364866 failed focused and full regression",
-      "focused_failure": "cross_workspace_diff_restore::d7_cold_reopen_after_restore: project root was deleted with the TempDir fixture before reopen",
-      "full_failure": "agent_execution::{a8,a9,a38,a40}: OS error 2 after the same fixture lifetime issue"
+      "reason": "Native Ubuntu 24.04 run 36173494807 failed focused and full regression",
+      "focused_failure": "cross_workspace_materialization::{m7_cas_readable_after_reopen,m7_cold_reopen,m7_persisted_target_snapshot_reload,m7_reopened_workspace_head_correctness}: project root was deleted with the TempDir fixture before reopen",
+      "full_failure": "cross_workspace_materialization::{m7_cas_readable_after_reopen,m7_cold_reopen,m7_persisted_target_snapshot_reload,m7_reopened_workspace_head_correctness}: project root was deleted with the TempDir fixture before reopen"
     },
     "macos": {
       "result": "FAIL",
-      "reason": "Native macOS 14 run 36168364866 failed focused and full regression",
-      "focused_failure": "control_layer: workspace path contains a symlink or reparse point under the hosted runner temporary path",
-      "full_failure": "agent_execution::{a7,a8,a9,a26,a38,a39,a40}: workspace path contains a symlink or reparse point"
+      "reason": "Native macOS 14 run 36173494807 failed focused and full regression",
+      "focused_failure": "core_ownership::core_owner_is_exclusive_and_blocks_direct_repository_access: isolated Conflict; not reproduced in the same run's full suite",
+      "full_failure": "cross_workspace_materialization::{m7_cas_readable_after_reopen,m7_cold_reopen,m7_persisted_target_snapshot_reload,m7_reopened_workspace_head_correctness}: project root was deleted with the TempDir fixture before reopen"
     }
   },
   "native_workflow_runs": [
@@ -77,6 +77,31 @@
         "full_regression": "FAIL / exit 101"
       },
       "interpretation": "Real native evidence; neither platform may be marked PASS until the remediation commit reruns cleanly."
+    },
+    {
+      "run_id": 36173494807,
+      "head_sha": "a6bfc1eb38ab5875caa6244d737d1500286254c6",
+      "linux": {
+        "runner": "ubuntu-24.04",
+        "fmt": "PASS",
+        "check_all_targets_locked": "PASS",
+        "clippy_all_targets_all_features_locked": "PASS",
+        "focused_matrix": "FAIL / exit 101 / four M7 materialization reopen tests",
+        "full_regression": "FAIL / exit 101 / four M7 materialization reopen tests"
+      },
+      "macos": {
+        "runner": "macos-14",
+        "fmt": "PASS",
+        "check_all_targets_locked": "PASS",
+        "clippy_all_targets_all_features_locked": "PASS",
+        "focused_matrix": "FAIL / exit 101 / isolated core ownership conflict",
+        "full_regression": "FAIL / exit 101 / four M7 materialization reopen tests"
+      },
+      "artifacts": {
+        "linux_sha256": "bd236703542b6f4f90e5591b3300b82160921b0ff64cdca4d9a2919cf8e4daa5",
+        "macos_sha256": "03de0cf021a778391a4a804f5855538c04398fc9c4d5d2986432d5fac978c6e2"
+      },
+      "interpretation": "Real native evidence; the run predates the pending fixture-lifetime fix and does not promote either platform to PASS."
     }
   ],
   "capability_inventory": {
@@ -117,7 +142,8 @@
   "historical_native_artifacts": "retained but not accepted as M4-020 current evidence",
   "remediation": [
     "Keep temporary project and workspace directories alive while reopening the Repository in d7_cold_reopen_after_restore.",
-    "Use a physical /private/tmp TMPDIR on macOS hosted runners so system /var symlink ancestry is not mistaken for a user-controlled reparse path."
+    "Use a physical /private/tmp TMPDIR on macOS hosted runners so system /var symlink ancestry is not mistaken for a user-controlled reparse path.",
+    "Keep the MaterializationFixture project and workspace TempDir values alive while reopening the Repository in the four M7 materialization tests."
   ],
   "mcp": "DEFERRED",
   "checkpoint_created": false,

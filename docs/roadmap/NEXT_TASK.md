@@ -7,21 +7,24 @@
 **Current Task:** M4-020 verifies that the frozen Core-owned contract is
 reproducible on native Linux and macOS: Core ownership, lifecycle, durable
 state, lease/revision/CAS, Operation recovery, Protocol v1.0, HTTP remote
-transport, authorization, reconnect, restart, and failure semantics. The
-first real native workflow run (`36168364866`) passed format/check/clippy but
-failed the focused and full regression on both Ubuntu 24.04 and macOS 14:
-Linux exposed a temporary-fixture lifetime bug, while macOS exposed the
-hosted-runner `/var` symlink ancestry. Windows remains PASS; Linux and macOS
+transport, authorization, reconnect, restart, and failure semantics. Native
+runs `36168364866` and `36173494807` passed format/check/clippy but failed
+the focused and full regression on Ubuntu 24.04 and macOS 14. Run
+`36173494807` still used the pre-fix commit for the four M7 materialization
+reopen tests; macOS also recorded one focused-only ownership conflict that
+passed in the same run's full suite. Windows remains PASS; Linux and macOS
 are real `FAIL` evidence, so no M4-020 checkpoint is created. See
 [`M4_CROSS_PLATFORM_NATIVE_RUNTIME.md`](../architecture/M4_CROSS_PLATFORM_NATIVE_RUNTIME.md)
 and
 [`ADR-M4-020-cross-platform-native-runtime.md`](../decisions/ADR-M4-020-cross-platform-native-runtime.md).
 
-**Next Action:** Push the remediation for the Linux cold-reopen fixture and
-macOS physical `TMPDIR`, then execute
+**Next Action:** Push the unpushed test-only fixture-lifetime fix in
+`tests/cross_workspace_materialization.rs`, then execute
 `.github/workflows/m4-cross-platform-regression.yml` again on both native
 runners. Retain complete artifacts and compare semantic outcomes with the
 Windows matrix. The failed run record is retained at
+[`m4-020-github-actions-run-36173494807.json`](../../artifacts/m4-development/m4-020-github-actions-run-36173494807.json);
+the prior failed run remains at
 [`m4-020-github-actions-run-36168364866.json`](../../artifacts/m4-development/m4-020-github-actions-run-36168364866.json);
 the Docker diagnostic remains at
 [`m4-020-docker-linux-probe-2026-09-24.json`](../../artifacts/m4-development/m4-020-docker-linux-probe-2026-09-24.json).

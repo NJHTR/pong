@@ -1435,9 +1435,18 @@ fn m7_cold_reopen() {
         )
         .expect("materialization");
 
-    let project_path = fixture._project.path().to_path_buf();
-
-    drop(fixture);
+    // Close only the repository before reopening. Keep the temporary project
+    // and workspace parents alive so the reopen exercises durable state
+    // rather than a deleted test fixture.
+    let MaterializationFixture {
+        repository,
+        _project: project,
+        _ws1_parent,
+        _ws2_parent,
+        ..
+    } = fixture;
+    let project_path = project.path().to_path_buf();
+    drop(repository);
 
     // Reopen
     let reopened = Repository::open(&project_path).expect("reopen");
@@ -1463,8 +1472,18 @@ fn m7_persisted_target_snapshot_reload() {
         )
         .expect("materialization");
 
-    let project_path = fixture._project.path().to_path_buf();
-    drop(fixture);
+    // Close only the repository before reopening. Keep the temporary project
+    // and workspace parents alive so the reopen exercises durable state
+    // rather than a deleted test fixture.
+    let MaterializationFixture {
+        repository,
+        _project: project,
+        _ws1_parent,
+        _ws2_parent,
+        ..
+    } = fixture;
+    let project_path = project.path().to_path_buf();
+    drop(repository);
 
     let reopened = Repository::open(&project_path).expect("reopen");
     let snapshot = reopened
@@ -1489,8 +1508,18 @@ fn m7_reopened_workspace_head_correctness() {
         )
         .expect("materialization");
 
-    let project_path = fixture._project.path().to_path_buf();
-    drop(fixture);
+    // Close only the repository before reopening. Keep the temporary project
+    // and workspace parents alive so the reopen exercises durable state
+    // rather than a deleted test fixture.
+    let MaterializationFixture {
+        repository,
+        _project: project,
+        _ws1_parent,
+        _ws2_parent,
+        ..
+    } = fixture;
+    let project_path = project.path().to_path_buf();
+    drop(repository);
 
     let reopened = Repository::open(&project_path).expect("reopen");
     let ws2 = reopened.metadata().workspace("ws2-mat").unwrap().unwrap();
@@ -1512,11 +1541,21 @@ fn m7_cas_readable_after_reopen() {
         )
         .expect("materialization");
 
-    let project_path = fixture._project.path().to_path_buf();
+    // Close only the repository before reopening. Keep the temporary project
+    // and workspace parents alive so the reopen exercises durable state
+    // rather than a deleted test fixture.
+    let MaterializationFixture {
+        repository,
+        _project: project,
+        _ws1_parent,
+        _ws2_parent,
+        ..
+    } = fixture;
+    let project_path = project.path().to_path_buf();
     let digest_hex = result.digest.to_hex();
     let digest = Digest::from_hex(&digest_hex).unwrap();
 
-    drop(fixture);
+    drop(repository);
 
     let reopened = Repository::open(&project_path).expect("reopen");
     let cas_path = reopened.cas().object_path(digest);

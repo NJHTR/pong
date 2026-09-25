@@ -1,17 +1,17 @@
 # ADR-M4-020: Cross-Platform Native Runtime Regression Gate
 
-**Date:** 2026-09-24
-**Status:** Proposed / remediation pending after native run `36168364866`
+**Date:** 2026-09-26
+**Status:** Proposed / remediation pending after native runs `36168364866` and `36173494807`
 
 ## Context
 
 Windows is the live development host. M4-019 established the supported
-Core-owned path and a passing Windows full regression. The first actual
-M4-020 native workflow run (`36168364866`) reached both Ubuntu 24.04 and
-macOS 14, passed format/check/clippy, and then exposed fixture-lifetime and
-hosted-temp-path failures in the existing tests. Existing historical native
-artifacts are not the same as this M4-020 run: they use different workflows,
-commits, or test scopes.
+Core-owned path and a passing Windows full regression. Native workflow runs
+`36168364866` and `36173494807` reached both Ubuntu 24.04 and macOS 14 and
+passed format/check/clippy, but the focused/full test matrices still exposed
+fixture-lifetime failures. Existing historical native artifacts are not the
+same as this M4-020 run: they use different workflows, commits, or test
+scopes.
 
 ## Decision
 
@@ -42,8 +42,10 @@ schema change is justified by these test-harness failures.
 ## Consequences
 
 Windows remains PASS. The Docker Desktop WSL2 Linux probe remains
-supplementary diagnostic evidence only. Linux and macOS now have real native
-FAIL evidence from run `36168364866`; they must not be relabeled PASS until the
-remediation commit reruns cleanly. The next action is to run the workflow
-again and retain the generated artifacts, including exact toolchain,
-filesystem identity, commands, exit codes, and cold-reopen results.
+supplementary diagnostic evidence only. Linux and macOS have real native FAIL
+evidence from runs `36168364866` and `36173494807`; they must not be relabeled
+PASS until the test-only fixture fix is pushed and the workflow reruns
+cleanly. The isolated macOS focused ownership conflict was not
+reproduced in that run's full suite and remains unclassified. Retain generated
+artifacts, including exact toolchain, filesystem identity, commands, exit
+codes, and cold-reopen results.

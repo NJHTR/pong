@@ -1,0 +1,116 @@
+{
+  "record_version": "m4-020-github-actions-native-regression-0.2",
+  "slice": "M4-020",
+  "workflow": ".github/workflows/m4-cross-platform-regression.yml",
+  "run_id": 36173494807,
+  "run_number": 2,
+  "run_url": "https://github.com/NJHTR/pong/actions/runs/36173494807",
+  "head_sha": "a6bfc1eb38ab5875caa6244d737d1500286254c6",
+  "date": "2026-09-26",
+  "artifacts": [
+    {
+      "platform": "linux",
+      "name": "m4-linux-native-regression",
+      "downloaded_archive": "m4-linux-native-regression.zip",
+      "sha256": "bd236703542b6f4f90e5591b3300b82160921b0ff64cdca4d9a2919cf8e4daa5"
+    },
+    {
+      "platform": "macos",
+      "name": "m4-macos-native-regression",
+      "downloaded_archive": "m4-macos-native-regression.zip",
+      "sha256": "03de0cf021a778391a4a804f5855538c04398fc9c4d5d2986432d5fac978c6e2"
+    }
+  ],
+  "platforms": {
+    "linux": {
+      "runner": "ubuntu-24.04",
+      "architecture": "x86_64",
+      "os_version": "Linux 6.17.0-1022-azure",
+      "filesystem": "ext4",
+      "rustc": "1.98.1",
+      "cargo": "1.98.1",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 101,
+        "failures": [
+          "cross_workspace_materialization::m7_cas_readable_after_reopen",
+          "cross_workspace_materialization::m7_cold_reopen",
+          "cross_workspace_materialization::m7_persisted_target_snapshot_reload",
+          "cross_workspace_materialization::m7_reopened_workspace_head_correctness"
+        ],
+        "error": "NotFound(project root does not exist)"
+      },
+      "full_regression": {
+        "exit_code": 101,
+        "failures": [
+          "cross_workspace_materialization::m7_cas_readable_after_reopen",
+          "cross_workspace_materialization::m7_cold_reopen",
+          "cross_workspace_materialization::m7_persisted_target_snapshot_reload",
+          "cross_workspace_materialization::m7_reopened_workspace_head_correctness"
+        ],
+        "error": "NotFound(project root does not exist)"
+      },
+      "interpretation": "The run used a6bfc1e before the pending fixture-lifetime fix was committed."
+    },
+    "macos": {
+      "runner": "macos-14",
+      "architecture": "arm64",
+      "os_version": "Darwin 23.6.0",
+      "rustc": "1.98.1",
+      "cargo": "1.98.1",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 101,
+        "failures": [
+          "core_ownership::core_owner_is_exclusive_and_blocks_direct_repository_access"
+        ],
+        "error": "Conflict(repository already has active access; Core ownership requires exclusive startup)",
+        "qualification": "The failure was not reproduced in the full regression in the same run."
+      },
+      "full_regression": {
+        "exit_code": 101,
+        "failures": [
+          "cross_workspace_materialization::m7_cas_readable_after_reopen",
+          "cross_workspace_materialization::m7_cold_reopen",
+          "cross_workspace_materialization::m7_persisted_target_snapshot_reload",
+          "cross_workspace_materialization::m7_reopened_workspace_head_correctness"
+        ],
+        "error": "NotFound(project root does not exist)"
+      },
+      "interpretation": "The M7 failures are the same fixture-lifetime issue; focused ownership remains an isolated unclassified native observation."
+    }
+  },
+  "windows_local_validation_after_pending_fix": {
+    "cargo_fmt": "PASS",
+    "cargo_check_all_targets_locked": "PASS",
+    "cargo_clippy_all_targets_all_features_locked": "PASS",
+    "cross_workspace_materialization": "PASS / 43 passed / 0 failed",
+    "core_ownership": "PASS / 2 passed / 0 failed"
+  },
+  "semantic_contract": {
+    "protocol_version": "1.0 unchanged",
+    "core_ownership": "one exclusive Core owner; second Core rejected",
+    "cold_reopen": "durable state must remain consistent",
+    "model_a_direct_repository": "NOT_SUPPORTED"
+  },
+  "production_code_changed": false,
+  "protocol_changed": false,
+  "checkpoint_created": false,
+  "pushed": false,
+  "tag_created": false,
+  "m4_020_status": "BLOCKED / NATIVE REGRESSION FAILURES",
+  "next_required": [
+    "Push the unpushed tests/cross_workspace_materialization.rs fixture-lifetime fix.",
+    "Run the same workflow again on Ubuntu 24.04 and macOS 14 after that push.",
+    "Do not promote either native platform until focused and full exits are zero."
+  ],
+  "mcp": "DEFERRED"
+}
