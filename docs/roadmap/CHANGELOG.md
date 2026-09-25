@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased - M4-020 rollback fixture evidence (2026-09-26)
+
+- Retained GitHub Actions run `36185384714` at HEAD
+  `f342694ca11537da368fb9c380fc3cf3a506cd58`: Ubuntu 24.04 and macOS 14
+  passed format/check/clippy, but both focused and full regression matrices
+  failed in the same four `cross_workspace_rollback` R9 reopen tests.
+- The native failure is `NotFound("project root does not exist")`: the
+  `CrossWorkspaceRollbackFixture` temporary project/workspace parents were
+  dropped before `Repository` reopen. This is a test-harness lifetime defect,
+  not a production, Protocol v1.0, Core schema, or durable-semantics defect.
+- The preceding M7 materialization fixture fix is effective; those failures no
+  longer appear in this run. The current Windows worktree passes the rollback
+  suite (47/47), focused M4 matrix, and `cargo test --all --locked` after the
+  pending rollback fixture fix.
+- M4-020 remains `BLOCKED / NATIVE REGRESSION FAILURES`; Linux and macOS must
+  be rerun after the test-only fix is pushed. No production code, checkpoint,
+  push, or tag changed in this evidence update.
+
 ## Unreleased - M4-020 native rerun evidence (2026-09-26)
 
 - Retained GitHub Actions run `36173494807` at HEAD

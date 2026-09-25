@@ -1,13 +1,14 @@
 # ADR-M4-020: Cross-Platform Native Runtime Regression Gate
 
 **Date:** 2026-09-26
-**Status:** Proposed / remediation pending after native runs `36168364866` and `36173494807`
+**Status:** Proposed / remediation pending after native runs
+`36168364866`, `36173494807`, and `36185384714`
 
 ## Context
 
 Windows is the live development host. M4-019 established the supported
 Core-owned path and a passing Windows full regression. Native workflow runs
-`36168364866` and `36173494807` reached both Ubuntu 24.04 and macOS 14 and
+`36168364866`, `36173494807`, and `36185384714` reached both Ubuntu 24.04 and macOS 14 and
 passed format/check/clippy, but the focused/full test matrices still exposed
 fixture-lifetime failures. Existing historical native artifacts are not the
 same as this M4-020 run: they use different workflows, commits, or test
@@ -43,7 +44,7 @@ schema change is justified by these test-harness failures.
 
 Windows remains PASS. The Docker Desktop WSL2 Linux probe remains
 supplementary diagnostic evidence only. Linux and macOS have real native FAIL
-evidence from runs `36168364866` and `36173494807`; they must not be relabeled
+evidence from runs `36168364866`, `36173494807`, and `36185384714`; they must not be relabeled
 PASS until the test-only fixture fix is pushed and the workflow reruns
 cleanly. The isolated macOS focused ownership conflict was not
 reproduced in that run's full suite and remains unclassified. Retain generated

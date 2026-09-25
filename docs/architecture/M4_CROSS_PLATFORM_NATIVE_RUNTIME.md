@@ -4,7 +4,7 @@
 **Baseline:** `b71798d7b3be144f449deac6fa0ff39eca5fb234`  
 **Preparation/evidence commit:** `cad20cd51979addba5811f28266994f514d1edd5`
 **Status:** `BLOCKED / NATIVE REGRESSION FAILURES` after native workflow runs
-`36168364866` and `36173494807`. Windows remains passing; the next
+`36168364866`, `36173494807`, and `36185384714`. Windows remains passing; the next
 test-only fixture remediation is prepared for another rerun.
 
 ## Scope
@@ -71,8 +71,8 @@ placeholders are not counted as passes.
 | Platform | Result | Evidence |
 | --- | --- | --- |
 | Windows | `PASS` | M4-019 checkpoint and current repository baseline |
-| Linux | `FAIL` | GitHub Actions run `36173494807`, Ubuntu 24.04 focused/full regression |
-| macOS | `FAIL` | GitHub Actions run `36173494807`, macOS 14 focused/full regression |
+| Linux | `FAIL` | GitHub Actions run `36185384714`, Ubuntu 24.04 focused/full regression |
+| macOS | `FAIL` | GitHub Actions run `36185384714`, macOS 14 focused/full regression |
 | Protocol v1.0 | `PASS / unchanged` | No DTO or wire-shape change |
 | HTTP transport | `PASS on Windows` / native parity `NOT_PROVEN` | Existing M4-015/M4-019 evidence |
 | Authorization | `PASS on Windows` / native parity `NOT_PROVEN` | M4-018 evidence |
@@ -89,10 +89,12 @@ then exposed two test/runner-boundary defects:
   which the existing workspace safety boundary correctly rejected as a
   symlink/reparse path.
 
-The remediation keeps the project and workspace `TempDir` values alive during
-the Linux reopen and assigns macOS tests a physical `/private/tmp` `TMPDIR`.
-These changes do not alter production code, Protocol v1.0, Core schema, or
-durable semantics. The complete run record is retained in
+The first remediation keeps the project and workspace `TempDir` values alive
+during the Linux reopen and assigns macOS tests a physical `/private/tmp`
+`TMPDIR`. A second fixture-lifetime defect was found in rollback R9 reopen
+tests and has a test-only fix in the current worktree. These changes do not
+alter production code, Protocol v1.0, Core schema, or durable semantics. Run
+records are retained in
 [`m4-020-github-actions-run-36168364866.json`](../../artifacts/m4-development/m4-020-github-actions-run-36168364866.json)
 and its companion log.
 
@@ -109,9 +111,27 @@ production fix target.
 
 The immutable run record and artifact hashes are retained in
 [`m4-020-github-actions-run-36173494807.json`](../../artifacts/m4-development/m4-020-github-actions-run-36173494807.json)
-and its companion log. The current unpushed worktree validates the
-test-only fixture fix, but Linux and macOS remain `FAIL` until a new native
-rerun passes both focused and full matrices.
+and its companion log. The current worktree validates that M7 materialization
+fixture fix on Windows, but Linux and macOS remain `FAIL` pending native rerun.
+
+## Fourth Native Run
+
+Run `36185384714` executed commit `f342694ca11537da368fb9c380fc3cf3a506cd58`
+on Ubuntu 24.04 and macOS 14. Format, check, and clippy passed on both
+platforms. The previous M7 materialization reopen failures no longer
+appeared. Both focused and full matrices instead failed at the same four
+`cross_workspace_rollback` R9 reopen tests: the tests dropped
+`CrossWorkspaceRollbackFixture` before reopening the Repository, deleting the
+temporary project root. The native runner records show
+`NotFound("project root does not exist")`.
+
+The supplied Linux and macOS ZIP artifacts are identified by their SHA-256
+hashes in
+[`m4-020-github-actions-run-36185384714.json`](../../artifacts/m4-development/m4-020-github-actions-run-36185384714.json);
+the corresponding run summary is retained in its companion log. On Windows,
+the current test-only fix passes `cross_workspace_rollback` (47/47), the
+focused M4 matrix, and `cargo test --all --locked`. These local results do
+not promote native Linux or macOS to PASS.
 
 Historical M1 Linux/macOS artifacts are retained, but they do not close this
 slice: they were produced by different workflows, commits, and matrices.

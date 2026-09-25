@@ -5,17 +5,19 @@
   "base_subject": "checkpoint: m4-windows-regression-gate",
   "prepared_head": "cad20cd51979addba5811f28266994f514d1edd5",
   "prepared_subject": "docs: bind m4 cross-platform evidence to preparation head",
+  "current_head": "f342694ca11537da368fb9c380fc3cf3a506cd58",
+  "last_updated": "2026-09-25",
   "status": "BLOCKED / NATIVE REGRESSION FAILURES",
   "production_code_changed": false,
   "workflow_prepared": true,
   "workflow_executed_in_this_session": true,
   "latest_workflow_run": {
-    "run_id": 36173494807,
-    "run_number": 2,
-    "head_sha": "a6bfc1eb38ab5875caa6244d737d1500286254c6",
+    "run_id": 36185384714,
+    "run_number": 4,
+    "head_sha": "f342694ca11537da368fb9c380fc3cf3a506cd58",
     "conclusion": "failure",
-    "url": "https://github.com/NJHTR/pong/actions/runs/36173494807",
-    "evidence": "m4-020-github-actions-run-36173494807.json"
+    "url": "https://github.com/NJHTR/pong/actions/runs/36185384714",
+    "evidence": "m4-020-github-actions-run-36185384714.json"
   },
   "supplementary_probes": [
     {
@@ -35,7 +37,8 @@
     "fmt": "PASS",
     "check_all_targets_locked": "PASS",
     "clippy_all_targets_all_features_locked": "PASS",
-    "focused_m4_matrix": "PASS / 94 tests / 0 failed / 0 newly ignored",
+    "focused_m4_matrix": "PASS / required suites green / 0 failed",
+    "cross_workspace_rollback": "PASS / 47 passed / 0 failed",
     "full_regression": "PASS / cargo test --all --locked / exit 0"
   },
   "platforms": {
@@ -45,15 +48,15 @@
     },
     "linux": {
       "result": "FAIL",
-      "reason": "Native Ubuntu 24.04 run 36173494807 failed focused and full regression",
-      "focused_failure": "cross_workspace_materialization::{m7_cas_readable_after_reopen,m7_cold_reopen,m7_persisted_target_snapshot_reload,m7_reopened_workspace_head_correctness}: project root was deleted with the TempDir fixture before reopen",
-      "full_failure": "cross_workspace_materialization::{m7_cas_readable_after_reopen,m7_cold_reopen,m7_persisted_target_snapshot_reload,m7_reopened_workspace_head_correctness}: project root was deleted with the TempDir fixture before reopen"
+      "reason": "Native Ubuntu 24.04 run 36185384714 failed focused and full regression",
+      "focused_failure": "cross_workspace_rollback::{r9_cas_reload,r9_cold_reopen,r9_rollback_record_reload,r9_snapshot_reload}: project root was deleted with the TempDir fixture before reopen",
+      "full_failure": "cross_workspace_rollback::{r9_cas_reload,r9_cold_reopen,r9_rollback_record_reload,r9_snapshot_reload}: project root was deleted with the TempDir fixture before reopen"
     },
     "macos": {
       "result": "FAIL",
-      "reason": "Native macOS 14 run 36173494807 failed focused and full regression",
-      "focused_failure": "core_ownership::core_owner_is_exclusive_and_blocks_direct_repository_access: isolated Conflict; not reproduced in the same run's full suite",
-      "full_failure": "cross_workspace_materialization::{m7_cas_readable_after_reopen,m7_cold_reopen,m7_persisted_target_snapshot_reload,m7_reopened_workspace_head_correctness}: project root was deleted with the TempDir fixture before reopen"
+      "reason": "Native macOS 14 run 36185384714 failed focused and full regression",
+      "focused_failure": "cross_workspace_rollback::{r9_cas_reload,r9_cold_reopen,r9_rollback_record_reload,r9_snapshot_reload}: project root was deleted with the TempDir fixture before reopen",
+      "full_failure": "cross_workspace_rollback::{r9_cas_reload,r9_cold_reopen,r9_rollback_record_reload,r9_snapshot_reload}: project root was deleted with the TempDir fixture before reopen"
     }
   },
   "native_workflow_runs": [
@@ -102,6 +105,40 @@
         "macos_sha256": "03de0cf021a778391a4a804f5855538c04398fc9c4d5d2986432d5fac978c6e2"
       },
       "interpretation": "Real native evidence; the run predates the pending fixture-lifetime fix and does not promote either platform to PASS."
+    },
+    {
+      "run_id": 36185384714,
+      "head_sha": "f342694ca11537da368fb9c380fc3cf3a506cd58",
+      "linux": {
+        "runner": "ubuntu-24.04",
+        "architecture": "x86_64",
+        "filesystem": "ext4",
+        "rustc": "1.98.1",
+        "cargo": "1.98.1",
+        "fmt": "PASS",
+        "check_all_targets_locked": "PASS",
+        "clippy_all_targets_all_features_locked": "PASS",
+        "focused_matrix": "FAIL / exit 101 / four rollback R9 reopen tests",
+        "full_regression": "FAIL / exit 101 / four rollback R9 reopen tests"
+      },
+      "macos": {
+        "runner": "macos-14",
+        "architecture": "arm64",
+        "rustc": "1.98.1",
+        "cargo": "1.98.1",
+        "fmt": "PASS",
+        "check_all_targets_locked": "PASS",
+        "clippy_all_targets_all_features_locked": "PASS",
+        "focused_matrix": "FAIL / exit 101 / four rollback R9 reopen tests",
+        "full_regression": "FAIL / exit 101 / four rollback R9 reopen tests"
+      },
+      "artifacts": {
+        "linux_archive": "m4-linux-native-regression (1).zip",
+        "linux_sha256": "05b02c6c1b67cd4d9b0b176238431de8d92d90033ef037cee8afd67bebc23290",
+        "macos_archive": "m4-macos-native-regression (1).zip",
+        "macos_sha256": "b425ab424448fecc313bdba59ad6af23c928824134fa5533db87bb1178a01b32"
+      },
+      "interpretation": "Real native evidence; M7 materialization failures are gone, but rollback reopen fixtures still drop their project TempDir before Repository reopen."
     }
   ],
   "capability_inventory": {
@@ -143,7 +180,8 @@
   "remediation": [
     "Keep temporary project and workspace directories alive while reopening the Repository in d7_cold_reopen_after_restore.",
     "Use a physical /private/tmp TMPDIR on macOS hosted runners so system /var symlink ancestry is not mistaken for a user-controlled reparse path.",
-    "Keep the MaterializationFixture project and workspace TempDir values alive while reopening the Repository in the four M7 materialization tests."
+    "Keep the MaterializationFixture project and workspace TempDir values alive while reopening the Repository in the four M7 materialization tests.",
+    "Keep the CrossWorkspaceRollbackFixture project and workspace parent TempDir values alive while reopening the Repository in the four R9 rollback tests."
   ],
   "mcp": "DEFERRED",
   "checkpoint_created": false,

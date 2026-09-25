@@ -1,0 +1,115 @@
+{
+  "record_version": "m4-020-github-actions-native-regression-0.3",
+  "slice": "M4-020",
+  "workflow": ".github/workflows/m4-cross-platform-regression.yml",
+  "run_id": 36185384714,
+  "run_number": 4,
+  "run_url": "https://github.com/NJHTR/pong/actions/runs/36185384714",
+  "head_sha": "f342694ca11537da368fb9c380fc3cf3a506cd58",
+  "date": "2026-09-25",
+  "artifacts": [
+    {
+      "platform": "linux",
+      "name": "m4-linux-native-regression",
+      "source_archive": "m4-linux-native-regression (1).zip",
+      "sha256": "05b02c6c1b67cd4d9b0b176238431de8d92d90033ef037cee8afd67bebc23290"
+    },
+    {
+      "platform": "macos",
+      "name": "m4-macos-native-regression",
+      "source_archive": "m4-macos-native-regression (1).zip",
+      "sha256": "b425ab424448fecc313bdba59ad6af23c928824134fa5533db87bb1178a01b32"
+    }
+  ],
+  "platforms": {
+    "linux": {
+      "runner": "ubuntu-24.04",
+      "architecture": "x86_64",
+      "os_version": "Linux 6.17.0-1022-azure",
+      "filesystem": "ext4",
+      "rustc": "1.98.1",
+      "cargo": "1.98.1",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 101,
+        "failures": [
+          "cross_workspace_rollback::r9_cas_reload",
+          "cross_workspace_rollback::r9_cold_reopen",
+          "cross_workspace_rollback::r9_rollback_record_reload",
+          "cross_workspace_rollback::r9_snapshot_reload"
+        ],
+        "error": "NotFound(project root does not exist)"
+      },
+      "full_regression": {
+        "exit_code": 101,
+        "failures": [
+          "cross_workspace_rollback::r9_cas_reload",
+          "cross_workspace_rollback::r9_cold_reopen",
+          "cross_workspace_rollback::r9_rollback_record_reload",
+          "cross_workspace_rollback::r9_snapshot_reload"
+        ],
+        "error": "NotFound(project root does not exist)"
+      }
+    },
+    "macos": {
+      "runner": "macos-14",
+      "architecture": "arm64",
+      "os_version": "Darwin 23.6.0",
+      "rustc": "1.98.1",
+      "cargo": "1.98.1",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 101,
+        "failures": [
+          "cross_workspace_rollback::r9_cas_reload",
+          "cross_workspace_rollback::r9_cold_reopen",
+          "cross_workspace_rollback::r9_rollback_record_reload",
+          "cross_workspace_rollback::r9_snapshot_reload"
+        ],
+        "error": "NotFound(project root does not exist)"
+      },
+      "full_regression": {
+        "exit_code": 101,
+        "failures": [
+          "cross_workspace_rollback::r9_cas_reload",
+          "cross_workspace_rollback::r9_cold_reopen",
+          "cross_workspace_rollback::r9_rollback_record_reload",
+          "cross_workspace_rollback::r9_snapshot_reload"
+        ],
+        "error": "NotFound(project root does not exist)"
+      }
+    }
+  },
+  "windows_local_validation_after_pending_fix": {
+    "cargo_fmt": "PASS",
+    "cargo_check_all_targets_locked": "PASS",
+    "cargo_clippy_all_targets_all_features_locked": "PASS",
+    "focused_m4_matrix": "PASS / required suites green / 0 failed",
+    "cross_workspace_rollback": "PASS / 47 passed / 0 failed",
+    "full_regression": "PASS / cargo test --all --locked / exit 0"
+  },
+  "interpretation": {
+    "m7_materialization_failures": "resolved by the preceding test-only fixture lifetime fix",
+    "new_failure": "rollback R9 tests drop CrossWorkspaceRollbackFixture before Repository reopen",
+    "production_code_changed": false,
+    "protocol_changed": false,
+    "m4_020_status": "BLOCKED / NATIVE REGRESSION FAILURES",
+    "checkpoint_created": false,
+    "pushed": false,
+    "tag_created": false
+  },
+  "next_required": [
+    "Retain CrossWorkspaceRollbackFixture project and workspace parent TempDir values through Repository reopen in the four R9 tests.",
+    "Run the same workflow again on Ubuntu 24.04 and macOS 14 after the test-only fix is committed and pushed.",
+    "Do not promote either native platform until focused and full exits are zero."
+  ],
+  "mcp": "DEFERRED"
+}

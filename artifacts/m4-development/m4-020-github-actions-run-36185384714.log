@@ -1,0 +1,47 @@
+M4-020 GitHub Actions native regression run
+Run: 36185384714 (#4)
+URL: https://github.com/NJHTR/pong/actions/runs/36185384714
+HEAD: f342694ca11537da368fb9c380fc3cf3a506cd58
+Date: 2026-09-26
+
+Both native jobs completed the quality gates:
+- cargo fmt --all -- --check: exit 0
+- cargo check --all-targets --locked: exit 0
+- cargo clippy --all-targets --all-features --locked -- -D warnings: exit 0
+
+Linux native (ubuntu-24.04, x86_64, ext4, Rust/Cargo 1.98.1):
+- focused matrix: exit 101
+- full cargo test --all --locked: exit 101
+- failures: cross_workspace_rollback r9_cas_reload, r9_cold_reopen,
+  r9_rollback_record_reload, and r9_snapshot_reload
+- error: NotFound("project root does not exist")
+
+macOS native (macos-14, arm64, Rust/Cargo 1.98.1):
+- focused matrix: exit 101
+- full cargo test --all --locked: exit 101
+- failures: the same four cross_workspace_rollback R9 reopen tests
+- error: NotFound("project root does not exist")
+
+Interpretation:
+- The preceding M7 materialization fixture fix is effective; those failures
+  no longer appear in run 36185384714.
+- The rollback R9 tests still drop CrossWorkspaceRollbackFixture before
+  reopening Repository, deleting the temporary project root.
+- This is a test-harness lifetime defect, not a production or protocol defect.
+
+Windows local validation after the pending rollback fixture fix:
+- cargo fmt --all -- --check: PASS
+- cargo check --all-targets --locked: PASS
+- cargo clippy --all-targets --all-features --locked -- -D warnings: PASS
+- focused M4 matrix: PASS
+- cross_workspace_rollback: 47 passed, 0 failed
+- cargo test --all --locked: PASS, exit 0
+
+Disposition:
+- Windows: PASS
+- Linux: FAIL, real native evidence
+- macOS: FAIL, real native evidence
+- Protocol v1.0: PASS / unchanged
+- production code: unchanged
+- M4-020: BLOCKED / NATIVE REGRESSION FAILURES
+- no checkpoint, push, or tag was created by this evidence update

@@ -1867,8 +1867,18 @@ fn r9_cold_reopen() {
         })
         .expect("rollback");
 
-    let project_path = fixture._project.path().to_path_buf();
-    drop(fixture);
+    // Close only the repository before reopening. Keep the temporary project
+    // and workspace parents alive so the reopen exercises durable state
+    // rather than a deleted test fixture.
+    let CrossWorkspaceRollbackFixture {
+        repository,
+        _project: project,
+        _ws1_parent,
+        _ws2_parent,
+        ..
+    } = fixture;
+    let project_path = project.path().to_path_buf();
+    drop(repository);
 
     let reopened = Repository::open(&project_path).expect("reopen");
     let ws2 = reopened.metadata().workspace("ws2-rb").unwrap().unwrap();
@@ -1904,8 +1914,18 @@ fn r9_rollback_record_reload() {
         })
         .expect("rollback");
 
-    let project_path = fixture._project.path().to_path_buf();
-    drop(fixture);
+    // Close only the repository before reopening. Keep the temporary project
+    // and workspace parents alive so the reopen exercises durable state
+    // rather than a deleted test fixture.
+    let CrossWorkspaceRollbackFixture {
+        repository,
+        _project: project,
+        _ws1_parent,
+        _ws2_parent,
+        ..
+    } = fixture;
+    let project_path = project.path().to_path_buf();
+    drop(repository);
 
     let reopened = Repository::open(&project_path).expect("reopen");
     let reloaded = reopened
@@ -1947,8 +1967,18 @@ fn r9_snapshot_reload() {
     let result_head = rollback.result_workspace_head.as_ref().unwrap();
     let snapshot_id = format!("snp-{}", result_head.strip_prefix("sha256:").unwrap());
 
-    let project_path = fixture._project.path().to_path_buf();
-    drop(fixture);
+    // Close only the repository before reopening. Keep the temporary project
+    // and workspace parents alive so the reopen exercises durable state
+    // rather than a deleted test fixture.
+    let CrossWorkspaceRollbackFixture {
+        repository,
+        _project: project,
+        _ws1_parent,
+        _ws2_parent,
+        ..
+    } = fixture;
+    let project_path = project.path().to_path_buf();
+    drop(repository);
 
     let reopened = Repository::open(&project_path).expect("reopen");
     let snapshot = reopened
@@ -1989,8 +2019,18 @@ fn r9_cas_reload() {
     let digest_hex = result_head.strip_prefix("sha256:").unwrap();
     let digest = Digest::from_hex(digest_hex).unwrap();
 
-    let project_path = fixture._project.path().to_path_buf();
-    drop(fixture);
+    // Close only the repository before reopening. Keep the temporary project
+    // and workspace parents alive so the reopen exercises durable state
+    // rather than a deleted test fixture.
+    let CrossWorkspaceRollbackFixture {
+        repository,
+        _project: project,
+        _ws1_parent,
+        _ws2_parent,
+        ..
+    } = fixture;
+    let project_path = project.path().to_path_buf();
+    drop(repository);
 
     let reopened = Repository::open(&project_path).expect("reopen");
     let cas_path = reopened.cas().object_path(digest);
