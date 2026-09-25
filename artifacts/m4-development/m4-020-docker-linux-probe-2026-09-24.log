@@ -1,0 +1,39 @@
+M4-020 DOCKER LINUX PROBE
+Date: 2026-09-24
+Source HEAD: bf28943f8d841a1373411abac460a027248a824b
+Source subject: docs: finalize m4 cross-platform evidence binding
+
+Environment:
+- Host: Windows NT 10.0.26200.0
+- Docker Desktop: 4.84.0 (234817)
+- Docker Engine: 29.6.2
+- Kernel: 6.18.33.2-microsoft-standard-WSL2
+- Image: rust:1.95-bookworm
+- Container: Debian GNU/Linux 12 (bookworm), x86_64
+- Workspace: Docker overlay filesystem
+- Native runner: no
+
+The source was exported from the exact HEAD into a clean container overlay.
+The archive had no .git directory; the source HEAD is recorded from the host
+before export.
+
+Commands and results:
+- cargo fmt --all -- --check: PASS, exit 0
+- cargo check --all-targets --locked: PASS, exit 0
+- cargo clippy --all-targets --all-features --locked -- -D warnings:
+  PASS, exit 0
+- focused M4 matrix: FAIL, exit 101
+  - cross_workspace_diff_restore::d7_cold_reopen_after_restore
+  - NotFound("project root does not exist: /tmp/.tmp3WUT7X")
+- cargo test --all --locked: FAIL, exit 101
+  - agent_execution::{a8,a9,a38,a40}
+  - Io(Os { code: 2, kind: NotFound, message: "No such file or directory" })
+
+Interpretation:
+- This is real Docker Linux execution, not native Linux evidence.
+- The Docker run does not promote Linux to PASS.
+- Native Linux remains NOT_PROVEN.
+- macOS remains NOT_PROVEN.
+- M4-020 remains BLOCKED / ENVIRONMENT.
+- No production code, Protocol DTO, Core schema, or ownership semantics changed.
+- No checkpoint, push, or tag was created.

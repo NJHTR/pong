@@ -8,17 +8,25 @@
 reproducible on native Linux and macOS: Core ownership, lifecycle, durable
 state, lease/revision/CAS, Operation recovery, Protocol v1.0, HTTP remote
 transport, authorization, reconnect, restart, and failure semantics. The
-native workflow is prepared, but this Windows-only session cannot execute
-Linux or macOS jobs. Windows remains PASS; Linux and macOS remain
-`NOT_PROVEN`, so no M4-020 checkpoint is created. See
+first real native workflow run (`36168364866`) passed format/check/clippy but
+failed the focused and full regression on both Ubuntu 24.04 and macOS 14:
+Linux exposed a temporary-fixture lifetime bug, while macOS exposed the
+hosted-runner `/var` symlink ancestry. Windows remains PASS; Linux and macOS
+are real `FAIL` evidence, so no M4-020 checkpoint is created. See
 [`M4_CROSS_PLATFORM_NATIVE_RUNTIME.md`](../architecture/M4_CROSS_PLATFORM_NATIVE_RUNTIME.md)
 and
 [`ADR-M4-020-cross-platform-native-runtime.md`](../decisions/ADR-M4-020-cross-platform-native-runtime.md).
 
-**Next Action:** Execute `.github/workflows/m4-cross-platform-regression.yml`
-on both native runners, retain complete artifacts, and compare semantic
-outcomes with the Windows matrix. Do not promote Linux/macOS to PASS from
-workflow configuration alone.
+**Next Action:** Push the remediation for the Linux cold-reopen fixture and
+macOS physical `TMPDIR`, then execute
+`.github/workflows/m4-cross-platform-regression.yml` again on both native
+runners. Retain complete artifacts and compare semantic outcomes with the
+Windows matrix. The failed run record is retained at
+[`m4-020-github-actions-run-36168364866.json`](../../artifacts/m4-development/m4-020-github-actions-run-36168364866.json);
+the Docker diagnostic remains at
+[`m4-020-docker-linux-probe-2026-09-24.json`](../../artifacts/m4-development/m4-020-docker-linux-probe-2026-09-24.json).
+Do not promote Linux/macOS to PASS until a native rerun returns zero for every
+required command.
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are

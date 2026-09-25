@@ -99,7 +99,7 @@ fn operation(project_id: &str, operation_id: &str, agent_id: &str) -> OperationE
     }
 }
 
-fn workspace_fixture() -> (TempDir, Repository, LeaseToken, PathBuf) {
+fn workspace_fixture() -> (TempDir, TempDir, Repository, LeaseToken, PathBuf) {
     let project = tempdir().expect("project");
     let workspace_parent = tempdir().expect("workspace parent");
     let mut repository = Repository::init(project.path()).expect("repository");
@@ -117,11 +117,11 @@ fn workspace_fixture() -> (TempDir, Repository, LeaseToken, PathBuf) {
             .acquire_lease("ws-a", "agent-a", 0, 1_000_000)
             .expect("lease")
     };
-    (workspace_parent, repository, lease, path)
+    (project, workspace_parent, repository, lease, path)
 }
 
-fn version_fixture() -> (TempDir, Repository, LeaseToken, PathBuf, String) {
-    let (workspace_parent, mut repository, lease, path) = workspace_fixture();
+fn version_fixture() -> (TempDir, TempDir, Repository, LeaseToken, PathBuf, String) {
+    let (project, workspace_parent, mut repository, lease, path) = workspace_fixture();
     fs::write(path.join("state.txt"), b"version").expect("state");
     let snapshot = WorkspaceManager::new(&mut repository, Redactor::default())
         .snapshot_local("ws-a", &lease, SnapshotOptions::default(), 1, "t1")
@@ -152,6 +152,7 @@ fn version_fixture() -> (TempDir, Repository, LeaseToken, PathBuf, String) {
         })
         .expect("version");
     (
+        project,
         workspace_parent,
         repository,
         lease,
@@ -307,7 +308,7 @@ fn a6_missing_agent_is_rejected() {
 
 #[test]
 fn a7_workspace_attachment_is_scope_checked() {
-    let (_parent, mut repository, _lease, _path) = workspace_fixture();
+    let (_project, _parent, mut repository, _lease, _path) = workspace_fixture();
     repository
         .metadata_mut()
         .create_agent_identity(&AgentIdentity {
@@ -342,7 +343,7 @@ fn a7_workspace_attachment_is_scope_checked() {
 
 #[test]
 fn a8_version_references_are_explicit_not_inferred() {
-    let (_parent, mut repository, _lease, _path, version_id) = version_fixture();
+    let (_project, _parent, mut repository, _lease, _path, version_id) = version_fixture();
     repository
         .metadata_mut()
         .create_agent_identity(&AgentIdentity {
@@ -372,7 +373,7 @@ fn a8_version_references_are_explicit_not_inferred() {
 
 #[test]
 fn a9_current_version_is_not_derived_from_workspace_head() {
-    let (_parent, mut repository, _lease, _path, version_id) = version_fixture();
+    let (_project, _parent, mut repository, _lease, _path, version_id) = version_fixture();
     repository
         .metadata_mut()
         .create_agent_identity(&AgentIdentity {
@@ -708,7 +709,7 @@ fn a25_postcommit_uncertainty_is_recovered_after_reopen() {
 
 #[test]
 fn a26_workspace_lease_is_still_the_only_write_authority() {
-    let (_parent, mut repository, lease, _path) = workspace_fixture();
+    let (_project, _parent, mut repository, lease, _path) = workspace_fixture();
     let stale = LeaseToken {
         expires_at_ms: lease.expires_at_ms,
         epoch: lease.epoch + 1,
@@ -1054,7 +1055,7 @@ fn a38_missing_workspace_and_version_references_fail_closed() {
             .create_execution(&missing_workspace),
         Err(PongError::NotFound(_))
     ));
-    let (_parent, mut repository, _lease, _path, _version) = version_fixture();
+    let (_project, _parent, mut repository, _lease, _path, _version) = version_fixture();
     repository
         .metadata_mut()
         .create_agent_identity(&AgentIdentity {
@@ -1085,7 +1086,7 @@ fn a38_missing_workspace_and_version_references_fail_closed() {
 
 #[test]
 fn a39_project_and_environment_scope_are_checked() {
-    let (_parent, mut repository, _lease, _path) = workspace_fixture();
+    let (_project, _parent, mut repository, _lease, _path) = workspace_fixture();
     repository
         .metadata_mut()
         .create_agent_identity(&AgentIdentity {
@@ -1116,7 +1117,7 @@ fn a39_project_and_environment_scope_are_checked() {
 
 #[test]
 fn a40_current_version_update_uses_dual_cas_and_preserves_workspace_heads() {
-    let (_parent, mut repository, lease, _path, version_id) = version_fixture();
+    let (_project, _parent, mut repository, lease, _path, version_id) = version_fixture();
     repository
         .metadata_mut()
         .create_agent_identity(&AgentIdentity {

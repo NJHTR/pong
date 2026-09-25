@@ -1,0 +1,32 @@
+M4-020 GitHub Actions native regression run
+Run: 36168364866 (#1)
+URL: https://github.com/NJHTR/pong/actions/runs/36168364866
+HEAD: bf28943f8d841a1373411abac460a027248a824b
+Date: 2026-09-25
+
+Both native jobs completed quality gates successfully:
+- cargo fmt --all -- --check: exit 0
+- cargo check --all-targets --locked: exit 0
+- cargo clippy --all-targets --all-features --locked -- -D warnings: exit 0
+
+Linux native (ubuntu-24.04):
+- focused matrix: exit 101
+- failure: cross_workspace_diff_restore::d7_cold_reopen_after_restore
+- error: NotFound("project root does not exist: /tmp/.tmpLPPitK")
+- full cargo test --all --locked: exit 101
+- failures: agent_execution a8, a9, a38, a40
+- error: OS error 2 / No such file or directory
+
+macOS native (macos-14):
+- focused matrix: exit 101
+- ten control_layer tests rejected the hosted temporary path with
+  Integrity("workspace path contains a symlink or reparse point")
+- full cargo test --all --locked: exit 101
+- seven agent_execution tests rejected the same path ancestry
+
+Disposition:
+- Windows: PASS from M4-019
+- Linux: FAIL, real native evidence
+- macOS: FAIL, real native evidence
+- M4-020: BLOCKED / NATIVE REGRESSION FAILURES
+- no checkpoint, push, or tag was created by this run

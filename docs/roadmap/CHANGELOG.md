@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased - M4-020 native failure remediation (2026-09-25)
+
+- Retained real GitHub Actions run `36168364866` at HEAD
+  `bf28943f8d841a1373411abac460a027248a824b`: Ubuntu 24.04 and macOS 14
+  passed format/check/clippy but failed the focused and full regression.
+- Recorded the Linux cold-reopen fixture lifetime failure and the macOS hosted
+  runner `/var` symlink-ancestry failure as real native evidence; M4-020
+  remains `BLOCKED / NATIVE REGRESSION FAILURES`.
+- Fixed only the regression harness: keep temporary project/workspace roots
+  alive during reopen, and use physical `/private/tmp` for macOS `TMPDIR`.
+  Production code, Protocol v1.0, Core schema, and ownership semantics were
+  not changed. No checkpoint was created.
+
 ## Unreleased - M4 Cross-Platform Native Runtime Regression Gate (2026-09-24)
 
 - Added a dedicated Ubuntu/macOS workflow for the M4 Core ownership,
@@ -1120,3 +1133,17 @@
   checksum/reference bundle. Workflow capture-boundary hardening was pushed in
   `2cf136e`; M1 remains `NOT PASSED` and a fresh successful native run is
   required.
+## Unreleased - M4-020 native runtime environment probe (2026-09-24)
+
+- Rechecked the Windows worktree at `bf28943f8d841a1373411abac460a027248a824b`
+  and preserved the three pre-existing untracked provider/Windows files.
+- Started the installed Docker Desktop Linux engine and ran the M4 focused
+  and full regression from a clean archive of the exact HEAD in a Debian 12
+  `rust:1.95-bookworm` container.
+- `cargo fmt`, `cargo check --all-targets --locked`, and clippy passed.
+  The focused matrix failed at `d7_cold_reopen_after_restore`; the full suite
+  failed in four existing `agent_execution` tests with OS error 2.
+- Docker Desktop WSL2 execution is retained as supplementary diagnostic
+  evidence only, not native Linux evidence. Linux and macOS remain
+  `NOT_PROVEN`; M4-020 remains `BLOCKED / ENVIRONMENT`. No production code,
+  checkpoint, push, or tag was created.

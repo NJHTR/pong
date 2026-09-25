@@ -3,8 +3,9 @@
 **Date:** 2026-09-24  
 **Baseline:** `b71798d7b3be144f449deac6fa0ff39eca5fb234`  
 **Preparation/evidence commit:** `cad20cd51979addba5811f28266994f514d1edd5`
-**Status:** `BLOCKED / ENVIRONMENT` for Linux and macOS in this local
-Windows-only session.
+**Status:** `BLOCKED / NATIVE REGRESSION FAILURES` after the first native
+Ubuntu/macOS workflow run. Windows remains passing; remediation is prepared
+for a rerun.
 
 ## Scope
 
@@ -70,13 +71,30 @@ placeholders are not counted as passes.
 | Platform | Result | Evidence |
 | --- | --- | --- |
 | Windows | `PASS` | M4-019 checkpoint and current repository baseline |
-| Linux | `NOT_PROVEN` | No Linux runner was executed in this session |
-| macOS | `NOT_PROVEN` | No macOS runner was executed in this session |
+| Linux | `FAIL` | GitHub Actions run `36168364866`, Ubuntu 24.04 focused/full regression |
+| macOS | `FAIL` | GitHub Actions run `36168364866`, macOS 14 focused/full regression |
 | Protocol v1.0 | `PASS / unchanged` | No DTO or wire-shape change |
 | HTTP transport | `PASS on Windows` / native parity `NOT_PROVEN` | Existing M4-015/M4-019 evidence |
 | Authorization | `PASS on Windows` / native parity `NOT_PROVEN` | M4-018 evidence |
 | Core ownership | `PASS on Windows` / native parity `NOT_PROVEN` | M4-019 evidence |
 | Cold reopen and recovery | `PASS on Windows` / native parity `NOT_PROVEN` | Existing regression evidence |
+
+The first real native run completed all three quality gates on both platforms,
+then exposed two test/runner-boundary defects:
+
+- Linux deleted the temporary project directory with the fixture before
+  `d7_cold_reopen_after_restore` reopened the Repository. The same lifetime
+  error surfaced as `NotFound` in four `agent_execution` tests.
+- macOS hosted-runner temporary paths inherited a `/var` symlink ancestry,
+  which the existing workspace safety boundary correctly rejected as a
+  symlink/reparse path.
+
+The remediation keeps the project and workspace `TempDir` values alive during
+the Linux reopen and assigns macOS tests a physical `/private/tmp` `TMPDIR`.
+These changes do not alter production code, Protocol v1.0, Core schema, or
+durable semantics. The complete run record is retained in
+[`m4-020-github-actions-run-36168364866.json`](../../artifacts/m4-development/m4-020-github-actions-run-36168364866.json)
+and its companion log.
 
 Historical M1 Linux/macOS artifacts are retained, but they do not close this
 slice: they were produced by different workflows, commits, and matrices.
@@ -84,11 +102,18 @@ This document deliberately does not relabel them as M4-020 PASS.
 
 ## Environment Boundary
 
-The current machine is Windows only. It can execute and verify the Windows
-quality gates, but it cannot produce native Linux or macOS evidence. A
-workflow file is executable preparation, not a platform result. M4-020 remains
-`BLOCKED / ENVIRONMENT` until both native jobs produce complete artifacts
-with zero exit codes and the same semantic assertions.
+The current host is Windows only. Docker Desktop can provide a Linux userland,
+but the 2026-09-24 Docker Desktop WSL2 probe did not pass the focused or full
+regression and is not native Ubuntu evidence. It therefore does not promote
+Linux to `PASS`. A real native workflow did execute on Ubuntu 24.04 and
+macOS 14, but both jobs failed after the quality gates. M4-020 remains
+`BLOCKED / NATIVE REGRESSION FAILURES` until a remediation rerun produces
+complete artifacts with zero exits and the same semantic assertions.
 
-No production code was changed for this preparation slice. No MCP, SDK, TLS,
-public Internet deployment, Model A support, or protocol redesign is included.
+The supplementary Docker result is retained in
+[`m4-020-docker-linux-probe-2026-09-24.json`](../../artifacts/m4-development/m4-020-docker-linux-probe-2026-09-24.json)
+and its companion log. It is diagnostic evidence only, not a native-platform
+release row.
+
+No production code was changed for this remediation. No MCP, SDK, TLS, public
+Internet deployment, Model A support, or protocol redesign is included.

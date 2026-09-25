@@ -29,3 +29,14 @@ changed. Historical M1 native artifacts remain retained but are not relabeled
 as current M4-020 evidence.
 
 Checkpoint: none. Status: BLOCKED / ENVIRONMENT.
+
+Supplementary Docker probe on 2026-09-24:
+- Docker Desktop 4.84.0 Linux engine, WSL2 kernel, Debian 12 container,
+  rust:1.95-bookworm image, clean source archive from HEAD bf28943
+- fmt/check/clippy passed
+- focused matrix failed at d7_cold_reopen_after_restore with a missing
+  temporary project root under /tmp
+- full regression failed in four existing agent_execution tests with OS error 2
+- this is not native Ubuntu evidence and does not promote Linux to PASS
+- native Linux remains NOT_PROVEN; macOS remains NOT_PROVEN
+- detailed record: m4-020-docker-linux-probe-2026-09-24.json

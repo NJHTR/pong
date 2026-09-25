@@ -5,10 +5,32 @@
   "base_subject": "checkpoint: m4-windows-regression-gate",
   "prepared_head": "cad20cd51979addba5811f28266994f514d1edd5",
   "prepared_subject": "docs: bind m4 cross-platform evidence to preparation head",
-  "status": "BLOCKED / ENVIRONMENT",
+  "status": "BLOCKED / NATIVE REGRESSION FAILURES",
   "production_code_changed": false,
   "workflow_prepared": true,
-  "workflow_executed_in_this_session": false,
+  "workflow_executed_in_this_session": true,
+  "latest_workflow_run": {
+    "run_id": 36168364866,
+    "run_number": 1,
+    "head_sha": "bf28943f8d841a1373411abac460a027248a824b",
+    "conclusion": "failure",
+    "url": "https://github.com/NJHTR/pong/actions/runs/36168364866",
+    "evidence": "m4-020-github-actions-run-36168364866.json"
+  },
+  "supplementary_probes": [
+    {
+      "kind": "Docker Desktop Linux userland",
+      "date": "2026-09-24",
+      "artifact": "m4-020-docker-linux-probe-2026-09-24.json",
+      "result": "FAIL / supplementary only",
+      "native_platform_credit": false,
+      "fmt": "PASS",
+      "check_all_targets_locked": "PASS",
+      "clippy_all_targets_all_features_locked": "PASS",
+      "focused_m4_matrix": "FAIL / exit 101 / d7_cold_reopen_after_restore",
+      "full_regression": "FAIL / exit 101 / four agent_execution tests"
+    }
+  ],
   "windows_local_validation": {
     "fmt": "PASS",
     "check_all_targets_locked": "PASS",
@@ -22,14 +44,41 @@
       "evidence": "M4-019 checkpoint b71798d7b3be144f449deac6fa0ff39eca5fb234"
     },
     "linux": {
-      "result": "NOT_PROVEN",
-      "reason": "No native Linux runner is available in the current Windows session"
+      "result": "FAIL",
+      "reason": "Native Ubuntu 24.04 run 36168364866 failed focused and full regression",
+      "focused_failure": "cross_workspace_diff_restore::d7_cold_reopen_after_restore: project root was deleted with the TempDir fixture before reopen",
+      "full_failure": "agent_execution::{a8,a9,a38,a40}: OS error 2 after the same fixture lifetime issue"
     },
     "macos": {
-      "result": "NOT_PROVEN",
-      "reason": "No native macOS runner is available in the current Windows session"
+      "result": "FAIL",
+      "reason": "Native macOS 14 run 36168364866 failed focused and full regression",
+      "focused_failure": "control_layer: workspace path contains a symlink or reparse point under the hosted runner temporary path",
+      "full_failure": "agent_execution::{a7,a8,a9,a26,a38,a39,a40}: workspace path contains a symlink or reparse point"
     }
   },
+  "native_workflow_runs": [
+    {
+      "run_id": 36168364866,
+      "head_sha": "bf28943f8d841a1373411abac460a027248a824b",
+      "linux": {
+        "runner": "ubuntu-24.04",
+        "fmt": "PASS",
+        "check_all_targets_locked": "PASS",
+        "clippy_all_targets_all_features_locked": "PASS",
+        "focused_matrix": "FAIL / exit 101",
+        "full_regression": "FAIL / exit 101"
+      },
+      "macos": {
+        "runner": "macos-14",
+        "fmt": "PASS",
+        "check_all_targets_locked": "PASS",
+        "clippy_all_targets_all_features_locked": "PASS",
+        "focused_matrix": "FAIL / exit 101",
+        "full_regression": "FAIL / exit 101"
+      },
+      "interpretation": "Real native evidence; neither platform may be marked PASS until the remediation commit reruns cleanly."
+    }
+  ],
   "capability_inventory": {
     "core_owner_lock": "fs2 shared/exclusive lock plus process-local registry",
     "repository_lock": "shared normal handle and exclusive migration fence",
@@ -66,6 +115,10 @@
     ]
   },
   "historical_native_artifacts": "retained but not accepted as M4-020 current evidence",
+  "remediation": [
+    "Keep temporary project and workspace directories alive while reopening the Repository in d7_cold_reopen_after_restore.",
+    "Use a physical /private/tmp TMPDIR on macOS hosted runners so system /var symlink ancestry is not mistaken for a user-controlled reparse path."
+  ],
   "mcp": "DEFERRED",
   "checkpoint_created": false,
   "pushed": false,

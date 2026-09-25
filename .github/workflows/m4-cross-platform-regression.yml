@@ -58,6 +58,15 @@ jobs:
           rustc --version --verbose | tee evidence/platform/rustc.txt
           cargo --version | tee evidence/platform/cargo.txt
 
+      - name: Use physical temporary root on macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp_root="/private/tmp/pong-m4-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "${temp_root}"
+          printf 'TMPDIR=%s\n' "${temp_root}" >> "${GITHUB_ENV}"
+
       - name: Run quality gates
         if: always()
         shell: bash

@@ -1,0 +1,85 @@
+{
+  "record_version": "m4-020-github-actions-native-regression-0.1",
+  "slice": "M4-020",
+  "workflow": ".github/workflows/m4-cross-platform-regression.yml",
+  "run_id": 36168364866,
+  "run_number": 1,
+  "run_url": "https://github.com/NJHTR/pong/actions/runs/36168364866",
+  "head_sha": "bf28943f8d841a1373411abac460a027248a824b",
+  "date": "2026-09-25",
+  "platforms": {
+    "linux": {
+      "runner": "ubuntu-24.04",
+      "result": "FAIL",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 101,
+        "failure": "cross_workspace_diff_restore::d7_cold_reopen_after_restore",
+        "error": "NotFound(\"project root does not exist: /tmp/.tmpLPPitK\")"
+      },
+      "full_regression": {
+        "exit_code": 101,
+        "failures": [
+          "agent_execution::a8_version_references_are_explicit_not_inferred",
+          "agent_execution::a9_current_version_is_not_derived_from_workspace_head",
+          "agent_execution::a38_missing_workspace_and_version_references_fail_closed",
+          "agent_execution::a40_current_version_update_uses_dual_cas_and_preserves_workspace_heads"
+        ],
+        "error": "Io(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })"
+      }
+    },
+    "macos": {
+      "runner": "macos-14",
+      "result": "FAIL",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 101,
+        "failures": [
+          "control_layer::lease_failures_are_rejected_before_snapshot_or_operation_publication",
+          "control_layer::invalid_workspace_parent_and_request_fail_before_snapshot_publication",
+          "control_layer::mutation_after_publication_intent_is_not_overwritten_by_retry",
+          "control_layer::provider_neutral_facade_persists_handoff_and_continuation",
+          "control_layer::postcommit_uncertainty_resumes_after_cold_reopen",
+          "control_layer::precommit_version_failure_has_one_retryable_operation_and_one_result",
+          "control_layer::revision_authority_rejects_stale_publication_without_durable_mutation",
+          "control_layer::replay_with_foreign_snapshot_ownership_fails_closed",
+          "control_layer::replay_with_missing_snapshot_fails_closed_after_cold_reopen",
+          "control_layer::three_provider_metadata_values_publish_to_isolated_workspaces"
+        ],
+        "error": "Integrity(\"workspace path contains a symlink or reparse point\")"
+      },
+      "full_regression": {
+        "exit_code": 101,
+        "failures": [
+          "agent_execution::a7_workspace_attachment_is_scope_checked",
+          "agent_execution::a8_version_references_are_explicit_not_inferred",
+          "agent_execution::a9_current_version_is_not_derived_from_workspace_head",
+          "agent_execution::a26_workspace_lease_is_still_the_only_write_authority",
+          "agent_execution::a38_missing_workspace_and_version_references_fail_closed",
+          "agent_execution::a39_project_and_environment_scope_are_checked",
+          "agent_execution::a40_current_version_update_uses_dual_cas_and_preserves_workspace_heads"
+        ],
+        "error": "Integrity(\"workspace path contains a symlink or reparse point\")"
+      }
+    }
+  },
+  "interpretation": {
+    "windows": "PASS from M4-019",
+    "linux": "FAIL",
+    "macos": "FAIL",
+    "m4_020_status": "BLOCKED / NATIVE REGRESSION FAILURES",
+    "production_code_changed": false,
+    "protocol_changed": false,
+    "checkpoint_created": false,
+    "pushed": false,
+    "tag_created": false
+  }
+}

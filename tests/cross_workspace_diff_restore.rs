@@ -737,13 +737,20 @@ fn d7_cold_reopen_after_restore() {
         .expect("restore");
 
     let snapshot_id = result.snapshot_id.clone();
-    let project_path = fixture._project.path().to_path_buf();
-
-    // Close repository
-    drop(fixture);
+    // Close only the repository before reopening. Keep the temporary project
+    // and workspace parents alive so the reopen exercises durable state
+    // rather than a deleted test fixture.
+    let CrossWorkspaceFixture {
+        repository,
+        _project: project,
+        _ws1_parent,
+        _ws2_parent,
+        ..
+    } = fixture;
+    drop(repository);
 
     // Reopen
-    let repository = Repository::open(&project_path).expect("reopen");
+    let repository = Repository::open(project.path()).expect("reopen");
 
     // Snapshot remains durable
     let snapshot = repository
