@@ -1,0 +1,42 @@
+M4-020 native regression run 36227546466
+Date: 2026-09-26
+Commit: a163057acf6e09d3abb5d23f65b1e1bf63563d93
+Workflow: .github/workflows/m4-cross-platform-regression.yml
+
+Linux: Ubuntu 24.04, x86_64, ext4, rustc/cargo 1.98.1
+macOS: macOS 14, arm64, rustc/cargo 1.98.1
+
+Quality gates on both platforms:
+- cargo fmt --all -- --check: exit 0
+- cargo check --all-targets --locked: exit 0
+- cargo clippy --all-targets --all-features --locked -- -D warnings: exit 0
+
+Focused and full regression on both platforms:
+- exit 101
+- only failing test: http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly
+- failure: tests/http_remote_transport.rs:1207 received EOF while parsing the
+  empty readiness line from the child pong-agent-http process
+
+Root cause:
+The test wrote a temporary credentials.json without Unix owner-only permissions.
+The production loader correctly rejects credential files with group/other bits,
+so the child exits before emitting {"status":"ready", ...}. The test harness
+discarded child stderr, masking the safe startup error.
+
+Remediation prepared locally:
+- set that test credential fixture to mode 0600 on Unix;
+- include child exit status and stderr when readiness is EOF;
+- include the raw readiness line for malformed JSON.
+
+Local Windows validation after remediation:
+- focused M4 matrix: PASS
+- http_remote_transport: 16 passed, 0 failed
+- http_hardening: 10 passed, 0 failed
+- real_remote_e2e: 9 passed, 0 failed
+- cargo test --all --locked: exit 0
+
+Disposition:
+Linux and macOS remain FAIL for this immutable run and require a fresh native
+workflow run after the remediation commit. No production code, Protocol v1.0,
+Core schema, or ownership semantics changed. No checkpoint, tag, or automatic
+workflow dispatch was performed.

@@ -4,8 +4,9 @@
 **Baseline:** `b71798d7b3be144f449deac6fa0ff39eca5fb234`  
 **Preparation/evidence commit:** `cad20cd51979addba5811f28266994f514d1edd5`
 **Status:** `BLOCKED / NATIVE REGRESSION FAILURES` after native workflow runs
-`36168364866`, `36173494807`, `36185384714`, and `36192502871`. Windows remains
-passing; the next test-only fixture remediation is prepared for another rerun.
+`36168364866`, `36173494807`, `36185384714`, `36192502871`, and
+`36227546466`. Windows remains passing; the next test-only fixture remediation
+is prepared for another rerun.
 
 ## Scope
 
@@ -160,15 +161,42 @@ Historical M1 Linux/macOS artifacts are retained, but they do not close this
 slice: they were produced by different workflows, commits, and matrices.
 This document deliberately does not relabel them as M4-020 PASS.
 
+## Sixth Native Run
+
+Run `36227546466` executed commit
+`a163057acf6e09d3abb5d23f65b1e1bf63563d93` on Ubuntu 24.04 and macOS 14.
+Format, check, and clippy passed on both platforms. The M7 materialization,
+rollback R9, source cold-reopen, and `http_hardening` credential fixtures no
+longer failed. Both focused and full matrices instead failed at the one
+remaining process-startup test:
+`http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly`.
+
+The child `pong-agent-http` exited before emitting its readiness JSON because
+this separate test wrote `credentials.json` with default Unix permissions.
+The production credential loader correctly rejected group/other-readable
+credentials, while the test helper discarded child stderr and reported only
+`EOF while parsing a value`. This is a test-harness setup and diagnostics
+defect, not an HTTP, Core, Protocol, or ownership semantic failure.
+
+The current Windows worktree fixes that fixture by setting mode `0600` on Unix
+and reports child status/stderr when readiness is absent. After the fix,
+Windows `http_remote_transport` passes 16/16, the M4 focused matrix passes,
+and `cargo test --all --locked` exits 0. These local results do not promote
+native Linux or macOS to PASS.
+
+The immutable run record and downloaded artifact hashes are retained in
+[`m4-020-github-actions-run-36227546466.json`](../../artifacts/m4-development/m4-020-github-actions-run-36227546466.json)
+and its companion log.
+
 ## Environment Boundary
 
 The current host is Windows only. Docker Desktop can provide a Linux userland,
 but the 2026-09-24 Docker Desktop WSL2 probe did not pass the focused or full
 regression and is not native Ubuntu evidence. It therefore does not promote
-Linux to `PASS`. A real native workflow did execute on Ubuntu 24.04 and
-macOS 14, but both jobs failed after the quality gates. M4-020 remains
-`BLOCKED / NATIVE REGRESSION FAILURES` until a remediation rerun produces
-complete artifacts with zero exits and the same semantic assertions.
+Linux to `PASS`. Real native workflows executed on Ubuntu 24.04 and macOS 14,
+but both jobs in run `36227546466` failed after the quality gates. M4-020
+remains `BLOCKED / NATIVE REGRESSION FAILURES` until a remediation rerun
+produces complete artifacts with zero exits and the same semantic assertions.
 
 The supplementary Docker result is retained in
 [`m4-020-docker-linux-probe-2026-09-24.json`](../../artifacts/m4-development/m4-020-docker-linux-probe-2026-09-24.json)

@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased - M4-020 native regression run #6 audit (2026-09-26)
+
+- Retained native GitHub Actions run `36227546466` and both downloaded
+  artifacts. Ubuntu 24.04 and macOS 14 passed fmt/check/clippy, but focused and
+  full regression both failed at the single
+  `http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly`
+  test.
+- Identified the remaining failure as a test-harness credential fixture:
+  `credentials.json` was created with broad Unix permissions, so the production
+  loader correctly rejected it before readiness. The test helper discarded
+  child stderr and surfaced only an opaque EOF/JSON parse error.
+- Updated `tests/http_remote_transport.rs` to set Unix credential mode `0600`
+  and retain safe child status/stderr when readiness fails. No production code,
+  Protocol v1.0, Core schema, or ownership semantics changed.
+- Windows validation after the fix passed the M4 focused matrix,
+  `http_remote_transport` 16/16, `http_hardening` 10/10,
+  `real_remote_e2e` 9/9, and `cargo test --all --locked` with exit code `0`.
+  Linux and macOS remain real `FAIL` for run `36227546466`; a fresh native
+  workflow rerun is required. No M4-020 checkpoint, tag, or automatic workflow
+  dispatch was created.
+
 ## Unreleased - M4-020 native rerun evidence (2026-09-26)
 
 - Retained GitHub Actions run `36192502871` at HEAD

@@ -1203,8 +1203,21 @@ impl HttpProcess {
         let stdin = child.stdin.take().unwrap();
         let mut stdout = BufReader::new(child.stdout.take().unwrap());
         let mut line = String::new();
-        stdout.read_line(&mut line).unwrap();
-        let ready: Value = serde_json::from_str(&line).unwrap();
+        let bytes_read = stdout.read_line(&mut line).unwrap();
+        if bytes_read == 0 {
+            let status = child.try_wait().unwrap();
+            let mut stderr = String::new();
+            if let Some(mut pipe) = child.stderr.take() {
+                pipe.read_to_string(&mut stderr).unwrap();
+            }
+            panic!(
+                "pong-agent-http exited before readiness (status={status:?}); stderr: {}",
+                stderr.trim()
+            );
+        }
+        let ready: Value = serde_json::from_str(&line).unwrap_or_else(|error| {
+            panic!("pong-agent-http emitted invalid readiness JSON ({error}); line={line:?}")
+        });
         assert_eq!(ready["status"], "ready");
         let addr = ready["listen_addr"].as_str().unwrap().parse().unwrap();
         Self { child, stdin, addr }
@@ -1237,6 +1250,12 @@ fn production_http_process_owns_core_authenticates_and_shuts_down_cleanly() {
         .unwrap(),
     )
     .unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&credential_file, fs::Permissions::from_mode(0o600))
+            .expect("restrict process credential permissions");
+    }
     let process = HttpProcess::start(repository.path(), workspace.path(), &credential_file);
     ok(
         &call(

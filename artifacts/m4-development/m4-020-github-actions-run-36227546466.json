@@ -1,0 +1,119 @@
+{
+  "record_version": "m4-020-github-actions-native-regression-0.5",
+  "slice": "M4-020",
+  "workflow": ".github/workflows/m4-cross-platform-regression.yml",
+  "run_id": 36227546466,
+  "run_number": 6,
+  "run_url": "https://github.com/NJHTR/pong/actions/runs/36227546466",
+  "head_sha": "a163057acf6e09d3abb5d23f65b1e1bf63563d93",
+  "date": "2026-09-26",
+  "artifacts": [
+    {
+      "platform": "linux",
+      "name": "m4-linux-native-regression",
+      "source_archive": "m4-linux-native-regression (3).zip",
+      "sha256": "c87c3cd155dfd38435be8ef26989e2fd88ae2ee578019fccb6a1233c3e3d5b89"
+    },
+    {
+      "platform": "macos",
+      "name": "m4-macos-native-regression",
+      "source_archive": "m4-macos-native-regression (3).zip",
+      "sha256": "d96e815673235c498c0f229d8bee76d21fb543fc771fdd116efe74bb16c0b040"
+    }
+  ],
+  "platforms": {
+    "linux": {
+      "runner": "ubuntu-24.04",
+      "architecture": "x86_64",
+      "filesystem": "ext4",
+      "rustc": "1.98.1",
+      "cargo": "1.98.1",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 101,
+        "failures": [
+          "http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly"
+        ],
+        "error": "tests/http_remote_transport.rs:1207 received EOF before readiness JSON; the child exited before writing the ready line"
+      },
+      "full_regression": {
+        "exit_code": 101,
+        "failures": [
+          "http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly"
+        ],
+        "error": "same readiness EOF failure; all preceding full-regression suites passed"
+      }
+    },
+    "macos": {
+      "runner": "macos-14",
+      "architecture": "arm64",
+      "filesystem": "reported empty by workflow inventory",
+      "rustc": "1.98.1",
+      "cargo": "1.98.1",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 101,
+        "failures": [
+          "http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly"
+        ],
+        "error": "tests/http_remote_transport.rs:1207 received EOF before readiness JSON; the child exited before writing the ready line"
+      },
+      "full_regression": {
+        "exit_code": 101,
+        "failures": [
+          "http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly"
+        ],
+        "error": "same readiness EOF failure; all preceding full-regression suites passed"
+      }
+    }
+  },
+  "failure_interpretation": {
+    "layer": "test harness fixture setup",
+    "root_cause": "The test wrote the temporary credential JSON with default Unix permissions. pong-agent-http intentionally rejects credential files whose mode exposes group or other bits, so the child exited before readiness.",
+    "production_code_changed": false,
+    "protocol_changed": false,
+    "core_semantics_failed": false,
+    "diagnostic_gap": "HttpProcess::start discarded child stderr and converted startup failure into opaque EOF/JSON parsing failure."
+  },
+  "remediation_in_current_worktree": {
+    "file": "tests/http_remote_transport.rs",
+    "changes": [
+      "Set the process-test credential file to 0600 on Unix before spawning pong-agent-http.",
+      "Report child exit status and safe stderr when readiness is EOF.",
+      "Report the readiness line when it is not valid JSON."
+    ],
+    "production_code_changed": false
+  },
+  "windows_local_validation_after_remediation": {
+    "cargo_fmt": "PASS",
+    "cargo_check_all_targets_locked": "PASS",
+    "cargo_clippy_all_targets_all_features_locked": "PASS",
+    "m4_focused_matrix": "PASS",
+    "http_remote_transport": "PASS / 16 passed / 0 failed",
+    "http_hardening": "PASS / 10 passed / 0 failed",
+    "real_remote_e2e": "PASS / 9 passed / 0 failed",
+    "full_regression": "PASS / cargo test --all --locked / exit 0"
+  },
+  "interpretation": {
+    "m4_020_status": "BLOCKED / NATIVE RERUN REQUIRED",
+    "linux": "FAIL for run 36227546466; remediation is not native evidence",
+    "macos": "FAIL for run 36227546466; remediation is not native evidence",
+    "checkpoint_created": false,
+    "pushed": false,
+    "tag_created": false
+  },
+  "next_required": [
+    "Commit and push the test-only remediation.",
+    "Manually rerun the existing workflow on Ubuntu 24.04 and macOS 14.",
+    "Accept Linux/macOS only when both focused and full commands exit zero."
+  ],
+  "mcp": "DEFERRED"
+}

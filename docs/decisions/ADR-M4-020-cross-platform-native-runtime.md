@@ -2,17 +2,17 @@
 
 **Date:** 2026-09-26
 **Status:** Proposed / remediation pending after native runs
-`36168364866`, `36173494807`, `36185384714`, and `36192502871`
+`36168364866`, `36173494807`, `36185384714`, `36192502871`, and `36227546466`
 
 ## Context
 
 Windows is the live development host. M4-019 established the supported
 Core-owned path and a passing Windows full regression. Native workflow runs
-`36168364866`, `36173494807`, `36185384714`, and `36192502871` reached both Ubuntu 24.04 and macOS 14 and
-passed format/check/clippy, but the focused/full test matrices still exposed
-fixture-lifetime failures. Existing historical native artifacts are not the
-same as this M4-020 run: they use different workflows, commits, or test
-scopes.
+`36168364866`, `36173494807`, `36185384714`, `36192502871`, and `36227546466`
+reached both Ubuntu 24.04 and macOS 14 and passed format/check/clippy, but the
+focused/full test matrices still exposed test-fixture failures. Existing
+historical native artifacts are not the same as this M4-020 run: they use
+different workflows, commits, or test scopes.
 
 ## Decision
 
@@ -37,16 +37,19 @@ Platform-specific locking, rename, signal and cleanup mechanisms are allowed
 when they implement the same contract. Test fixture lifetime is part of the
 cross-platform regression harness: a cold reopen must keep its temporary
 project alive, and hosted macOS runs must use a physical temporary root when
-the safety boundary rejects `/var` symlink ancestry. No production code or
-schema change is justified by these test-harness failures.
+the safety boundary rejects `/var` symlink ancestry. Unix credential fixtures
+must satisfy the owner-only permission boundary enforced by the production
+loader, and process-test startup diagnostics must retain safe child stderr. No
+production code or schema change is justified by these test-harness failures.
 
 ## Consequences
 
 Windows remains PASS. The Docker Desktop WSL2 Linux probe remains
 supplementary diagnostic evidence only. Linux and macOS have real native FAIL
-evidence from runs `36168364866`, `36173494807`, `36185384714`, and `36192502871`; they must not be relabeled
-PASS until the test-only fixture fix is pushed and the workflow reruns
-cleanly. The isolated macOS focused ownership conflict was not
+evidence from runs `36168364866`, `36173494807`, `36185384714`, `36192502871`,
+and `36227546466`; they must not be relabeled PASS until the test-only
+credential/readiness fix is pushed and the workflow reruns cleanly. The
+isolated macOS focused ownership conflict was not
 reproduced in that run's full suite and remains unclassified. Retain generated
 artifacts, including exact toolchain, filesystem identity, commands, exit
 codes, and cold-reopen results.
