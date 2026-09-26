@@ -21,10 +21,10 @@ pub mod repository;
 pub mod workspace;
 
 pub use control::{
-    AcquireWorkspaceRequest, AgentControl, CreateCandidateRequest, CreateExecutionRequest,
-    CreateExplorationRequest, CreateTaskRequest, CreateWorkspaceRequest, LeaseView,
-    PublishVersionRequest, PublishVersionResult, RegisterAgentRequest, ReleaseWorkspaceRequest,
-    RenewWorkspaceRequest, SnapshotView, StateView, WorkspaceView,
+    AcquireWorkspaceRequest, AgentControl, CreateExecutionRequest, CreateTaskRequest,
+    CreateWorkspaceRequest, LeaseView, PublishVersionRequest, PublishVersionResult,
+    RegisterAgentRequest, ReleaseWorkspaceRequest, RenewWorkspaceRequest, SnapshotView, StateView,
+    WorkspaceView,
 };
 pub use core_service::{AgentProtocolCore, ProtocolDispatch, ProtocolDispatchError};
 pub use environment::{EnvironmentFacts, ENVIRONMENT_SCHEMA_VERSION};
@@ -39,16 +39,15 @@ pub use http_transport::{
     MIN_HTTP_MAX_RESPONSE_BYTES,
 };
 pub use metadata::{
-    AgentIdentity, CandidateCreation, CandidateRecord, CheckpointCreation, CheckpointRecord,
-    EnvironmentRecord, EventEnvelope, EventRecord, ExecutionCreation, ExecutionOperationRecord,
-    ExecutionRecord, ExplorationCreation, ExplorationRecord, HandoffCreation, HandoffRecord,
-    LeaseRecord, LeaseToken, MetadataFailpoint, MetadataFailpoints, NewEvent, NewEventEnvelope,
-    OperationEnvelope, OperationError, OperationOutcome, OperationRecord, OperationRef,
-    ProjectionAppliedEvent, ProjectionCursor, ProjectionDefinition, ProjectionFailpoint,
-    ProjectionFailpoints, ProjectionHandler, ProjectionRecord, ResumeCreation, ResumeRecord,
-    RollbackCreation, RollbackRecord, RollbackTarget, SnapshotPublication, SnapshotRecord,
-    TaskCreation, TaskRecord, VersionCreation, VersionPublication, VersionRecord, WorkspaceRecord,
-    WorkspaceUpdate, EVENT_ENVELOPE_SCHEMA_VERSION, OPERATION_SCHEMA_VERSION,
+    AgentIdentity, CheckpointCreation, CheckpointRecord, EnvironmentRecord, EventEnvelope,
+    EventRecord, ExecutionCreation, ExecutionOperationRecord, ExecutionRecord, HandoffCreation,
+    HandoffRecord, LeaseRecord, LeaseToken, MetadataFailpoint, MetadataFailpoints, NewEvent,
+    NewEventEnvelope, OperationEnvelope, OperationError, OperationOutcome, OperationRecord,
+    OperationRef, ProjectionAppliedEvent, ProjectionCursor, ProjectionDefinition,
+    ProjectionFailpoint, ProjectionFailpoints, ProjectionHandler, ProjectionRecord, ResumeCreation,
+    ResumeRecord, RollbackCreation, RollbackRecord, RollbackTarget, SnapshotPublication,
+    SnapshotRecord, TaskCreation, TaskRecord, VersionCreation, VersionPublication, VersionRecord,
+    WorkspaceRecord, WorkspaceUpdate, EVENT_ENVELOPE_SCHEMA_VERSION, OPERATION_SCHEMA_VERSION,
     PROJECTION_SCHEMA_VERSION, SNAPSHOT_SCHEMA_VERSION,
 };
 pub use remote::{
