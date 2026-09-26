@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased - Exploration / Candidate / Route Semantics (2026-09-26)
+
+- Started the next post-M4 implementation slice as a Core-internal durable
+  model for explorations and candidate routes. This handoff does not change
+  External Agent Protocol v1.0 or the M4-020/M4-021 status.
+
+## Unreleased - M4-021 provider interoperability handoff (2026-09-26)
+
+- Defined the smallest post-M4-020 slice: real Codex-to-Claude continuation
+  through the existing `pong-agent-protocol` JSON Lines process and frozen
+  External Agent Protocol v1.0.
+- Ran the unchanged ignored harness at current HEAD
+  `d6e9dae1b02a19bc2d1af3d8a589ccf76f55f00f`. The real Claude Code process
+  returned HTTP 503 (`No available channel for model glm-5.3 under group glm`)
+  after 227.39 seconds, exit code `1`, before W2 continuation.
+- Recorded the exact platform, provider versions, command, topology, safe
+  failure, and unexecuted recovery steps in
+  `artifacts/m4-development/m4-021-provider-interoperability-2026-09-26.json`
+  and its companion log.
+- M4-021 is `BLOCKED / PROVIDER ENVIRONMENT`. No production code, Protocol
+  v1.0, Core schema, or test was modified. The three pre-existing untracked
+  provider/Windows files remain untouched and untracked.
+- No M4-021 checkpoint, push, or tag was created. Resume only when the
+  declared Claude provider service is available; do not substitute a provider,
+  mock the provider, or weaken the gate.
 ## Unreleased - M4-020 native regression run #7 complete (2026-09-26)
 
 - Retained successful GitHub Actions run `36229863325` at commit

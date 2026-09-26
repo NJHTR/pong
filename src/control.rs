@@ -5,11 +5,11 @@
 //! exposing SQLite connections or making provider names part of core behavior.
 
 use crate::metadata::{
-    AgentIdentity, CheckpointCreation, CheckpointRecord, ExecutionCreation,
-    ExecutionOperationRecord, ExecutionRecord, HandoffCreation, HandoffRecord, LeaseToken,
-    OperationEnvelope, OperationOutcome, OperationRecord, OperationRef, ResumeCreation,
-    ResumeRecord, SnapshotRecord, TaskCreation, TaskRecord, VersionPublication, VersionRecord,
-    WorkspaceRecord,
+    AgentIdentity, CandidateCreation, CandidateRecord, CheckpointCreation, CheckpointRecord,
+    ExecutionCreation, ExecutionOperationRecord, ExecutionRecord, ExplorationCreation,
+    ExplorationRecord, HandoffCreation, HandoffRecord, LeaseToken, OperationEnvelope,
+    OperationOutcome, OperationRecord, OperationRef, ResumeCreation, ResumeRecord, SnapshotRecord,
+    TaskCreation, TaskRecord, VersionPublication, VersionRecord, WorkspaceRecord,
 };
 use crate::redaction::Redactor;
 use crate::workspace::{SnapshotDiff, SnapshotOptions, WorkspaceManager};
@@ -46,6 +46,9 @@ pub struct CreateExecutionRequest {
     pub current_version_id: Option<String>,
     pub created_at: String,
 }
+
+pub type CreateExplorationRequest = ExplorationCreation;
+pub type CreateCandidateRequest = CandidateCreation;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CreateWorkspaceRequest {
@@ -218,6 +221,111 @@ impl<'a> AgentControl<'a> {
 
     pub fn task(&self, task_id: &str) -> Result<Option<TaskRecord>, PongError> {
         self.repository.metadata().task(task_id)
+    }
+
+    pub fn create_exploration(
+        &mut self,
+        request: CreateExplorationRequest,
+    ) -> Result<ExplorationRecord, PongError> {
+        self.repository.metadata_mut().create_exploration(&request)
+    }
+
+    pub fn exploration(
+        &self,
+        exploration_id: &str,
+    ) -> Result<Option<ExplorationRecord>, PongError> {
+        self.repository.metadata().exploration(exploration_id)
+    }
+
+    pub fn list_explorations(&self, task_id: &str) -> Result<Vec<ExplorationRecord>, PongError> {
+        self.repository.metadata().list_explorations(task_id)
+    }
+
+    pub fn create_candidate(
+        &mut self,
+        request: CreateCandidateRequest,
+    ) -> Result<CandidateRecord, PongError> {
+        self.repository.metadata_mut().create_candidate(&request)
+    }
+
+    pub fn candidate(&self, candidate_id: &str) -> Result<Option<CandidateRecord>, PongError> {
+        self.repository.metadata().candidate(candidate_id)
+    }
+
+    pub fn list_candidates(&self, exploration_id: &str) -> Result<Vec<CandidateRecord>, PongError> {
+        self.repository.metadata().list_candidates(exploration_id)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn transition_candidate(
+        &mut self,
+        candidate_id: &str,
+        next_status: &str,
+        outcome: Option<&str>,
+        terminal_version_id: Option<&str>,
+        score: Option<f64>,
+        evidence_ref: Option<&str>,
+        updated_at: &str,
+    ) -> Result<CandidateRecord, PongError> {
+        self.repository.metadata_mut().transition_candidate(
+            candidate_id,
+            next_status,
+            outcome,
+            terminal_version_id,
+            score,
+            evidence_ref,
+            updated_at,
+        )
+    }
+
+    pub fn select_candidate(
+        &mut self,
+        exploration_id: &str,
+        candidate_id: &str,
+        updated_at: &str,
+    ) -> Result<ExplorationRecord, PongError> {
+        self.repository
+            .metadata_mut()
+            .select_candidate(exploration_id, candidate_id, updated_at)
+    }
+
+    /// Materialize the durable terminal Version of the selected candidate.
+    /// Selection remains a metadata transition; physical materialization uses
+    /// the existing WorkspaceManager operation and lease/revision guards.
+    #[allow(clippy::too_many_arguments)]
+    pub fn materialize_selected_candidate(
+        &mut self,
+        exploration_id: &str,
+        target_workspace_id: &str,
+        lease: &LeaseToken,
+        expected_revision: i64,
+        now_ms: i64,
+        now: &str,
+    ) -> Result<SnapshotView, PongError> {
+        let exploration = self
+            .repository
+            .metadata()
+            .exploration(exploration_id)?
+            .ok_or_else(|| PongError::NotFound("exploration does not exist".into()))?;
+        let candidate_id = exploration
+            .selected_candidate_id
+            .ok_or_else(|| PongError::Conflict("exploration has no selected candidate".into()))?;
+        let candidate = self
+            .repository
+            .metadata()
+            .candidate(&candidate_id)?
+            .ok_or_else(|| PongError::Integrity("selected candidate is missing".into()))?;
+        let version_id = candidate.terminal_version_id.ok_or_else(|| {
+            PongError::Conflict("selected candidate has no terminal Version".into())
+        })?;
+        self.materialize_from_version(
+            target_workspace_id,
+            &version_id,
+            lease,
+            expected_revision,
+            now_ms,
+            now,
+        )
     }
 
     pub fn create_execution(

@@ -2,27 +2,31 @@
 
 **Current Phase:** M4 - provider-neutral external protocol boundary
 
-**Current Milestone:** Cross-platform / native runtime regression gate (M4-020)
+**Current Milestone:** Provider-neutral external runtime interoperability
+gate (M4-021)
 
-**Current Task:** M4-020 verifies that the frozen Core-owned contract is
-reproducible on native Linux and macOS: Core ownership, lifecycle, durable
-state, lease/revision/CAS, Operation recovery, Protocol v1.0, HTTP remote
-transport, authorization, reconnect, restart, and failure semantics. Native
-run `36229863325` passed format/check/clippy, the complete focused matrix, and
-the full regression on both Ubuntu 24.04 and macOS 14 with exit code `0`.
-Windows was already PASS. M4-020 is now `PASS / COMPLETE`; see
+**Current Task:** M4-021 evaluates whether real Codex and Claude Code
+processes can continue one durable Pong workflow through the existing local
+JSON Lines transport and frozen External Agent Protocol v1.0. M4-020 is
+already `PASS / COMPLETE` on Windows, Ubuntu 24.04, and macOS 14; it is not
+repeated. See
 [`M4_CROSS_PLATFORM_NATIVE_RUNTIME.md`](../architecture/M4_CROSS_PLATFORM_NATIVE_RUNTIME.md)
 and
 [`ADR-M4-020-cross-platform-native-runtime.md`](../decisions/ADR-M4-020-cross-platform-native-runtime.md).
 
-**Next Action:** Finalize this slice with the formal
-`checkpoint: m4-cross-platform-native-runtime` snapshot containing the accepted
-run #7 evidence, then proceed to the next explicitly scoped task. Do not rerun
-the workflow unless source, test, or workflow inputs change. Keep TLS
+**Next Action:** M4-021 is currently `BLOCKED / PROVIDER ENVIRONMENT`. The
+current-HEAD ignored harness reached the real provider stage but Claude Code
+returned HTTP 503 (`No available channel for model glm-5.3 under group glm`)
+and exited `1` before W2 continuation. Retain the exact record in
+[`m4-021-provider-interoperability-2026-09-26.json`](../../artifacts/m4-development/m4-021-provider-interoperability-2026-09-26.json).
+Resume only when the declared Claude provider service is available, using the
+unchanged harness and current HEAD. Do not substitute a provider, mock the
+provider, alter Protocol v1.0, or weaken the gate. No M4-021 checkpoint,
+push, or tag is created while blocked.
+
+M4-020 evidence and historical failed run records remain immutable. Keep TLS
 deployment, production secret manager, Windows credential ACL, slow-client
 deadline, and public Internet deployment as `NOT_PROVEN`; MCP remains deferred.
-Historical failed run records and the supplementary Docker diagnostic remain
-retained and must not be rewritten.
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
@@ -314,3 +318,10 @@ separate owner-controlled action.
 
 Every future session starts here. If the next action changes, update this file
 before changing implementation or roadmap scope.
+
+## Current implementation handoff
+
+The next implementation slice is **Exploration / Candidate / Route Semantics**.
+It adds minimal durable Core semantics over the existing Task, Execution,
+Version, Snapshot, Checkpoint, Operation, and Workspace records. Protocol v1.0
+and the M4-020/M4-021 dispositions remain unchanged.
