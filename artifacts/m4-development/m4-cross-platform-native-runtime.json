@@ -5,7 +5,7 @@
   "base_subject": "checkpoint: m4-windows-regression-gate",
   "prepared_head": "cad20cd51979addba5811f28266994f514d1edd5",
   "prepared_subject": "docs: bind m4 cross-platform evidence to preparation head",
-  "current_head": "82e5f5c957a0fe83252b51534140f64a52d99bd3",
+  "current_head": "481ea396e630f46294632213ad4be22a42f331b8",
   "last_updated": "2026-09-26",
   "status": "BLOCKED / NATIVE REGRESSION FAILURES",
   "production_code_changed": false,
