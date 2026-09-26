@@ -314,3 +314,13 @@ separate owner-controlled action.
 
 Every future session starts here. If the next action changes, update this file
 before changing implementation or roadmap scope.
+
+## Architecture boundary correction
+
+Exploration, Route, Candidate, Evaluation, Search, and Selection are research
+or composition-layer concepts, not Pong Core domain entities. They may be
+implemented by an external orchestrator over Pong's durable substrate:
+Version/Snapshot lineage, Execution/Operation history, Checkpoint/Resume,
+Rollback/Restore/Materialization, Diff, Workspace isolation, Lease/Revision/CAS,
+Protocol, provenance, and recovery. Pong executes an externally chosen action;
+it does not rank candidates or decide which state is best.

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased - Core boundary correction after exploration prototype (2026-09-26)
+
+- Reverted `66fda97` with an auditable Git revert. Exploration/Candidate/Route
+  records, candidate lifecycle, score/evidence, selection, and
+  `materialize_selected_candidate` are not Pong Core capabilities.
+- Repositioned those concepts as a future Research/Composition Layer built on
+  Pong's existing Version, Execution, Checkpoint, Resume, Rollback, Diff,
+  Materialization, Workspace, concurrency, provenance, and recovery primitives.
+- Protocol v1.0 and the M4-020/M4-021 dispositions remain unchanged. No new
+  Exploration checkpoint was created.
+
 ## Unreleased - M4-020 native regression run #7 complete (2026-09-26)
 
 - Retained successful GitHub Actions run `36229863325` at commit
