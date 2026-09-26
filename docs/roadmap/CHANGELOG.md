@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased - M4-020 native rerun evidence (2026-09-26)
+
+- Retained GitHub Actions run `36192502871` at HEAD
+  `a8f13f04c972c7371f96ada0644048230c84ffc3`: Ubuntu 24.04 and macOS 14
+  passed format/check/clippy, but both focused and full regression matrices
+  failed in `cross_workspace_source::x21_cold_reopen` and
+  `http_hardening::process_credential_reload_rotates_and_revokes_without_touching_core_state`.
+- `x21_cold_reopen` dropped `TwoWorkspaceFixture` before Repository reopen,
+  deleting its temporary project root. The HTTP process test helper created a
+  credential file with broad Unix permissions; the production loader correctly
+  rejected it before readiness, and the test observed EOF.
+- The current test-only fixes keep the source fixture directories alive and
+  set the Unix credential fixture to `0600`. Windows verification passes the
+  source suite (30/30), materialization suite (43/43), rollback suite (47/47),
+  HTTP hardening (10/10), HTTP/remote/process matrices, and full
+  `cargo test --all --locked`.
+- M4-020 remains `BLOCKED / NATIVE REGRESSION FAILURES`; Linux and macOS must
+  be rerun after these fixes are pushed. No production code, Protocol v1.0,
+  Core schema, checkpoint, push, or tag changed in the recorded run.
+
 ## Unreleased - M4-020 rollback fixture evidence (2026-09-26)
 
 - Retained GitHub Actions run `36185384714` at HEAD

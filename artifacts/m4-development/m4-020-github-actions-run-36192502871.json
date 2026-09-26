@@ -1,0 +1,123 @@
+{
+  "record_version": "m4-020-github-actions-native-regression-0.4",
+  "slice": "M4-020",
+  "workflow": ".github/workflows/m4-cross-platform-regression.yml",
+  "run_id": 36192502871,
+  "run_number": 5,
+  "run_url": "https://github.com/NJHTR/pong/actions/runs/36192502871",
+  "head_sha": "a8f13f04c972c7371f96ada0644048230c84ffc3",
+  "date": "2026-09-26",
+  "artifacts": [
+    {
+      "platform": "linux",
+      "name": "m4-linux-native-regression",
+      "source_archive": "m4-linux-native-regression (2).zip",
+      "sha256": "18a6856615efc7dcfd6f808eeb2d7cbf0df55aeb497aa7abb53f1c250b38702a"
+    },
+    {
+      "platform": "macos",
+      "name": "m4-macos-native-regression",
+      "source_archive": "m4-macos-native-regression (2).zip",
+      "sha256": "e72f5be404a5a47142e547751c0d3e767c0a3b285754e4b11d385e2c017b6e4d"
+    }
+  ],
+  "platforms": {
+    "linux": {
+      "runner": "ubuntu-24.04",
+      "architecture": "x86_64",
+      "filesystem": "ext4",
+      "rustc": "1.98.1",
+      "cargo": "1.98.1",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 101,
+        "failures": [
+          "http_hardening::process_credential_reload_rotates_and_revokes_without_touching_core_state",
+          "cross_workspace_source::x21_cold_reopen"
+        ],
+        "errors": [
+          "HTTP process emitted no readiness line; the test helper later reported EOF while parsing an empty line",
+          "NotFound(\"project root does not exist: /tmp/.tmpz0dJda\")"
+        ]
+      },
+      "full_regression": {
+        "exit_code": 101,
+        "failures": [
+          "http_hardening::process_credential_reload_rotates_and_revokes_without_touching_core_state",
+          "cross_workspace_source::x21_cold_reopen"
+        ],
+        "errors": [
+          "HTTP process emitted no readiness line; the test helper later reported EOF while parsing an empty line",
+          "NotFound(\"project root does not exist\")"
+        ]
+      }
+    },
+    "macos": {
+      "runner": "macos-14",
+      "architecture": "arm64",
+      "rustc": "1.98.1",
+      "cargo": "1.98.1",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 101,
+        "failures": [
+          "http_hardening::process_credential_reload_rotates_and_revokes_without_touching_core_state",
+          "cross_workspace_source::x21_cold_reopen"
+        ],
+        "errors": [
+          "HTTP process emitted no readiness line; the test helper later reported EOF while parsing an empty line",
+          "NotFound(\"project root does not exist: /private/tmp/pong-m4-36192502871-1/.tmpVKkPcX\")"
+        ]
+      },
+      "full_regression": {
+        "exit_code": 101,
+        "failures": [
+          "http_hardening::process_credential_reload_rotates_and_revokes_without_touching_core_state",
+          "cross_workspace_source::x21_cold_reopen"
+        ],
+        "errors": [
+          "HTTP process emitted no readiness line; the test helper later reported EOF while parsing an empty line",
+          "NotFound(\"project root does not exist\")"
+        ]
+      }
+    }
+  },
+  "failure_interpretation": {
+    "cross_workspace_source": "x21_cold_reopen dropped TwoWorkspaceFixture before Repository reopen, deleting the temporary project root",
+    "http_hardening": "The Unix test helper wrote credentials with default broad permissions; the production loader correctly rejected the file before readiness, and the parent observed EOF. The fix sets test credentials to 0600.",
+    "production_code_changed": false,
+    "protocol_changed": false
+  },
+  "windows_local_validation_after_pending_fix": {
+    "cargo_fmt": "PASS",
+    "cargo_check_all_targets_locked": "PASS",
+    "cargo_clippy_all_targets_all_features_locked": "PASS",
+    "cross_workspace_source": "PASS / 30 passed / 0 failed",
+    "cross_workspace_materialization": "PASS / 43 passed / 0 failed",
+    "cross_workspace_rollback": "PASS / 47 passed / 0 failed",
+    "http_hardening": "PASS / 10 passed / 0 failed",
+    "core_ownership": "PASS / 2 passed / 0 failed",
+    "http_remote_transport": "PASS / 16 passed / 0 failed",
+    "real_remote_e2e": "PASS / 9 passed / 0 failed",
+    "full_regression": "PASS / cargo test --all --locked / exit 0"
+  },
+  "interpretation": {
+    "m4_020_status": "BLOCKED / NATIVE REGRESSION FAILURES",
+    "checkpoint_created": false,
+    "pushed": false,
+    "tag_created": false
+  },
+  "next_required": [
+    "Run the same workflow again on Ubuntu 24.04 and macOS 14 after the two test-only fixes are committed and pushed.",
+    "Do not promote either native platform until focused and full exits are zero."
+  ],
+  "mcp": "DEFERRED"
+}

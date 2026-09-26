@@ -5,19 +5,19 @@
   "base_subject": "checkpoint: m4-windows-regression-gate",
   "prepared_head": "cad20cd51979addba5811f28266994f514d1edd5",
   "prepared_subject": "docs: bind m4 cross-platform evidence to preparation head",
-  "current_head": "f342694ca11537da368fb9c380fc3cf3a506cd58",
-  "last_updated": "2026-09-25",
+  "current_head": "a8f13f04c972c7371f96ada0644048230c84ffc3",
+  "last_updated": "2026-09-26",
   "status": "BLOCKED / NATIVE REGRESSION FAILURES",
   "production_code_changed": false,
   "workflow_prepared": true,
   "workflow_executed_in_this_session": true,
   "latest_workflow_run": {
-    "run_id": 36185384714,
-    "run_number": 4,
-    "head_sha": "f342694ca11537da368fb9c380fc3cf3a506cd58",
+    "run_id": 36192502871,
+    "run_number": 5,
+    "head_sha": "a8f13f04c972c7371f96ada0644048230c84ffc3",
     "conclusion": "failure",
-    "url": "https://github.com/NJHTR/pong/actions/runs/36185384714",
-    "evidence": "m4-020-github-actions-run-36185384714.json"
+    "url": "https://github.com/NJHTR/pong/actions/runs/36192502871",
+    "evidence": "m4-020-github-actions-run-36192502871.json"
   },
   "supplementary_probes": [
     {
@@ -48,15 +48,15 @@
     },
     "linux": {
       "result": "FAIL",
-      "reason": "Native Ubuntu 24.04 run 36185384714 failed focused and full regression",
-      "focused_failure": "cross_workspace_rollback::{r9_cas_reload,r9_cold_reopen,r9_rollback_record_reload,r9_snapshot_reload}: project root was deleted with the TempDir fixture before reopen",
-      "full_failure": "cross_workspace_rollback::{r9_cas_reload,r9_cold_reopen,r9_rollback_record_reload,r9_snapshot_reload}: project root was deleted with the TempDir fixture before reopen"
+      "reason": "Native Ubuntu 24.04 run 36192502871 failed focused and full regression",
+      "focused_failure": "http_hardening::process_credential_reload_rotates_and_revokes_without_touching_core_state and cross_workspace_source::x21_cold_reopen",
+      "full_failure": "http_hardening::process_credential_reload_rotates_and_revokes_without_touching_core_state and cross_workspace_source::x21_cold_reopen"
     },
     "macos": {
       "result": "FAIL",
-      "reason": "Native macOS 14 run 36185384714 failed focused and full regression",
-      "focused_failure": "cross_workspace_rollback::{r9_cas_reload,r9_cold_reopen,r9_rollback_record_reload,r9_snapshot_reload}: project root was deleted with the TempDir fixture before reopen",
-      "full_failure": "cross_workspace_rollback::{r9_cas_reload,r9_cold_reopen,r9_rollback_record_reload,r9_snapshot_reload}: project root was deleted with the TempDir fixture before reopen"
+      "reason": "Native macOS 14 run 36192502871 failed focused and full regression",
+      "focused_failure": "http_hardening::process_credential_reload_rotates_and_revokes_without_touching_core_state and cross_workspace_source::x21_cold_reopen",
+      "full_failure": "http_hardening::process_credential_reload_rotates_and_revokes_without_touching_core_state and cross_workspace_source::x21_cold_reopen"
     }
   },
   "native_workflow_runs": [
@@ -139,6 +139,40 @@
         "macos_sha256": "b425ab424448fecc313bdba59ad6af23c928824134fa5533db87bb1178a01b32"
       },
       "interpretation": "Real native evidence; M7 materialization failures are gone, but rollback reopen fixtures still drop their project TempDir before Repository reopen."
+    },
+    {
+      "run_id": 36192502871,
+      "head_sha": "a8f13f04c972c7371f96ada0644048230c84ffc3",
+      "linux": {
+        "runner": "ubuntu-24.04",
+        "architecture": "x86_64",
+        "filesystem": "ext4",
+        "rustc": "1.98.1",
+        "cargo": "1.98.1",
+        "fmt": "PASS",
+        "check_all_targets_locked": "PASS",
+        "clippy_all_targets_all_features_locked": "PASS",
+        "focused_matrix": "FAIL / exit 101 / http_hardening credential reload and cross_workspace_source x21_cold_reopen",
+        "full_regression": "FAIL / exit 101 / http_hardening credential reload and cross_workspace_source x21_cold_reopen"
+      },
+      "macos": {
+        "runner": "macos-14",
+        "architecture": "arm64",
+        "rustc": "1.98.1",
+        "cargo": "1.98.1",
+        "fmt": "PASS",
+        "check_all_targets_locked": "PASS",
+        "clippy_all_targets_all_features_locked": "PASS",
+        "focused_matrix": "FAIL / exit 101 / http_hardening credential reload and cross_workspace_source x21_cold_reopen",
+        "full_regression": "FAIL / exit 101 / http_hardening credential reload and cross_workspace_source x21_cold_reopen"
+      },
+      "artifacts": {
+        "linux_archive": "m4-linux-native-regression (2).zip",
+        "linux_sha256": "18a6856615efc7dcfd6f808eeb2d7cbf0df55aeb497aa7abb53f1c250b38702a",
+        "macos_archive": "m4-macos-native-regression (2).zip",
+        "macos_sha256": "e72f5be404a5a47142e547751c0d3e767c0a3b285754e4b11d385e2c017b6e4d"
+      },
+      "interpretation": "Real native evidence; rollback R9 and M7 materialization failures are gone, but a source cold-reopen fixture and Unix credential-file test setup still fail."
     }
   ],
   "capability_inventory": {
@@ -181,7 +215,9 @@
     "Keep temporary project and workspace directories alive while reopening the Repository in d7_cold_reopen_after_restore.",
     "Use a physical /private/tmp TMPDIR on macOS hosted runners so system /var symlink ancestry is not mistaken for a user-controlled reparse path.",
     "Keep the MaterializationFixture project and workspace TempDir values alive while reopening the Repository in the four M7 materialization tests.",
-    "Keep the CrossWorkspaceRollbackFixture project and workspace parent TempDir values alive while reopening the Repository in the four R9 rollback tests."
+    "Keep the CrossWorkspaceRollbackFixture project and workspace parent TempDir values alive while reopening the Repository in the four R9 rollback tests.",
+    "Keep the TwoWorkspaceFixture project and workspace parent TempDir values alive while reopening the Repository in cross_workspace_source x21_cold_reopen.",
+    "Set the http_hardening process-test credential fixture to owner-only 0600 permissions on Unix before starting pong-agent-http."
   ],
   "mcp": "DEFERRED",
   "checkpoint_created": false,

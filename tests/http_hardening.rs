@@ -291,6 +291,12 @@ fn write_credentials(path: &Path, entries: &[(&str, &str, &str)]) {
         serde_json::to_vec(&json!({"credentials": credentials})).unwrap(),
     )
     .unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(path, fs::Permissions::from_mode(0o600))
+            .expect("restrict credential permissions");
+    }
 }
 
 struct HttpProcess {

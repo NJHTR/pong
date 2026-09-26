@@ -4,8 +4,8 @@
 **Baseline:** `b71798d7b3be144f449deac6fa0ff39eca5fb234`  
 **Preparation/evidence commit:** `cad20cd51979addba5811f28266994f514d1edd5`
 **Status:** `BLOCKED / NATIVE REGRESSION FAILURES` after native workflow runs
-`36168364866`, `36173494807`, and `36185384714`. Windows remains passing; the next
-test-only fixture remediation is prepared for another rerun.
+`36168364866`, `36173494807`, `36185384714`, and `36192502871`. Windows remains
+passing; the next test-only fixture remediation is prepared for another rerun.
 
 ## Scope
 
@@ -71,8 +71,8 @@ placeholders are not counted as passes.
 | Platform | Result | Evidence |
 | --- | --- | --- |
 | Windows | `PASS` | M4-019 checkpoint and current repository baseline |
-| Linux | `FAIL` | GitHub Actions run `36185384714`, Ubuntu 24.04 focused/full regression |
-| macOS | `FAIL` | GitHub Actions run `36185384714`, macOS 14 focused/full regression |
+| Linux | `FAIL` | GitHub Actions run `36192502871`, Ubuntu 24.04 focused/full regression |
+| macOS | `FAIL` | GitHub Actions run `36192502871`, macOS 14 focused/full regression |
 | Protocol v1.0 | `PASS / unchanged` | No DTO or wire-shape change |
 | HTTP transport | `PASS on Windows` / native parity `NOT_PROVEN` | Existing M4-015/M4-019 evidence |
 | Authorization | `PASS on Windows` / native parity `NOT_PROVEN` | M4-018 evidence |
@@ -132,6 +132,29 @@ the corresponding run summary is retained in its companion log. On Windows,
 the current test-only fix passes `cross_workspace_rollback` (47/47), the
 focused M4 matrix, and `cargo test --all --locked`. These local results do
 not promote native Linux or macOS to PASS.
+
+## Fifth Native Run
+
+Run `36192502871` executed commit
+`a8f13f04c972c7371f96ada0644048230c84ffc3` on Ubuntu 24.04 and macOS 14.
+Format, check, and clippy passed on both platforms. The rollback R9 and M7
+materialization reopen failures no longer appeared. Both focused and full
+matrices instead failed at:
+
+- `cross_workspace_source::x21_cold_reopen`, which dropped
+  `TwoWorkspaceFixture` before reopening the Repository and deleted the
+  temporary project root.
+- `http_hardening::process_credential_reload_rotates_and_revokes_without_touching_core_state`,
+  whose Unix test helper wrote a credential file with broad permissions. The
+  production loader correctly rejected that file before readiness, and the
+  test then observed EOF while parsing an empty readiness line.
+
+The supplied Linux and macOS ZIP artifacts and hashes are retained in
+[`m4-020-github-actions-run-36192502871.json`](../../artifacts/m4-development/m4-020-github-actions-run-36192502871.json)
+and its companion log. The current Windows worktree fixes both harness issues:
+`cross_workspace_source` passes 30/30 and `http_hardening` passes 10/10, while
+the focused M4 matrix and full `cargo test --all --locked` also pass. These
+local results do not promote native Linux or macOS to PASS.
 
 Historical M1 Linux/macOS artifacts are retained, but they do not close this
 slice: they were produced by different workflows, commits, and matrices.

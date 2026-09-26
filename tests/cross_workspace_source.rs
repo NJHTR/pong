@@ -777,8 +777,18 @@ fn x21_cold_reopen() {
         })
         .expect("execution");
 
-    let project_path = fixture._project.path().to_path_buf();
-    drop(fixture);
+    // Close only the repository before reopening. Keep the temporary project
+    // and workspace parents alive so the reopen exercises durable state
+    // rather than a deleted test fixture.
+    let TwoWorkspaceFixture {
+        repository,
+        _project: project,
+        _ws1_parent,
+        _ws2_parent,
+        ..
+    } = fixture;
+    let project_path = project.path().to_path_buf();
+    drop(repository);
 
     // Reopen repository
     let reopened = Repository::open(&project_path).expect("reopen");
