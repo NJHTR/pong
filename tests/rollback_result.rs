@@ -2,9 +2,9 @@
 
 use pong_core::cas::Digest;
 use pong_core::metadata::{
-    AgentIdentity, CheckpointCreation, ExecutionCreation, MetadataFailpoint, MetadataFailpoints,
-    OperationEnvelope, OperationRef, ResumeCreation, RollbackCreation, RollbackTarget,
-    TaskCreation, VersionPublication,
+    AgentIdentity, CheckpointCreation, ExecutionCreation, IdempotencyKey, MetadataFailpoint,
+    MetadataFailpoints, OperationEnvelope, OperationRef, ResumeCreation, RollbackCreation,
+    RollbackTarget, TaskCreation, VersionPublication,
 };
 use pong_core::redaction::Redactor;
 use pong_core::workspace::{
@@ -597,6 +597,167 @@ fn rr10_resume_then_snapshot_creates_new_version() {
             .len(),
         3
     );
+}
+
+#[test]
+fn git_like_history_closes_change_checkpoint_rollback_resume_and_reopen() {
+    let mut fixture = fixture();
+
+    // The current Workspace is V2; the read-only diff is the observable
+    // Change boundary that led to V2, without introducing a Change entity.
+    let change = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .diff_workspace_against_version("ws-rb", &fixture.v1.version_id)
+        .expect("diff current workspace against V1");
+    assert_eq!(change.entries.len(), 1);
+    assert_eq!(change.entries[0].path, "state.txt");
+
+    fixture
+        .repository
+        .metadata_mut()
+        .create_checkpoint(&CheckpointCreation {
+            checkpoint_id: "cp-history".into(),
+            task_id: "task-rb".into(),
+            execution_id: "exec-rb".into(),
+            workspace_id: "ws-rb".into(),
+            version_id: fixture.v1.version_id.clone(),
+            operation_id: Some("op-v1".into()),
+            reason: "known-good history anchor".into(),
+            actor_agent_id: "agent-rb".into(),
+            request_id: "checkpoint-history".into(),
+            created_at: "t5".into(),
+        })
+        .expect("checkpoint");
+
+    fixture
+        .repository
+        .metadata_mut()
+        .start_execution("exec-rb", 0, "t6")
+        .expect("start execution");
+    fixture
+        .repository
+        .metadata_mut()
+        .transition_execution("exec-rb", "failed", Some("interrupted"), 1, "t7")
+        .expect("record failure");
+
+    let rollback = request(&fixture, "rb-history", 4);
+    let rollback_record = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .rollback_local(&rollback)
+        .expect("rollback V2 to V1");
+    assert_eq!(rollback_record.status, "completed");
+    assert_eq!(rollback_record.target_version_id, fixture.v1.version_id);
+    assert_eq!(fs::read(fixture.path.join("state.txt")).unwrap(), b"one");
+
+    let resumed = fixture
+        .repository
+        .metadata_mut()
+        .resume_from_checkpoint(&ResumeCreation {
+            execution_id: "exec-resume-history".into(),
+            task_id: "task-rb".into(),
+            agent_id: "agent-rb".into(),
+            parent_execution_id: Some("exec-rb".into()),
+            workspace_id: Some("ws-rb".into()),
+            source_version_id: None,
+            checkpoint_id: Some("cp-history".into()),
+            request_id: "resume-history".into(),
+            created_at: "t8".into(),
+        })
+        .expect("resume from checkpoint");
+    assert_eq!(resumed.source_version_id, fixture.v1.version_id);
+
+    fs::write(fixture.path.join("state.txt"), b"three").expect("new resumed change");
+    let snapshot = WorkspaceManager::new(&mut fixture.repository, Redactor::default())
+        .snapshot_local("ws-rb", &fixture.lease, SnapshotOptions::default(), 5, "t9")
+        .expect("snapshot resumed change");
+    let v3 = publish_version(
+        &mut fixture.repository,
+        &snapshot.snapshot_id,
+        "op-v3-history",
+        Some(&fixture.v1.version_id),
+        "t10",
+    );
+    fixture
+        .repository
+        .metadata_mut()
+        .set_version_head(
+            "ws-rb",
+            Some(&v3.version_id),
+            &fixture.lease,
+            6,
+            "t10-head",
+            10,
+        )
+        .expect("select new version head");
+
+    let project_path = fixture._project.path().to_path_buf();
+    let workspace_path = fixture.path.clone();
+    drop(fixture.repository);
+    let reopened = Repository::open(project_path).expect("cold reopen");
+    let workspace = reopened
+        .metadata()
+        .workspace("ws-rb")
+        .unwrap()
+        .expect("workspace after reopen");
+    assert_eq!(
+        workspace.version_head_id.as_deref(),
+        Some(v3.version_id.as_str())
+    );
+    assert_eq!(
+        fs::read(workspace_path.join("state.txt")).unwrap(),
+        b"three"
+    );
+
+    let versions = reopened.metadata().list_versions("ws-rb").unwrap();
+    assert_eq!(versions.len(), 3);
+    assert!(versions
+        .iter()
+        .any(|version| version.version_id == fixture.v1.version_id));
+    assert!(versions
+        .iter()
+        .any(|version| version.version_id == fixture.v2.version_id));
+    assert_eq!(
+        v3.parent_version_id.as_deref(),
+        Some(fixture.v1.version_id.as_str())
+    );
+    let children = reopened
+        .metadata()
+        .get_children(&fixture.v1.version_id)
+        .unwrap();
+    assert_eq!(children.len(), 2);
+    assert!(children
+        .iter()
+        .any(|child| child.version_id == fixture.v2.version_id));
+    assert!(children
+        .iter()
+        .any(|child| child.version_id == v3.version_id));
+    assert!(reopened
+        .metadata()
+        .checkpoint("cp-history")
+        .unwrap()
+        .is_some());
+    assert!(reopened
+        .metadata()
+        .rollback_record("rb-history")
+        .unwrap()
+        .is_some());
+    assert_eq!(
+        reopened
+            .metadata()
+            .resume_record("exec-resume-history")
+            .unwrap()
+            .unwrap()
+            .source_version_id,
+        fixture.v1.version_id
+    );
+    let operation = reopened
+        .metadata()
+        .operation(&IdempotencyKey {
+            project_id: "project-rb".into(),
+            actor_id: "agent-rb".into(),
+            request_id: "request-op-v3-history".into(),
+        })
+        .unwrap()
+        .expect("version provenance after reopen");
+    assert_eq!(operation.operation_id, "op-v3-history");
 }
 
 #[test]
