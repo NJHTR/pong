@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased - M4-020 native regression run #7 complete (2026-09-26)
+
+- Retained successful GitHub Actions run `36229863325` at commit
+  `07f74b3a012c49b98b1dd6aaa7baa094658679c8`. Ubuntu 24.04 and macOS 14 both
+  passed `cargo fmt --all -- --check`, `cargo check --all-targets --locked`,
+  `cargo clippy --all-targets --all-features --locked -- -D warnings`, the
+  complete focused M4 matrix, and `cargo test --all --locked`, all with exit
+  code `0`.
+- Recorded the Linux/ext4 and macOS/arm64 manifests and artifact SHA-256
+  values in `m4-020-github-actions-run-36229863325.json` and its companion
+  log. The macOS workflow filesystem field remains explicitly `unknown`.
+- M4-020 is now `PASS / COMPLETE` across Windows, Linux, and macOS. No
+  production code, Protocol v1.0, Core schema, or ownership semantics changed.
+  Node.js 20 deprecation annotations are warnings only. TLS deployment,
+  production secret manager, Windows credential ACL, slow-client deadline, and
+  public Internet deployment remain `NOT_PROVEN`; MCP remains deferred.
+
 ## Unreleased - M4-020 native regression run #6 audit (2026-09-26)
 
 - Retained native GitHub Actions run `36227546466` and both downloaded

@@ -1,0 +1,108 @@
+{
+  "record_version": "m4-020-github-actions-native-regression-0.6",
+  "slice": "M4-020",
+  "workflow": ".github/workflows/m4-cross-platform-regression.yml",
+  "run_id": 36229863325,
+  "run_number": 7,
+  "run_url": "https://github.com/NJHTR/pong/actions/runs/36229863325",
+  "head_sha": "07f74b3a012c49b98b1dd6aaa7baa094658679c8",
+  "date": "2026-09-26",
+  "duration": "38m 55s",
+  "conclusion": "success",
+  "artifacts": [
+    {
+      "platform": "linux",
+      "name": "m4-linux-native-regression",
+      "source_archive": "m4-linux-native-regression (4).zip",
+      "sha256": "a81322ede35eb80b191217ca5e729b67a9b7d2469bd638f4a10572cfc17bc397"
+    },
+    {
+      "platform": "macos",
+      "name": "m4-macos-native-regression",
+      "source_archive": "m4-macos-native-regression (4).zip",
+      "sha256": "67ea51f5e6b3598b777bc74d46254c41bfc0bb198cc485d3670d3d32518690c8"
+    }
+  ],
+  "platforms": {
+    "linux": {
+      "runner": "ubuntu-24.04",
+      "architecture": "x86_64",
+      "os_version": "Linux 6.17.0-1022-azure",
+      "filesystem": "ext4",
+      "rustc": "1.98.1",
+      "cargo": "1.98.1",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 0,
+        "failures": []
+      },
+      "full_regression": {
+        "exit_code": 0,
+        "failures": []
+      },
+      "result": "PASS"
+    },
+    "macos": {
+      "runner": "macos-14",
+      "architecture": "arm64",
+      "os_version": "Darwin 23.6.0",
+      "filesystem": "unknown / workflow inventory empty",
+      "rustc": "1.98.1",
+      "cargo": "1.98.1",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": {
+        "exit_code": 0,
+        "failures": []
+      },
+      "full_regression": {
+        "exit_code": 0,
+        "failures": []
+      },
+      "result": "PASS"
+    }
+  },
+  "semantic_results": {
+    "core_ownership": "PASS",
+    "second_core_rejection": "PASS",
+    "lifecycle_and_cold_reopen": "PASS",
+    "http_transport": "PASS",
+    "authentication": "PASS",
+    "authorization": "PASS",
+    "reconnect_and_restart": "PASS",
+    "lease_revision_and_idempotency": "PASS",
+    "failure_isolation_and_error_safety": "PASS",
+    "resource_limits": "PASS",
+    "protocol_v1_0": "PASS / unchanged",
+    "provider_neutrality": "PASS",
+    "model_a_direct_repository": "NOT_SUPPORTED"
+  },
+  "warnings": [
+    "GitHub Actions reported Node.js 20 deprecation warnings for actions/checkout@v4 and actions/upload-artifact@v4; both jobs still completed successfully."
+  ],
+  "production_code_changed": false,
+  "protocol_changed": false,
+  "mcp": "DEFERRED",
+  "interpretation": {
+    "m4_020_status": "PASS / COMPLETE",
+    "windows": "PASS from M4-019 and current Windows regression baseline",
+    "linux": "PASS from native Ubuntu 24.04 run 36229863325",
+    "macos": "PASS from native macOS 14 run 36229863325",
+    "tls_deployment": "NOT_PROVEN",
+    "public_internet": "NOT_PROVEN",
+    "production_secret_manager": "NOT_PROVEN",
+    "windows_credential_acl": "NOT_PROVEN",
+    "slow_client_deadline": "NOT_PROVEN"
+  },
+  "checkpoint_created": false,
+  "pushed": false,
+  "tag_created": false,
+  "provider_untracked_files_preserved": true
+}

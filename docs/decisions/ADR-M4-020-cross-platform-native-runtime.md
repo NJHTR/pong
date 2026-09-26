@@ -1,8 +1,7 @@
 # ADR-M4-020: Cross-Platform Native Runtime Regression Gate
 
 **Date:** 2026-09-26
-**Status:** Proposed / remediation pending after native runs
-`36168364866`, `36173494807`, `36185384714`, `36192502871`, and `36227546466`
+**Status:** Accepted / `PASS / COMPLETE` after native run `36229863325`
 
 ## Context
 
@@ -13,6 +12,11 @@ reached both Ubuntu 24.04 and macOS 14 and passed format/check/clippy, but the
 focused/full test matrices still exposed test-fixture failures. Existing
 historical native artifacts are not the same as this M4-020 run: they use
 different workflows, commits, or test scopes.
+
+Native workflow run `36229863325` executed commit
+`07f74b3a012c49b98b1dd6aaa7baa094658679c8` on Ubuntu 24.04 and macOS 14. Both
+jobs passed format/check/clippy, the focused M4 matrix, and the full regression
+with exit code `0`.
 
 ## Decision
 
@@ -45,11 +49,9 @@ production code or schema change is justified by these test-harness failures.
 ## Consequences
 
 Windows remains PASS. The Docker Desktop WSL2 Linux probe remains
-supplementary diagnostic evidence only. Linux and macOS have real native FAIL
-evidence from runs `36168364866`, `36173494807`, `36185384714`, `36192502871`,
-and `36227546466`; they must not be relabeled PASS until the test-only
-credential/readiness fix is pushed and the workflow reruns cleanly. The
-isolated macOS focused ownership conflict was not
-reproduced in that run's full suite and remains unclassified. Retain generated
-artifacts, including exact toolchain, filesystem identity, commands, exit
-codes, and cold-reopen results.
+supplementary diagnostic evidence only. Run `36229863325` is the accepted
+native evidence for Linux and macOS, so the M4-020 gate is `PASS / COMPLETE`.
+Retain the earlier failed run records as historical remediation evidence, and
+retain the accepted run's exact toolchain, filesystem identity, commands, exit
+codes, and cold-reopen results. Linux is evidenced on Ubuntu 24.04/ext4;
+macOS's workflow filesystem field remains explicitly `unknown`.

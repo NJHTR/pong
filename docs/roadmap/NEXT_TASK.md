@@ -8,42 +8,21 @@
 reproducible on native Linux and macOS: Core ownership, lifecycle, durable
 state, lease/revision/CAS, Operation recovery, Protocol v1.0, HTTP remote
 transport, authorization, reconnect, restart, and failure semantics. Native
-runs `36168364866`, `36173494807`, `36185384714`, `36192502871`, and
-`36227546466` passed format/check/clippy but failed the focused and full
-regression on Ubuntu 24.04
-and macOS 14. Run `36192502871` no longer shows the preceding M7 materialization
-or rollback R9 failures; it instead exposes `cross_workspace_source::x21_cold_reopen`
-and the Unix credential-file setup in
-`http_hardening::process_credential_reload_rotates_and_revokes_without_touching_core_state`.
-Run `36227546466` shows those fixes are effective and exposes the separate
-`http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly`
-credential fixture, which failed before readiness for the same Unix permission
-reason.
-Windows remains PASS; Linux and macOS are real `FAIL` evidence, so no
-M4-020 checkpoint is created. See
+run `36229863325` passed format/check/clippy, the complete focused matrix, and
+the full regression on both Ubuntu 24.04 and macOS 14 with exit code `0`.
+Windows was already PASS. M4-020 is now `PASS / COMPLETE`; see
 [`M4_CROSS_PLATFORM_NATIVE_RUNTIME.md`](../architecture/M4_CROSS_PLATFORM_NATIVE_RUNTIME.md)
 and
 [`ADR-M4-020-cross-platform-native-runtime.md`](../decisions/ADR-M4-020-cross-platform-native-runtime.md).
 
-**Next Action:** Commit and push the test-only fix in
-`tests/http_remote_transport.rs` (the earlier
-`tests/cross_workspace_source.rs` and `tests/http_hardening.rs` fixes are
-already in the current HEAD), then execute
-`.github/workflows/m4-cross-platform-regression.yml` again on both native
-runners. Retain complete artifacts and compare semantic outcomes with the
-Windows matrix. The latest failed run record is retained at
-[`m4-020-github-actions-run-36227546466.json`](../../artifacts/m4-development/m4-020-github-actions-run-36227546466.json);
-the prior failed run record is retained at
-[`m4-020-github-actions-run-36192502871.json`](../../artifacts/m4-development/m4-020-github-actions-run-36192502871.json);
-[`m4-020-github-actions-run-36185384714.json`](../../artifacts/m4-development/m4-020-github-actions-run-36185384714.json);
-the earlier failed run record is retained at
-[`m4-020-github-actions-run-36173494807.json`](../../artifacts/m4-development/m4-020-github-actions-run-36173494807.json);
-the oldest failed run remains at
-[`m4-020-github-actions-run-36168364866.json`](../../artifacts/m4-development/m4-020-github-actions-run-36168364866.json);
-the Docker diagnostic remains at
-[`m4-020-docker-linux-probe-2026-09-24.json`](../../artifacts/m4-development/m4-020-docker-linux-probe-2026-09-24.json).
-Do not promote Linux/macOS to PASS until a native rerun returns zero for every
-required command.
+**Next Action:** Finalize this slice with the formal
+`checkpoint: m4-cross-platform-native-runtime` snapshot containing the accepted
+run #7 evidence, then proceed to the next explicitly scoped task. Do not rerun
+the workflow unless source, test, or workflow inputs change. Keep TLS
+deployment, production secret manager, Windows credential ACL, slow-client
+deadline, and public Internet deployment as `NOT_PROVEN`; MCP remains deferred.
+Historical failed run records and the supplementary Docker diagnostic remain
+retained and must not be rewritten.
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are

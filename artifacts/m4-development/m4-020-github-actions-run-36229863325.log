@@ -1,0 +1,42 @@
+M4-020 native regression run 36229863325
+Date: 2026-09-26
+Run number: 7
+Commit: 07f74b3a012c49b98b1dd6aaa7baa094658679c8
+Workflow: .github/workflows/m4-cross-platform-regression.yml
+Duration: 38m 55s
+
+Linux: Ubuntu 24.04, x86_64, ext4, rustc/cargo 1.98.1
+macOS: macOS 14, arm64, filesystem reported empty by workflow inventory, rustc/cargo 1.98.1
+
+Quality gates on both platforms:
+- cargo fmt --all -- --check: exit 0
+- cargo check --all-targets --locked: exit 0
+- cargo clippy --all-targets --all-features --locked -- -D warnings: exit 0
+
+Focused M4 native matrix:
+- Linux: exit 0
+- macOS: exit 0
+- no failing tests
+
+Full native regression:
+- Linux: cargo test --all --locked, exit 0
+- macOS: cargo test --all --locked, exit 0
+- no failing tests
+
+Native result:
+- Windows: PASS from the existing M4-019/current Windows regression baseline
+- Linux: PASS
+- macOS: PASS
+- M4-020: PASS / COMPLETE
+
+Artifact SHA-256:
+- m4-linux-native-regression (4).zip:
+  a81322ede35eb80b191217ca5e729b67a9b7d2469bd638f4a10572cfc17bc397
+- m4-macos-native-regression (4).zip:
+  67ea51f5e6b3598b777bc74d46254c41bfc0bb198cc485d3670d3d32518690c8
+
+The workflow emitted Node.js 20 deprecation warnings for checkout/upload-artifact.
+They are warnings only and did not affect the successful exit status.
+No production code, Protocol v1.0, Core schema, or ownership semantics changed.
+TLS deployment, production secret manager, Windows credential ACL, slow-client
+deadline, and public Internet deployment remain NOT_PROVEN. MCP remains deferred.

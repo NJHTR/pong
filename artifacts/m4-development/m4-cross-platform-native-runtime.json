@@ -5,19 +5,19 @@
   "base_subject": "checkpoint: m4-windows-regression-gate",
   "prepared_head": "cad20cd51979addba5811f28266994f514d1edd5",
   "prepared_subject": "docs: bind m4 cross-platform evidence to preparation head",
-  "current_head": "a163057acf6e09d3abb5d23f65b1e1bf63563d93",
+  "current_head": "07f74b3a012c49b98b1dd6aaa7baa094658679c8",
   "last_updated": "2026-09-26",
-  "status": "BLOCKED / NATIVE REGRESSION FAILURES",
+  "status": "PASS / COMPLETE",
   "production_code_changed": false,
   "workflow_prepared": true,
   "workflow_executed_in_this_session": true,
   "latest_workflow_run": {
-    "run_id": 36227546466,
-    "run_number": 6,
-    "head_sha": "a163057acf6e09d3abb5d23f65b1e1bf63563d93",
-    "conclusion": "failure",
-    "url": "https://github.com/NJHTR/pong/actions/runs/36227546466",
-    "evidence": "m4-020-github-actions-run-36227546466.json"
+    "run_id": 36229863325,
+    "run_number": 7,
+    "head_sha": "07f74b3a012c49b98b1dd6aaa7baa094658679c8",
+    "conclusion": "success",
+    "url": "https://github.com/NJHTR/pong/actions/runs/36229863325",
+    "evidence": "m4-020-github-actions-run-36229863325.json"
   },
   "supplementary_probes": [
     {
@@ -47,16 +47,22 @@
       "evidence": "M4-019 checkpoint b71798d7b3be144f449deac6fa0ff39eca5fb234"
     },
     "linux": {
-      "result": "FAIL",
-      "reason": "Native Ubuntu 24.04 run 36227546466 failed focused and full regression",
-      "focused_failure": "http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly",
-      "full_failure": "http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly"
+      "result": "PASS",
+      "runner": "ubuntu-24.04",
+      "architecture": "x86_64",
+      "filesystem": "ext4",
+      "focused_matrix": "PASS / exit 0",
+      "full_regression": "PASS / exit 0",
+      "evidence": "m4-020-github-actions-run-36229863325.json"
     },
     "macos": {
-      "result": "FAIL",
-      "reason": "Native macOS 14 run 36227546466 failed focused and full regression",
-      "focused_failure": "http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly",
-      "full_failure": "http_remote_transport::production_http_process_owns_core_authenticates_and_shuts_down_cleanly"
+      "result": "PASS",
+      "runner": "macos-14",
+      "architecture": "arm64",
+      "filesystem": "unknown / workflow inventory empty",
+      "focused_matrix": "PASS / exit 0",
+      "full_regression": "PASS / exit 0",
+      "evidence": "m4-020-github-actions-run-36229863325.json"
     }
   },
   "native_workflow_runs": [
@@ -207,6 +213,44 @@
         "macos_sha256": "d96e815673235c498c0f229d8bee76d21fb543fc771fdd116efe74bb16c0b040"
       },
       "interpretation": "Real native evidence; prior fixture failures are gone. The remaining failure is the separate HTTP process test writing a Unix credential file without 0600 permissions."
+    },
+    {
+      "run_id": 36229863325,
+      "head_sha": "07f74b3a012c49b98b1dd6aaa7baa094658679c8",
+      "run_number": 7,
+      "linux": {
+        "runner": "ubuntu-24.04",
+        "architecture": "x86_64",
+        "os_version": "Linux 6.17.0-1022-azure",
+        "filesystem": "ext4",
+        "rustc": "1.98.1",
+        "cargo": "1.98.1",
+        "fmt": "PASS",
+        "check_all_targets_locked": "PASS",
+        "clippy_all_targets_all_features_locked": "PASS",
+        "focused_matrix": "PASS / exit 0",
+        "full_regression": "PASS / exit 0"
+      },
+      "macos": {
+        "runner": "macos-14",
+        "architecture": "arm64",
+        "os_version": "Darwin 23.6.0",
+        "filesystem": "unknown / workflow inventory empty",
+        "rustc": "1.98.1",
+        "cargo": "1.98.1",
+        "fmt": "PASS",
+        "check_all_targets_locked": "PASS",
+        "clippy_all_targets_all_features_locked": "PASS",
+        "focused_matrix": "PASS / exit 0",
+        "full_regression": "PASS / exit 0"
+      },
+      "artifacts": {
+        "linux_archive": "m4-linux-native-regression (4).zip",
+        "linux_sha256": "a81322ede35eb80b191217ca5e729b67a9b7d2469bd638f4a10572cfc17bc397",
+        "macos_archive": "m4-macos-native-regression (4).zip",
+        "macos_sha256": "67ea51f5e6b3598b777bc74d46254c41bfc0bb198cc485d3670d3d32518690c8"
+      },
+      "interpretation": "Real native evidence; both platforms completed every required quality, focused, and full regression command with exit 0."
     }
   ],
   "capability_inventory": {
@@ -257,8 +301,8 @@
     "Include child exit status and safe stderr in the http_remote_transport readiness failure path so startup failures are diagnosable."
   ],
   "mcp": "DEFERRED",
-  "checkpoint_created": false,
-  "pushed": false,
+  "checkpoint_created": true,
+  "pushed": true,
   "tag_created": false,
   "provider_untracked_files_preserved": true
 }

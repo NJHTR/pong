@@ -3,10 +3,9 @@
 **Date:** 2026-09-26
 **Baseline:** `b71798d7b3be144f449deac6fa0ff39eca5fb234`  
 **Preparation/evidence commit:** `cad20cd51979addba5811f28266994f514d1edd5`
-**Status:** `BLOCKED / NATIVE REGRESSION FAILURES` after native workflow runs
-`36168364866`, `36173494807`, `36185384714`, `36192502871`, and
-`36227546466`. Windows remains passing; the next test-only fixture remediation
-is prepared for another rerun.
+**Status:** `PASS / COMPLETE` after native workflow run `36229863325` at
+`07f74b3a012c49b98b1dd6aaa7baa094658679c8`. Windows, Linux, and macOS all
+have passing evidence for the required M4-020 regression gate.
 
 ## Scope
 
@@ -72,13 +71,13 @@ placeholders are not counted as passes.
 | Platform | Result | Evidence |
 | --- | --- | --- |
 | Windows | `PASS` | M4-019 checkpoint and current repository baseline |
-| Linux | `FAIL` | GitHub Actions run `36192502871`, Ubuntu 24.04 focused/full regression |
-| macOS | `FAIL` | GitHub Actions run `36192502871`, macOS 14 focused/full regression |
+| Linux | `PASS` | GitHub Actions run `36229863325`, Ubuntu 24.04 focused/full regression |
+| macOS | `PASS` | GitHub Actions run `36229863325`, macOS 14 focused/full regression |
 | Protocol v1.0 | `PASS / unchanged` | No DTO or wire-shape change |
-| HTTP transport | `PASS on Windows` / native parity `NOT_PROVEN` | Existing M4-015/M4-019 evidence |
-| Authorization | `PASS on Windows` / native parity `NOT_PROVEN` | M4-018 evidence |
-| Core ownership | `PASS on Windows` / native parity `NOT_PROVEN` | M4-019 evidence |
-| Cold reopen and recovery | `PASS on Windows` / native parity `NOT_PROVEN` | Existing regression evidence |
+| HTTP transport | `PASS` | Run `36229863325` plus Windows regression baseline |
+| Authorization | `PASS` | Run `36229863325` plus M4-018 evidence |
+| Core ownership | `PASS` | Run `36229863325` plus M4-019 evidence |
+| Cold reopen and recovery | `PASS` | Run `36229863325` plus existing regression evidence |
 
 The first real native run completed all three quality gates on both platforms,
 then exposed two test/runner-boundary defects:
@@ -188,15 +187,38 @@ The immutable run record and downloaded artifact hashes are retained in
 [`m4-020-github-actions-run-36227546466.json`](../../artifacts/m4-development/m4-020-github-actions-run-36227546466.json)
 and its companion log.
 
+## Seventh Native Run
+
+Run `36229863325` executed commit
+`07f74b3a012c49b98b1dd6aaa7baa094658679c8` on Ubuntu 24.04 and macOS 14.
+Both platforms passed all three quality gates, the complete focused M4 matrix,
+and `cargo test --all --locked`, each with exit code `0` and no failing tests.
+The run lasted 38 minutes 55 seconds and uploaded complete Linux and macOS
+manifests.
+
+The Linux runner reported x86_64/ext4 with Rust/Cargo 1.98.1. The macOS runner
+reported arm64/Darwin 23.6.0 with Rust/Cargo 1.98.1; its workflow filesystem
+inventory was empty and remains recorded as `unknown`, not as a claim about
+APFS. Artifact hashes and command evidence are retained in
+[`m4-020-github-actions-run-36229863325.json`](../../artifacts/m4-development/m4-020-github-actions-run-36229863325.json)
+and its companion log.
+
+This run closes the M4-020 native gate: Windows, Linux, and macOS are `PASS`.
+The Node.js 20 deprecation annotations are GitHub Actions warnings only and did
+not affect either successful job. No production code, Protocol v1.0, Core
+schema, ownership semantics, MCP, TLS deployment, public Internet deployment,
+production secret manager, Windows credential ACL, or slow-client deadline was
+changed or promoted by this slice.
+
 ## Environment Boundary
 
 The current host is Windows only. Docker Desktop can provide a Linux userland,
 but the 2026-09-24 Docker Desktop WSL2 probe did not pass the focused or full
 regression and is not native Ubuntu evidence. It therefore does not promote
-Linux to `PASS`. Real native workflows executed on Ubuntu 24.04 and macOS 14,
-but both jobs in run `36227546466` failed after the quality gates. M4-020
-remains `BLOCKED / NATIVE REGRESSION FAILURES` until a remediation rerun
-produces complete artifacts with zero exits and the same semantic assertions.
+Linux to `PASS`; the native Linux result is based on run `36229863325`. Real
+native workflows executed on Ubuntu 24.04 and macOS 14, and both jobs in run
+`36229863325` completed with zero exits. M4-020 is therefore
+`PASS / COMPLETE`.
 
 The supplementary Docker result is retained in
 [`m4-020-docker-linux-probe-2026-09-24.json`](../../artifacts/m4-development/m4-020-docker-linux-probe-2026-09-24.json)
