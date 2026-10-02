@@ -4,7 +4,7 @@ use pong_core::protocol::{
     ExternalAgentProtocol, ProtocolRequest, ProtocolResponse, WorkspaceBindingError,
     WorkspaceBindingResolver,
 };
-use pong_core::Repository;
+use pong_core::{bootstrap, Repository};
 use serde_json::Value;
 use std::env;
 use std::io::{self, BufRead, Write};
@@ -44,13 +44,15 @@ impl WorkspaceBindingResolver for LocalBindings {
 }
 
 struct Arguments {
-    repository: PathBuf,
-    workspace_root: PathBuf,
+    repository: Option<PathBuf>,
+    workspace_root: Option<PathBuf>,
+    project_root: Option<PathBuf>,
 }
 
 fn parse_arguments() -> Result<Arguments, String> {
     let mut repository = None;
     let mut workspace_root = None;
+    let mut project_root = None;
     let mut arguments = env::args_os().skip(1);
     while let Some(argument) = arguments.next() {
         match argument.to_str() {
@@ -70,17 +72,33 @@ fn parse_arguments() -> Result<Arguments, String> {
                         .ok_or_else(|| "--workspace-root requires a path".to_string())?,
                 );
             }
-            _ => {
-                return Err(
-                    "usage: pong-agent-protocol --repository PATH --workspace-root PATH".into(),
-                )
+            Some("--project-root") => {
+                project_root = Some(
+                    arguments
+                        .next()
+                        .map(PathBuf::from)
+                        .ok_or_else(|| "--project-root requires a path".to_string())?,
+                );
             }
+            _ => return Err(usage()),
         }
     }
+    if project_root.is_some() && (repository.is_some() || workspace_root.is_some()) {
+        return Err(usage());
+    }
+    if repository.is_some() != workspace_root.is_some() {
+        return Err("--repository and --workspace-root must be provided together".into());
+    }
     Ok(Arguments {
-        repository: repository.ok_or_else(|| "--repository is required".to_string())?,
-        workspace_root: workspace_root.ok_or_else(|| "--workspace-root is required".to_string())?,
+        repository,
+        workspace_root,
+        project_root,
     })
+}
+
+fn usage() -> String {
+    "usage: pong-agent-protocol [--project-root PATH] | [--repository PATH --workspace-root PATH]"
+        .into()
 }
 
 fn host_now_ms() -> i64 {
@@ -99,14 +117,29 @@ fn request_id_from_invalid_json(line: &str) -> Option<String> {
 }
 
 fn run(arguments: Arguments) -> Result<(), String> {
-    let mut repository =
-        Repository::open_as_core_owner(&arguments.repository).map_err(|error| {
-            format!(
-                "Pong repository Core ownership could not be acquired ({})",
-                error.code()
-            )
-        })?;
-    let bindings = LocalBindings::new(&arguments.workspace_root)?;
+    let (repository_path, workspace_root) = match (
+        arguments.repository,
+        arguments.workspace_root,
+        arguments.project_root,
+    ) {
+        (Some(repository), Some(workspace_root), None) => (repository, workspace_root),
+        (None, None, project_root) => {
+            let resolution = match project_root {
+                Some(project_root) => bootstrap::discover(project_root),
+                None => bootstrap::discover_from_cwd(),
+            }
+            .map_err(|error| format!("{} ({})", error, error.code()))?;
+            (resolution.repository_root, resolution.workspace_root)
+        }
+        _ => return Err(usage()),
+    };
+    let mut repository = Repository::open_as_core_owner(&repository_path).map_err(|error| {
+        format!(
+            "Pong repository Core ownership could not be acquired ({})",
+            error.code()
+        )
+    })?;
+    let bindings = LocalBindings::new(&workspace_root)?;
     let stdin = io::stdin();
     let mut stdout = io::BufWriter::new(io::stdout().lock());
     for line in stdin.lock().lines() {

@@ -6,6 +6,7 @@
 //! multi-process Runtime transport.
 
 pub(crate) mod atomic_replace;
+pub mod bootstrap;
 pub mod canonical;
 pub mod cas;
 pub mod control;

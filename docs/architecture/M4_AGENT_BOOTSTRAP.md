@@ -1,6 +1,6 @@
 # M4 Agent Bootstrap And Reconnect
 
-**Status:** `PARTIAL / BOOTSTRAP GAP / PROTOCOL-FROZEN`
+**Status:** `LOCAL BOOTSTRAP IMPLEMENTED / REMOTE DISCOVERY DEFERRED / PROTOCOL-FROZEN`
 
 This slice answers how a new Agent Runtime finds a local Pong Core and
 reconnects to durable state. It does not add an Agent platform, scheduler,
@@ -8,30 +8,46 @@ provider adapter, or new Core entity.
 
 ## Current Reality
 
-The implemented local Runtime path is explicit:
+The implemented local Runtime paths are explicit or project-discovered:
 
 ```text
 Runtime host
-  -> pong-agent-protocol --repository <project> --workspace-root <bindings>
+  -> pong-agent-protocol [--project-root <project>]
+  -> (or no arguments from a project cwd)
   -> local JSON Lines transport
   -> Pong Core owner
   -> Repository (.pong) and Workspace bindings
 ```
 
-The transport does not discover its repository or endpoint. A host must supply
-both paths when starting `pong-agent-protocol`. There is no public `pong init`,
-`pong attach`, or `pong connect` CLI, no `PONG_ENDPOINT` resolver, and no
-localhost default selected by the Core.
+The launch layer now resolves a nearest project `.pong/bootstrap.json`; explicit
+`--repository` plus `--workspace-root` remains compatible. There is still no
+public `pong init`, `pong attach`, or `pong connect` CLI, and the stdio adapter
+does not select a localhost network fallback. Endpoint hints are resolved by
+the helper with explicit argument, `PONG_ENDPOINT`, then metadata precedence;
+HTTP authentication remains outside this file.
 
-`.pong/repository.json` is an internal compatibility/selector marker. It
-currently describes repository format, schema, storage driver, and generation
-selection. It is not a client bootstrap manifest and does not contain an
-endpoint, bearer token, Agent identity, Workspace identity, or execution
-state. The durable SQLite/CAS state remains inside the Core boundary.
+`.pong/bootstrap.json` is a separate, non-secret descriptor. Its v1 shape is:
+
+```json
+{
+  "schema_version": 1,
+  "protocol_version": "1.0",
+  "repository_root": ".",
+  "workspace_root": "bindings",
+  "workspace_id": "optional-opaque-id",
+  "core_endpoint": null
+}
+```
+
+Paths may be relative to the project root or absolute. `core_endpoint` is an
+optional transport hint and is unset for stdio. The descriptor contains no
+bearer token, secret, SQLite/CAS state, Agent identity, Execution state, or
+history. `.pong/repository.json` remains an internal compatibility/selector
+marker; durable SQLite/CAS state remains inside the Core boundary.
 
 ## Existing Attach And Reconnect Semantics
 
-Once the host has supplied the explicit repository and binding-root paths, the
+After bootstrap resolution supplies the repository and binding-root paths, the
 frozen Protocol v1.0 surface is sufficient for a minimal reconnect flow:
 
 1. `hello` discovers the supported protocol commands and queries.
@@ -50,17 +66,17 @@ not persist a separate process-incarnation record. A Runtime that needs to
 attribute a new process instance must keep that correlation outside the Core
 until a future lifecycle slice defines it.
 
-The focused transport regression
-`explicit_local_bootstrap_reconnects_same_repository_workspace_and_execution`
-proves this explicit-path flow, including marker boundaries, repeat Agent
-registration, Workspace lookup, Execution inspection, cold reopen, and the
-absence of duplicate Workspace/Execution rows.
+The focused regressions `zero_explicit_path_bootstrap_reconnects_after_core_restart`
+and `explicit_local_bootstrap_reconnects_same_repository_workspace_and_execution`
+prove both project-discovered and explicit-path flows, including marker
+boundaries, repeat Agent registration, Workspace lookup, Execution inspection,
+cold reopen, and the absence of duplicate Workspace/Execution rows.
 
 ## Identity Boundaries
 
 | Concern | Current authority | Bootstrap/authentication boundary |
 | --- | --- | --- |
-| Pong location | Host-supplied repository path and transport launch | Discovery, not authentication |
+| Pong location | Explicit launch path or `.pong/bootstrap.json` resolution | Discovery, not authentication |
 | Repository | Local filesystem path plus `.pong` compatibility marker | Core storage identity |
 | Project | Durable Task/Workspace project binding | Attach scope |
 | Workspace | Opaque `workspace_id` and host binding reference | Attach target |
@@ -75,12 +91,20 @@ answers “which durable state is this Runtime operating on?”. These concerns
 must not be collapsed into `.pong` or into a bearer token stored beside the
 Workspace.
 
+## Bootstrap Failure Semantics
+
+The helper reports stable categories instead of collapsing all failures into a
+connection error: `BOOTSTRAP_PONG_DIRECTORY_MISSING`,
+`BOOTSTRAP_METADATA_MISSING`, `BOOTSTRAP_METADATA_INVALID`,
+`BOOTSTRAP_REPOSITORY_MISSING`, `BOOTSTRAP_WORKSPACE_ROOT_MISSING`,
+`BOOTSTRAP_PROTOCOL_INCOMPATIBLE`, and `BOOTSTRAP_ENDPOINT_INVALID`. An
+endpoint that exists but cannot be reached remains a transport/client failure.
+
 ## Minimal Future Bootstrap Slice
 
-The real gap is the local adapter/bootstrap layer, not the Core data model.
-For a Runtime launched from a project such as `D:\\bs\\seekwd`, a future
-offline-first bootstrap tool may provide a small non-secret local descriptor or
-CLI resolution rule containing only:
+The remaining gap is a richer CLI and remote endpoint lifecycle, not the Core
+data model. For a Runtime launched from a project such as `D:\\bs\\seekwd`,
+the implemented offline-first descriptor contains only:
 
 - a stable repository reference or project root;
 - the default local transport/endpoint or launch command;
@@ -100,8 +124,7 @@ primitives once a host supplies the bootstrap paths and opaque IDs.
 
 ## Boundary Decision
 
-Pong currently supports **explicit local bootstrap plus durable reconnect**.
-It does not yet support **zero-knowledge discovery from an arbitrary project
-directory**. That missing capability should be addressed by a future CLI/local
-bootstrap slice, not by changing Protocol v1.0 or by moving Runtime behavior
-into Workspace/Core.
+Pong now supports **zero-explicit-path local discovery plus durable reconnect**
+when `.pong/bootstrap.json` is present. It does not attempt remote service
+discovery or implicit localhost selection. Those belong to a future transport
+adapter slice, not to Protocol v1.0 or Workspace/Core.
