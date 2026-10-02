@@ -2,7 +2,7 @@
 
 **Date:** `2026-10-02`
 
-**Pong HEAD:** `4b58c6a feat: add Pong bootstrap initialization entrypoint`
+**Pong HEAD at this update:** `a1e503a docs: record real agent register blocker`
 
 **Target Repository:** `C:\Users\NJHTR\IdeaProjects\easyCode`
 
@@ -53,6 +53,60 @@ The process returned exit code `0` and emitted:
 This is a real Codex runtime thread identity. It is not a Pong Agent ID,
 Pong session, or Pong process incarnation.
 
+## Identity Semantics From Existing Contract
+
+The source-backed identity boundaries are:
+
+| Value | Meaning | Creator/authority | Restart behavior |
+| --- | --- | --- | --- |
+| `agent_id` | Durable logical actor identity | Runtime adapter/credential-backed caller; Pong accepts and persists the asserted opaque value | Stable when the same logical identity is reused |
+| `session_id` | Ephemeral transport or operation correlation value | Transport/runtime boundary; HTTP creates connection sessions, while JSONL has no durable session handshake | Changes on a new connection/process; not Agent identity |
+| incarnation | Process/runtime generation observation | Not represented as a Protocol v1.0 durable field | Must remain outside Core until a lifecycle contract defines it |
+| Codex `thread_id` | Codex runtime thread/run identity | Codex CLI | New thread observed on each independent probe; no evidence that it is a stable logical Agent identity |
+
+`src/metadata.rs` stores `AgentIdentity` as `agent_id`, `provider`,
+`display_name`, and `created_at`; it does not generate an Agent ID. The
+`register_agent` command requires an asserted `caller_agent_id` equal to the
+payload `agent_id`. Existing architecture documentation explicitly says that
+framework adapters translate native run IDs into Pong sessions and that
+connections, PIDs, executable names, and provider sessions are not Agent
+identity. Protocol v1.0 has no `incarnation` request or response field.
+
+Therefore the current mapping is:
+
+```text
+Codex thread_id -> provider metadata / external run reference only
+Pong agent_id, session, incarnation -> no formal Runtime Adapter source
+```
+
+This is not a valid direct `thread_id -> agent_id` mapping.
+
+## Second Real Codex Probe
+
+The current probe was run against `D:\pong` with no file tools permitted:
+
+```text
+codex exec --dangerously-bypass-approvals-and-sandbox \
+  --ephemeral --skip-git-repo-check --json \
+  -C D:\pong \
+  "Do not use any tools or modify files. Return exactly the word READY."
+```
+
+Actual provider result:
+
+```text
+provider: Codex
+version: codex-cli 0.158.0-alpha.2.1
+exit_code: 0
+thread_id: 01a0fc01-5235-78a2-afa4-22080dfcb63f
+agent_message: READY
+```
+
+The JSON event stream contained `thread.started`, `item.completed`, and
+`turn.completed`; it contained no provider session ID, logical Agent ID, or
+incarnation field. The process PID was not treated as an identity because it
+is an ephemeral process observation.
+
 ## `register_agent`
 
 **Status:** `BLOCKED / RUNTIME_INTEGRATION_GAP`
@@ -68,11 +122,30 @@ agent_id: n/a
 session: n/a
 incarnation: n/a
 provider_thread_id: 01a0fbf3-bf08-7512-bbe0-6454744cbbb0
+latest_provider_thread_id: 01a0fc01-5235-78a2-afa4-22080dfcb63f
 ```
 
 No `register_agent` request was sent because the required Pong identity
 fields did not exist. The provider thread ID was not transformed into a Pong
 ID, and no UUID or other durable ID was fabricated.
+
+The resulting acceptance states are:
+
+```text
+Provider Runtime: PASS
+Provider identity: PASS (Codex thread_id only)
+Identity mapping: BLOCKED
+Pong Core: PASS
+Transport: PASS
+register_agent: BLOCKED
+Agent inspection: BLOCKED (no registered Agent)
+Restart identity test: BLOCKED (no first successful registration)
+```
+
+The requested Runtime A -> shutdown -> Runtime A restarted comparison was
+not run as a claimed success path. Without a valid first registration there
+is no legitimate pair of Pong identities to compare, and the Codex CLI probe
+does not expose a stable logical Agent identity that could be reused.
 
 Observed provider warnings (plugin authentication/sync, unsupported
 PowerShell shell snapshot, and a deprecated configuration warning) did not
