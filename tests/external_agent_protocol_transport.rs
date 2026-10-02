@@ -534,3 +534,107 @@ fn process_transport_completes_handoff_and_survives_core_termination() {
         2
     );
 }
+
+#[test]
+fn explicit_local_bootstrap_reconnects_same_repository_workspace_and_execution() {
+    let fixture = fixture();
+    let marker_path = fixture.repository_dir.path().join(".pong/repository.json");
+    let marker: Value = serde_json::from_str(
+        &fs::read_to_string(&marker_path).expect("read repository bootstrap marker"),
+    )
+    .expect("repository marker JSON");
+    assert_eq!(marker["repository_format"], "0.1");
+    assert_eq!(marker["storage_driver"], "cas+sqlite");
+    assert!(marker.get("endpoint").is_none());
+    assert!(marker.get("token").is_none());
+
+    let mut first = Transport::start(fixture.repository_dir.path(), fixture.workspace_root.path());
+    register(&mut first, AGENT_A, "codex");
+    ok(
+        first.send(&envelope(
+            Some(AGENT_A),
+            "bootstrap-task",
+            None,
+            "create_task",
+            Some(json!({
+                "task_id": TASK,
+                "project_id": PROJECT,
+                "goal_ref": "goal:bootstrap-reconnect",
+                "context_ref": null
+            })),
+        )),
+        "task",
+    );
+    create_workspace(&mut first, AGENT_A, W1, "runtime-a");
+    ok(
+        first.send(&envelope(
+            Some(AGENT_A),
+            "bootstrap-execution",
+            None,
+            "create_execution",
+            Some(json!({
+                "execution_id": E1,
+                "task_id": TASK,
+                "parent_execution_id": null,
+                "workspace_id": W1,
+                "base_version_id": null
+            })),
+        )),
+        "execution",
+    );
+    ok(
+        first.send(&envelope(
+            Some(AGENT_A),
+            "bootstrap-start",
+            None,
+            "start_execution",
+            Some(json!({"execution_id": E1, "expected_revision": 0})),
+        )),
+        "execution",
+    );
+    first.close();
+
+    let mut reconnected =
+        Transport::start(fixture.repository_dir.path(), fixture.workspace_root.path());
+    register(&mut reconnected, AGENT_A, "codex");
+    let workspace = ok(
+        reconnected.send(&envelope(
+            Some(AGENT_A),
+            "bootstrap-get-workspace",
+            None,
+            "get_workspace",
+            Some(json!({"id": W1})),
+        )),
+        "workspace_inspection",
+    );
+    assert_eq!(workspace["workspace"]["workspace_id"], W1);
+    assert_eq!(workspace["workspace"]["project_id"], PROJECT);
+    let inspection = ok(
+        reconnected.send(&envelope(
+            Some(AGENT_A),
+            "bootstrap-inspect-execution",
+            None,
+            "inspect_execution",
+            Some(json!({"id": E1})),
+        )),
+        "execution_inspection",
+    );
+    assert_eq!(inspection["execution"]["execution_id"], E1);
+    assert_eq!(inspection["execution"]["agent_id"], AGENT_A);
+    assert_eq!(inspection["execution"]["workspace_id"], W1);
+    assert_eq!(inspection["workspace"]["workspace"]["workspace_id"], W1);
+    assert_eq!(inspection["workspace"]["workspace"]["project_id"], PROJECT);
+    assert!(!inspection.to_string().contains("locator"));
+    assert!(!inspection
+        .to_string()
+        .contains(fixture.workspace_root.path().to_string_lossy().as_ref()));
+    reconnected.close();
+
+    let repository = Repository::open(fixture.repository_dir.path()).expect("reopen repository");
+    assert_eq!(repository.metadata().list_versions(W1).unwrap().len(), 0);
+    assert_eq!(
+        repository.metadata().list_executions(TASK).unwrap().len(),
+        1
+    );
+    assert!(repository.metadata().workspace(W1).unwrap().is_some());
+}
