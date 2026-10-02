@@ -157,7 +157,18 @@ cargo clippy --all-targets --all-features --locked -- -D warnings
 git diff --check
 ```
 
-There is currently no public `pong init`, `pong checkpoint`, or `pong rollback` CLI. Read the [development guide](docs/development/DEVELOPMENT_GUIDE.md) and [next task](docs/roadmap/NEXT_TASK.md) before changing persistence semantics.
+There is no general `pong` command suite yet. Local Repository/bootstrap
+initialization is available through the focused `pong-bootstrap` entry point:
+
+```bash
+pong-bootstrap initialize <repository-root>
+```
+
+The command creates or reopens the Pong-owned `.pong` layout, writes the
+existing v1 bootstrap descriptor when absent, and leaves existing user files
+untouched. Read the [development guide](docs/development/DEVELOPMENT_GUIDE.md)
+and [next task](docs/roadmap/NEXT_TASK.md) before changing persistence
+semantics.
 
 ## Technical Principles
 

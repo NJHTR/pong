@@ -20,11 +20,13 @@ Runtime host
 ```
 
 The launch layer now resolves a nearest project `.pong/bootstrap.json`; explicit
-`--repository` plus `--workspace-root` remains compatible. There is still no
-public `pong init`, `pong attach`, or `pong connect` CLI, and the stdio adapter
-does not select a localhost network fallback. Endpoint hints are resolved by
-the helper with explicit argument, `PONG_ENDPOINT`, then metadata precedence;
-HTTP authentication remains outside this file.
+`--repository` plus `--workspace-root` remains compatible. The focused
+`pong-bootstrap initialize <repository-root>` entry point now performs the
+formal local Repository/bootstrap initialization. There is still no general
+`pong attach` or `pong connect` CLI, and the stdio adapter does not select a
+localhost network fallback. Endpoint hints are resolved by the helper with
+explicit argument, `PONG_ENDPOINT`, then metadata precedence; HTTP
+authentication remains outside this file.
 
 `.pong/bootstrap.json` is a separate, non-secret descriptor. Its v1 shape is:
 
@@ -33,8 +35,8 @@ HTTP authentication remains outside this file.
   "schema_version": 1,
   "protocol_version": "1.0",
   "repository_root": ".",
-  "workspace_root": "bindings",
-  "workspace_id": "optional-opaque-id",
+  "workspace_root": ".pong/workspaces",
+  "workspace_id": null,
   "core_endpoint": null
 }
 ```
@@ -44,6 +46,27 @@ optional transport hint and is unset for stdio. The descriptor contains no
 bearer token, secret, SQLite/CAS state, Agent identity, Execution state, or
 history. `.pong/repository.json` remains an internal compatibility/selector
 marker; durable SQLite/CAS state remains inside the Core boundary.
+
+## Formal Initialization
+
+Run:
+
+```text
+pong-bootstrap initialize <repository-root>
+```
+
+The entry point calls `Repository::init`, creates the Pong-owned
+`.pong/workspaces` binding root, and calls `BootstrapMetadata::write` only when
+`.pong/bootstrap.json` is absent. A compatible existing bootstrap is parsed
+and preserved without rewriting it; an incompatible repository or malformed
+bootstrap fails closed. Initialization is valid for non-Git directories and
+does not overwrite user files. The stdio runtime has no listener endpoint, so
+the generated descriptor keeps `core_endpoint` as `null`.
+
+Repository and workspace durable identities are not invented by this command:
+the repository marker retains its existing format/schema/storage identity, and
+the optional bootstrap `workspace_id` remains unset until a Protocol workspace
+is explicitly created.
 
 ## Existing Attach And Reconnect Semantics
 
@@ -100,11 +123,10 @@ connection error: `BOOTSTRAP_PONG_DIRECTORY_MISSING`,
 `BOOTSTRAP_PROTOCOL_INCOMPATIBLE`, and `BOOTSTRAP_ENDPOINT_INVALID`. An
 endpoint that exists but cannot be reached remains a transport/client failure.
 
-## Minimal Future Bootstrap Slice
+## Remaining Bootstrap Scope
 
-The remaining gap is a richer CLI and remote endpoint lifecycle, not the Core
-data model. For a Runtime launched from a project such as `D:\\bs\\seekwd`,
-the implemented offline-first descriptor contains only:
+The remaining gap is a richer CLI suite and remote endpoint lifecycle, not the
+Core data model. The implemented offline-first descriptor contains only:
 
 - a stable repository reference or project root;
 - the default local transport/endpoint or launch command;

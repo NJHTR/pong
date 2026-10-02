@@ -4,6 +4,7 @@
 //! and from the durable SQLite/CAS state. It only tells a launch layer where
 //! to open an existing repository and workspace binding root.
 
+use crate::Repository;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fmt;
@@ -26,6 +27,7 @@ pub enum BootstrapError {
     WorkspaceRootMissing(PathBuf),
     ProtocolVersionMismatch { expected: String, found: String },
     EndpointInvalid(String),
+    RepositoryInitialization(String),
     Io(io::Error),
     Serialization(serde_json::Error),
 }
@@ -70,6 +72,9 @@ impl fmt::Display for BootstrapError {
             Self::EndpointInvalid(message) => {
                 write!(formatter, "bootstrap endpoint is invalid: {message}")
             }
+            Self::RepositoryInitialization(message) => {
+                write!(formatter, "repository initialization failed: {message}")
+            }
             Self::Io(error) => write!(formatter, "bootstrap I/O error: {error}"),
             Self::Serialization(error) => {
                 write!(formatter, "bootstrap serialization error: {error}")
@@ -103,6 +108,7 @@ impl BootstrapError {
             Self::WorkspaceRootMissing(_) => "BOOTSTRAP_WORKSPACE_ROOT_MISSING",
             Self::ProtocolVersionMismatch { .. } => "BOOTSTRAP_PROTOCOL_INCOMPATIBLE",
             Self::EndpointInvalid(_) => "BOOTSTRAP_ENDPOINT_INVALID",
+            Self::RepositoryInitialization(_) => "BOOTSTRAP_REPOSITORY_INIT_FAILED",
             Self::Io(_) => "BOOTSTRAP_IO_ERROR",
             Self::Serialization(_) => "BOOTSTRAP_SERIALIZATION_ERROR",
         }
@@ -161,6 +167,30 @@ impl BootstrapMetadata {
         fs::write(&path, bytes)?;
         Ok(path)
     }
+}
+
+/// Initialize the local Repository and its project-discovered bootstrap.
+///
+/// The stdio Core has no network endpoint to advertise, so initialization
+/// writes `core_endpoint: null`. The binding root is owned by Pong under
+/// `.pong/workspaces`, keeping initialization away from user business files.
+/// An existing bootstrap is validated and preserved byte-for-byte.
+pub fn initialize(project_root: impl AsRef<Path>) -> Result<BootstrapResolution, BootstrapError> {
+    let project_root = project_root.as_ref();
+    let repository = Repository::init(project_root)
+        .map_err(|error| BootstrapError::RepositoryInitialization(error.to_string()))?;
+    drop(repository);
+
+    let project_root = canonical_directory(project_root)?;
+    let workspace_root = project_root.join(".pong").join("workspaces");
+    fs::create_dir_all(&workspace_root)?;
+    let metadata_path = BootstrapMetadata::path(&project_root);
+    if metadata_path.is_file() {
+        return discover(&project_root);
+    }
+
+    BootstrapMetadata::new(".", ".pong/workspaces", None, None).write(&project_root)?;
+    discover(&project_root)
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
