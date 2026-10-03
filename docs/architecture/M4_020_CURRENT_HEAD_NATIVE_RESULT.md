@@ -1,12 +1,18 @@
 # M4-020 Current-Head Native Runtime Result
 
 **Run date:** 2026-10-04
-**Current HEAD:** `704d39c2f27e8399438936df18ef54eef80ba4b2`
+**Repository HEAD:** `56a51eba4d5306a2244d7ed200a862a0bfb3c022`
+**Fresh Windows source SHA:** `704d39c2f27e8399438936df18ef54eef80ba4b2`
 **Branch:** `dev`
 
 This is a current-head revalidation record. It does not rewrite the accepted
 historical native run `36229863325`, which executed commit
 `07f74b3a012c49b98b1dd6aaa7baa094658679c8`.
+
+The fresh Windows artifact was captured before the evidence-only commit that
+moved the repository from `704d39c` to `56a51eb`. That commit changed only this
+result documentation and evidence files; no source, test, workflow, or
+Protocol input changed. Ubuntu/macOS were still not rerun for either SHA.
 
 ## Checkpoint
 
@@ -53,6 +59,18 @@ Evidence:
   [m4-020-windows-current-head-2026-10-04.log](../../artifacts/m4-development/m4-020-windows-current-head-2026-10-04.log)
 
 ## Native Runner Boundary
+
+### Requested `56a51eb` Native Dispatch
+
+Status: **BLOCKED / ENVIRONMENT**. The existing workflow is dispatchable only
+through GitHub Actions, but this environment has no authenticated `gh` CLI or
+GitHub token. The public workflow page is accessible only as an anonymous
+viewer and presents `Sign in` instead of a dispatch control. No new workflow
+run, runner output, or artifact was produced for `56a51eb`.
+
+This is an environment/access blocker, not a test failure. No Docker, WSL,
+local simulation, or historical artifact is counted as Ubuntu 24.04 or macOS
+14 evidence for `56a51eb`.
 
 The retained run `36229863325` is valid evidence for the older commit
 `07f74b3a012c49b98b1dd6aaa7baa094658679c8`. The current branch contains
