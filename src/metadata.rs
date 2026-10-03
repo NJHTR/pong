@@ -3244,6 +3244,47 @@ impl MetadataStore {
         result
     }
 
+    /// Apply an explicit route-level decision without deriving it from an
+    /// Execution outcome. Route source and terminal Version references remain
+    /// unchanged by this update.
+    pub fn update_route_status(
+        &mut self,
+        route_id: &str,
+        next_status: &str,
+    ) -> Result<RouteRecord, PongError> {
+        let route_id = self.redactor.redact_text(route_id);
+        let next_status = self.redactor.redact_text(next_status);
+        validate_non_empty(&route_id, "route id")?;
+        validate_non_empty(&next_status, "route status")?;
+        validate_route_status(&next_status)?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let current: RouteRecord = transaction
+            .query_row(
+                "SELECT route_id, exploration_id, source_kind, source_id, status,
+                        terminal_version_id, created_by, purpose_ref, created_at
+                 FROM routes WHERE route_id = ?1",
+                [&route_id],
+                route_from_row,
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("route does not exist".into()))?;
+        if current.status == next_status {
+            transaction.commit()?;
+            return Ok(current);
+        }
+        transaction.execute(
+            "UPDATE routes SET status = ?2 WHERE route_id = ?1",
+            params![route_id, next_status],
+        )?;
+        inject_before_commit(&mut self.failpoints, MetadataFailpoint::BeforeSqliteCommit)?;
+        transaction.commit()?;
+        inject_after_commit(&mut self.failpoints, MetadataFailpoint::AfterSqliteCommit)?;
+        self.route(&route_id)?
+            .ok_or_else(|| PongError::Integrity("route disappeared after status update".into()))
+    }
+
     pub fn attach_execution_to_route(
         &mut self,
         attachment: &RouteExecutionAttachment,

@@ -297,6 +297,16 @@ impl<'a> AgentControl<'a> {
         self.repository.metadata().list_routes(exploration_id)
     }
 
+    pub fn update_route_status(
+        &mut self,
+        route_id: &str,
+        next_status: &str,
+    ) -> Result<RouteRecord, PongError> {
+        self.repository
+            .metadata_mut()
+            .update_route_status(route_id, next_status)
+    }
+
     pub fn attach_execution_to_route(
         &mut self,
         attachment: RouteExecutionAttachment,
