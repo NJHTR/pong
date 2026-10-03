@@ -1,0 +1,51 @@
+{
+  "record_version": "m4-020-windows-native-current-head-0.1",
+  "slice": "M4-020",
+  "status": "PASS",
+  "commit": "704d39c2f27e8399438936df18ef54eef80ba4b2",
+  "branch": "dev",
+  "runner": {
+    "os": "Windows",
+    "architecture": "AMD64",
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\r\nbinary: rustc\r\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\r\ncommit-date: 2026-04-14\r\nhost: x86_64-pc-windows-msvc\r\nrelease: 1.95.0\r\nLLVM version: 22.1.2",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)"
+  },
+  "commands": [
+    {
+      "label": "fmt",
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "started_at": "2026-10-04T00:34:56.0776940+08:00",
+      "finished_at": "2026-10-04T00:34:56.6545171+08:00"
+    },
+    {
+      "label": "check",
+      "command": "cargo check --all-targets --locked",
+      "exit_code": 0,
+      "started_at": "2026-10-04T00:34:56.6808258+08:00",
+      "finished_at": "2026-10-04T00:34:56.8184359+08:00"
+    },
+    {
+      "label": "clippy",
+      "command": "cargo clippy --all-targets --all-features --locked -- -D warnings",
+      "exit_code": 0,
+      "started_at": "2026-10-04T00:34:56.8409464+08:00",
+      "finished_at": "2026-10-04T00:34:57.0648826+08:00"
+    },
+    {
+      "label": "focused",
+      "command": "cargo test --locked --test core_ownership --test control_layer --test local_core_broker --test local_concurrency --test repository_access_policy --test offline_core_e2e --test operation_ledger --test handoff_checkpoint_rollback --test cross_workspace_materialization --test cross_workspace_diff_restore --test cross_workspace_rollback --test version_reference --test workspace_lifecycle_operation --test workspace_diff_reconciliation --test workspace_snapshot --test workspace_status --test workspace_version --test protocol_lifecycle_reconnect --test external_agent_protocol_transport --test remote_transport_contract --test http_remote_transport --test http_hardening --test resource_authorization --test real_remote_e2e -- --nocapture",
+      "exit_code": 0,
+      "started_at": "2026-10-04T00:34:57.0937826+08:00",
+      "finished_at": "2026-10-04T00:35:14.6457282+08:00"
+    },
+    {
+      "label": "full",
+      "command": "cargo test --all --locked",
+      "exit_code": 0,
+      "started_at": "2026-10-04T00:35:14.6779633+08:00",
+      "finished_at": "2026-10-04T00:36:29.4427878+08:00"
+    }
+  ],
+  "raw_log": "D:\\pong\\artifacts\\m4-development\\m4-020-windows-current-head-2026-10-04.log"
+}
