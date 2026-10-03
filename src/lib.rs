@@ -19,6 +19,7 @@ pub mod protocol;
 pub mod redaction;
 pub mod remote;
 pub mod repository;
+pub mod runtime_identity;
 pub mod workspace;
 
 pub use control::{
@@ -61,6 +62,10 @@ pub use repository::{
     RepositoryGenerationManifest, RepositoryLayout, RepositoryMarker, RepositorySelector,
     GENERATION_REPOSITORY_FORMAT, GENERATION_SCHEMA_VERSION, REPOSITORY_FORMAT,
     REPOSITORY_MARKER_VERSION, REPOSITORY_SCHEMA_VERSION, REPOSITORY_SELECTOR_VERSION,
+};
+pub use runtime_identity::{
+    RuntimeIdentityAdapter, RuntimeIdentityMetadata, RUNTIME_IDENTITY_DIRECTORY,
+    RUNTIME_IDENTITY_SCHEMA_VERSION,
 };
 pub use workspace::{
     require_workspace_capability, transition_workspace_lifecycle, LocalWorkspace, RestoreOptions,
