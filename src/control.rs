@@ -6,10 +6,11 @@
 
 use crate::metadata::{
     AgentIdentity, CheckpointCreation, CheckpointRecord, ExecutionCreation,
-    ExecutionOperationRecord, ExecutionRecord, HandoffCreation, HandoffRecord, LeaseToken,
-    OperationEnvelope, OperationOutcome, OperationRecord, OperationRef, ResumeCreation,
-    ResumeRecord, SnapshotRecord, TaskCreation, TaskRecord, VersionPublication, VersionRecord,
-    WorkspaceRecord,
+    ExecutionOperationRecord, ExecutionRecord, ExplorationCreation, ExplorationRecord,
+    HandoffCreation, HandoffRecord, LeaseToken, OperationEnvelope, OperationOutcome,
+    OperationRecord, OperationRef, ResumeCreation, ResumeRecord, RouteCreation,
+    RouteExecutionAttachment, RouteRecord, SnapshotRecord, TaskCreation, TaskRecord,
+    VersionPublication, VersionRecord, WorkspaceRecord,
 };
 use crate::redaction::Redactor;
 use crate::workspace::{SnapshotDiff, SnapshotOptions, WorkspaceManager};
@@ -44,6 +45,28 @@ pub struct CreateExecutionRequest {
     pub workspace_id: Option<String>,
     pub base_version_id: Option<String>,
     pub current_version_id: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CreateExplorationRequest {
+    pub exploration_id: String,
+    pub task_id: String,
+    pub created_by: String,
+    pub purpose_ref: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CreateRouteRequest {
+    pub route_id: String,
+    pub exploration_id: String,
+    pub source_kind: String,
+    pub source_id: String,
+    pub status: String,
+    pub terminal_version_id: Option<String>,
+    pub created_by: String,
+    pub purpose_ref: Option<String>,
     pub created_at: String,
 }
 
@@ -218,6 +241,76 @@ impl<'a> AgentControl<'a> {
 
     pub fn task(&self, task_id: &str) -> Result<Option<TaskRecord>, PongError> {
         self.repository.metadata().task(task_id)
+    }
+
+    pub fn create_exploration(
+        &mut self,
+        request: CreateExplorationRequest,
+    ) -> Result<ExplorationRecord, PongError> {
+        self.repository
+            .metadata_mut()
+            .create_exploration(&ExplorationCreation {
+                exploration_id: request.exploration_id,
+                task_id: request.task_id,
+                created_by: request.created_by,
+                purpose_ref: request.purpose_ref,
+                created_at: request.created_at,
+            })
+    }
+
+    pub fn exploration(
+        &self,
+        exploration_id: &str,
+    ) -> Result<Option<ExplorationRecord>, PongError> {
+        self.repository.metadata().exploration(exploration_id)
+    }
+
+    pub fn explorations_for_task(
+        &self,
+        task_id: &str,
+    ) -> Result<Vec<ExplorationRecord>, PongError> {
+        self.repository.metadata().list_explorations(task_id)
+    }
+
+    pub fn create_route(&mut self, request: CreateRouteRequest) -> Result<RouteRecord, PongError> {
+        self.repository.metadata_mut().create_route(&RouteCreation {
+            route_id: request.route_id,
+            exploration_id: request.exploration_id,
+            source_kind: request.source_kind,
+            source_id: request.source_id,
+            status: request.status,
+            terminal_version_id: request.terminal_version_id,
+            created_by: request.created_by,
+            purpose_ref: request.purpose_ref,
+            created_at: request.created_at,
+        })
+    }
+
+    pub fn route(&self, route_id: &str) -> Result<Option<RouteRecord>, PongError> {
+        self.repository.metadata().route(route_id)
+    }
+
+    pub fn routes_for_exploration(
+        &self,
+        exploration_id: &str,
+    ) -> Result<Vec<RouteRecord>, PongError> {
+        self.repository.metadata().list_routes(exploration_id)
+    }
+
+    pub fn attach_execution_to_route(
+        &mut self,
+        attachment: RouteExecutionAttachment,
+    ) -> Result<RouteExecutionAttachment, PongError> {
+        self.repository
+            .metadata_mut()
+            .attach_execution_to_route(&attachment)
+    }
+
+    pub fn route_executions(
+        &self,
+        route_id: &str,
+    ) -> Result<Vec<RouteExecutionAttachment>, PongError> {
+        self.repository.metadata().route_executions(route_id)
     }
 
     pub fn create_execution(

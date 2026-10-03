@@ -573,6 +573,60 @@ pub struct TaskRecord {
     pub updated_at: String,
 }
 
+/// Durable scope for alternative routes belonging to one Task.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExplorationCreation {
+    pub exploration_id: String,
+    pub task_id: String,
+    pub created_by: String,
+    pub purpose_ref: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExplorationRecord {
+    pub exploration_id: String,
+    pub task_id: String,
+    pub created_by: String,
+    pub purpose_ref: Option<String>,
+    pub created_at: String,
+}
+
+/// Durable route relation. `source_kind` is either `version` or `checkpoint`;
+/// `source_id` is always explicit and is never inferred from a workspace head.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RouteCreation {
+    pub route_id: String,
+    pub exploration_id: String,
+    pub source_kind: String,
+    pub source_id: String,
+    pub status: String,
+    pub terminal_version_id: Option<String>,
+    pub created_by: String,
+    pub purpose_ref: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RouteRecord {
+    pub route_id: String,
+    pub exploration_id: String,
+    pub source_kind: String,
+    pub source_id: String,
+    pub status: String,
+    pub terminal_version_id: Option<String>,
+    pub created_by: String,
+    pub purpose_ref: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RouteExecutionAttachment {
+    pub route_id: String,
+    pub execution_id: String,
+    pub attached_at: String,
+}
+
 /// Input for creating one concrete Execution attempt.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExecutionCreation {
@@ -1100,6 +1154,25 @@ const TASK_COLUMNS: &[&str] = &[
     "revision",
     "updated_at",
 ];
+const EXPLORATION_COLUMNS: &[&str] = &[
+    "exploration_id",
+    "task_id",
+    "created_by",
+    "purpose_ref",
+    "created_at",
+];
+const ROUTE_COLUMNS: &[&str] = &[
+    "route_id",
+    "exploration_id",
+    "source_kind",
+    "source_id",
+    "status",
+    "terminal_version_id",
+    "created_by",
+    "purpose_ref",
+    "created_at",
+];
+const ROUTE_EXECUTION_COLUMNS: &[&str] = &["route_id", "execution_id", "attached_at"];
 const EXECUTION_COLUMNS: &[&str] = &[
     "execution_id",
     "task_id",
@@ -1963,6 +2036,19 @@ impl MetadataStore {
             true,
         )?;
         validate_additive_table_schema(&self.connection, "tasks", TASK_COLUMNS, true)?;
+        validate_additive_table_schema(
+            &self.connection,
+            "explorations",
+            EXPLORATION_COLUMNS,
+            true,
+        )?;
+        validate_additive_table_schema(&self.connection, "routes", ROUTE_COLUMNS, true)?;
+        validate_additive_table_schema(
+            &self.connection,
+            "route_executions",
+            ROUTE_EXECUTION_COLUMNS,
+            true,
+        )?;
         validate_additive_table_schema(&self.connection, "executions", EXECUTION_COLUMNS, true)?;
         validate_additive_table_schema(
             &self.connection,
@@ -2196,6 +2282,36 @@ impl MetadataStore {
             );
             CREATE INDEX IF NOT EXISTS tasks_project_state
                 ON tasks(project_id, state, updated_at, task_id);
+            CREATE TABLE IF NOT EXISTS explorations (
+                exploration_id TEXT PRIMARY KEY NOT NULL,
+                task_id TEXT NOT NULL,
+                created_by TEXT NOT NULL,
+                purpose_ref TEXT,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS explorations_task_created
+                ON explorations(task_id, created_at, exploration_id);
+            CREATE TABLE IF NOT EXISTS routes (
+                route_id TEXT PRIMARY KEY NOT NULL,
+                exploration_id TEXT NOT NULL,
+                source_kind TEXT NOT NULL,
+                source_id TEXT NOT NULL,
+                status TEXT NOT NULL,
+                terminal_version_id TEXT,
+                created_by TEXT NOT NULL,
+                purpose_ref TEXT,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS routes_exploration_created
+                ON routes(exploration_id, created_at, route_id);
+            CREATE TABLE IF NOT EXISTS route_executions (
+                route_id TEXT NOT NULL,
+                execution_id TEXT NOT NULL UNIQUE,
+                attached_at TEXT NOT NULL,
+                PRIMARY KEY (route_id, execution_id)
+            );
+            CREATE INDEX IF NOT EXISTS route_executions_route_attached
+                ON route_executions(route_id, attached_at, execution_id);
             CREATE TABLE IF NOT EXISTS executions (
                 execution_id TEXT PRIMARY KEY NOT NULL,
                 task_id TEXT NOT NULL,
@@ -2343,6 +2459,19 @@ impl MetadataStore {
             false,
         )?;
         validate_additive_table_schema(&self.connection, "tasks", TASK_COLUMNS, false)?;
+        validate_additive_table_schema(
+            &self.connection,
+            "explorations",
+            EXPLORATION_COLUMNS,
+            false,
+        )?;
+        validate_additive_table_schema(&self.connection, "routes", ROUTE_COLUMNS, false)?;
+        validate_additive_table_schema(
+            &self.connection,
+            "route_executions",
+            ROUTE_EXECUTION_COLUMNS,
+            false,
+        )?;
         validate_additive_table_schema(&self.connection, "executions", EXECUTION_COLUMNS, false)?;
         validate_additive_table_schema(
             &self.connection,
@@ -2840,6 +2969,359 @@ impl MetadataStore {
         )?;
         let result = statement
             .query_map([project_id], task_from_row)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(PongError::from);
+        result
+    }
+
+    pub fn create_exploration(
+        &mut self,
+        creation: &ExplorationCreation,
+    ) -> Result<ExplorationRecord, PongError> {
+        let creation = redact_exploration_creation(&self.redactor, creation)?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        transaction
+            .query_row(
+                "SELECT task_id FROM tasks WHERE task_id = ?1",
+                [&creation.task_id],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("exploration task does not exist".into()))?;
+        transaction
+            .query_row(
+                "SELECT agent_id FROM agent_identities WHERE agent_id = ?1",
+                [&creation.created_by],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("exploration creator does not exist".into()))?;
+        if let Some(existing) = transaction
+            .query_row(
+                "SELECT exploration_id, task_id, created_by, purpose_ref, created_at
+                 FROM explorations WHERE exploration_id = ?1",
+                [&creation.exploration_id],
+                exploration_from_row,
+            )
+            .optional()?
+        {
+            if existing.task_id != creation.task_id
+                || existing.created_by != creation.created_by
+                || existing.purpose_ref != creation.purpose_ref
+                || existing.created_at != creation.created_at
+            {
+                return Err(PongError::IdempotencyKeyReuse(creation.exploration_id));
+            }
+            transaction.commit()?;
+            return Ok(existing);
+        }
+        transaction.execute(
+            "INSERT INTO explorations
+             (exploration_id, task_id, created_by, purpose_ref, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![
+                creation.exploration_id,
+                creation.task_id,
+                creation.created_by,
+                creation.purpose_ref,
+                creation.created_at
+            ],
+        )?;
+        inject_before_commit(&mut self.failpoints, MetadataFailpoint::BeforeSqliteCommit)?;
+        transaction.commit()?;
+        inject_after_commit(&mut self.failpoints, MetadataFailpoint::AfterSqliteCommit)?;
+        self.exploration(&creation.exploration_id)?
+            .ok_or_else(|| PongError::Integrity("exploration disappeared after creation".into()))
+    }
+
+    pub fn exploration(
+        &self,
+        exploration_id: &str,
+    ) -> Result<Option<ExplorationRecord>, PongError> {
+        let exploration_id = self.redactor.redact_text(exploration_id);
+        self.connection
+            .query_row(
+                "SELECT exploration_id, task_id, created_by, purpose_ref, created_at
+                 FROM explorations WHERE exploration_id = ?1",
+                [&exploration_id],
+                exploration_from_row,
+            )
+            .optional()
+            .map_err(PongError::from)
+    }
+
+    pub fn list_explorations(&self, task_id: &str) -> Result<Vec<ExplorationRecord>, PongError> {
+        let task_id = self.redactor.redact_text(task_id);
+        let mut statement = self.connection.prepare(
+            "SELECT exploration_id, task_id, created_by, purpose_ref, created_at
+             FROM explorations WHERE task_id = ?1 ORDER BY created_at ASC, exploration_id ASC",
+        )?;
+        let result = statement
+            .query_map([task_id], exploration_from_row)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(PongError::from);
+        result
+    }
+
+    pub fn create_route(&mut self, creation: &RouteCreation) -> Result<RouteRecord, PongError> {
+        let creation = redact_route_creation(&self.redactor, creation)?;
+        validate_route_status(&creation.status)?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let (task_id, project_id): (String, String) = transaction
+            .query_row(
+                "SELECT e.task_id, t.project_id
+                 FROM explorations e JOIN tasks t ON t.task_id = e.task_id
+                 WHERE e.exploration_id = ?1",
+                [&creation.exploration_id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("route exploration does not exist".into()))?;
+        transaction
+            .query_row(
+                "SELECT agent_id FROM agent_identities WHERE agent_id = ?1",
+                [&creation.created_by],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("route creator does not exist".into()))?;
+        match creation.source_kind.as_str() {
+            "version" => {
+                let source_project: Option<String> = transaction
+                    .query_row(
+                        "SELECT project_id FROM versions WHERE version_id = ?1",
+                        [&creation.source_id],
+                        |row| row.get(0),
+                    )
+                    .optional()?;
+                let source_project = source_project.ok_or_else(|| {
+                    PongError::NotFound("route source Version does not exist".into())
+                })?;
+                if source_project != project_id {
+                    return Err(PongError::Conflict(
+                        "route source Version project scope does not match exploration".into(),
+                    ));
+                }
+                creation.source_id.clone()
+            }
+            "checkpoint" => {
+                let checkpoint: Option<(String, String, String)> = transaction
+                    .query_row(
+                        "SELECT task_id, workspace_id, version_id FROM checkpoints
+                         WHERE checkpoint_id = ?1",
+                        [&creation.source_id],
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                    )
+                    .optional()?;
+                let Some((checkpoint_task, workspace_id, version_id)) = checkpoint else {
+                    return Err(PongError::NotFound(
+                        "route source Checkpoint does not exist".into(),
+                    ));
+                };
+                if checkpoint_task != task_id {
+                    return Err(PongError::Conflict(
+                        "route source Checkpoint task scope does not match exploration".into(),
+                    ));
+                }
+                let version_scope: Option<(String, String)> = transaction
+                    .query_row(
+                        "SELECT project_id, workspace_id FROM versions WHERE version_id = ?1",
+                        [&version_id],
+                        |row| Ok((row.get(0)?, row.get(1)?)),
+                    )
+                    .optional()?;
+                let Some((version_project, version_workspace)) = version_scope else {
+                    return Err(PongError::Integrity(
+                        "route source Checkpoint references a missing Version".into(),
+                    ));
+                };
+                if version_project != project_id || version_workspace != workspace_id {
+                    return Err(PongError::Conflict(
+                        "route source Checkpoint Version scope is invalid".into(),
+                    ));
+                }
+                version_id
+            }
+            _ => {
+                return Err(PongError::InvalidInput(
+                    "route source kind must be version or checkpoint".into(),
+                ));
+            }
+        };
+        if let Some(terminal_version_id) = creation.terminal_version_id.as_deref() {
+            let terminal_project: Option<String> = transaction
+                .query_row(
+                    "SELECT project_id FROM versions WHERE version_id = ?1",
+                    [terminal_version_id],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            if terminal_project.as_deref() != Some(project_id.as_str()) {
+                return Err(PongError::Conflict(
+                    "route terminal Version project scope does not match exploration".into(),
+                ));
+            }
+        }
+        if let Some(existing) = transaction
+            .query_row(
+                "SELECT route_id, exploration_id, source_kind, source_id, status,
+                        terminal_version_id, created_by, purpose_ref, created_at
+                 FROM routes WHERE route_id = ?1",
+                [&creation.route_id],
+                route_from_row,
+            )
+            .optional()?
+        {
+            if existing.exploration_id != creation.exploration_id
+                || existing.source_kind != creation.source_kind
+                || existing.source_id != creation.source_id
+                || existing.status != creation.status
+                || existing.terminal_version_id != creation.terminal_version_id
+                || existing.created_by != creation.created_by
+                || existing.purpose_ref != creation.purpose_ref
+                || existing.created_at != creation.created_at
+            {
+                return Err(PongError::IdempotencyKeyReuse(creation.route_id));
+            }
+            transaction.commit()?;
+            return Ok(existing);
+        }
+        transaction.execute(
+            "INSERT INTO routes
+             (route_id, exploration_id, source_kind, source_id, status,
+              terminal_version_id, created_by, purpose_ref, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![
+                creation.route_id,
+                creation.exploration_id,
+                creation.source_kind,
+                creation.source_id,
+                creation.status,
+                creation.terminal_version_id,
+                creation.created_by,
+                creation.purpose_ref,
+                creation.created_at
+            ],
+        )?;
+        inject_before_commit(&mut self.failpoints, MetadataFailpoint::BeforeSqliteCommit)?;
+        transaction.commit()?;
+        inject_after_commit(&mut self.failpoints, MetadataFailpoint::AfterSqliteCommit)?;
+        let route = self
+            .route(&creation.route_id)?
+            .ok_or_else(|| PongError::Integrity("route disappeared after creation".into()))?;
+        Ok(route)
+    }
+
+    pub fn route(&self, route_id: &str) -> Result<Option<RouteRecord>, PongError> {
+        let route_id = self.redactor.redact_text(route_id);
+        self.connection
+            .query_row(
+                "SELECT route_id, exploration_id, source_kind, source_id, status,
+                        terminal_version_id, created_by, purpose_ref, created_at
+                 FROM routes WHERE route_id = ?1",
+                [&route_id],
+                route_from_row,
+            )
+            .optional()
+            .map_err(PongError::from)
+    }
+
+    pub fn list_routes(&self, exploration_id: &str) -> Result<Vec<RouteRecord>, PongError> {
+        let exploration_id = self.redactor.redact_text(exploration_id);
+        let mut statement = self.connection.prepare(
+            "SELECT route_id, exploration_id, source_kind, source_id, status,
+                    terminal_version_id, created_by, purpose_ref, created_at
+             FROM routes WHERE exploration_id = ?1 ORDER BY created_at ASC, route_id ASC",
+        )?;
+        let result = statement
+            .query_map([exploration_id], route_from_row)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(PongError::from);
+        result
+    }
+
+    pub fn attach_execution_to_route(
+        &mut self,
+        attachment: &RouteExecutionAttachment,
+    ) -> Result<RouteExecutionAttachment, PongError> {
+        let attachment = redact_route_execution_attachment(&self.redactor, attachment)?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let (route_task, route_project): (String, String) = transaction
+            .query_row(
+                "SELECT e.task_id, t.project_id
+                 FROM routes r
+                 JOIN explorations e ON e.exploration_id = r.exploration_id
+                 JOIN tasks t ON t.task_id = e.task_id
+                 WHERE r.route_id = ?1",
+                [&attachment.route_id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()?
+            .ok_or_else(|| PongError::NotFound("route does not exist".into()))?;
+        let execution_project: Option<(String, String)> = transaction
+            .query_row(
+                "SELECT task_id, project_id FROM executions WHERE execution_id = ?1",
+                [&attachment.execution_id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()?;
+        let Some((execution_task, execution_project)) = execution_project else {
+            return Err(PongError::NotFound("route execution does not exist".into()));
+        };
+        if execution_task != route_task || execution_project != route_project {
+            return Err(PongError::Conflict(
+                "route execution task/project scope does not match route".into(),
+            ));
+        }
+        if let Some(existing) = transaction
+            .query_row(
+                "SELECT route_id, execution_id, attached_at FROM route_executions
+                 WHERE execution_id = ?1",
+                [&attachment.execution_id],
+                route_execution_attachment_from_row,
+            )
+            .optional()?
+        {
+            if existing == attachment {
+                transaction.commit()?;
+                return Ok(existing);
+            }
+            return Err(PongError::Conflict(
+                "execution is already attached to another route".into(),
+            ));
+        }
+        transaction.execute(
+            "INSERT INTO route_executions(route_id, execution_id, attached_at)
+             VALUES (?1, ?2, ?3)",
+            params![
+                attachment.route_id,
+                attachment.execution_id,
+                attachment.attached_at
+            ],
+        )?;
+        inject_before_commit(&mut self.failpoints, MetadataFailpoint::BeforeSqliteCommit)?;
+        transaction.commit()?;
+        inject_after_commit(&mut self.failpoints, MetadataFailpoint::AfterSqliteCommit)?;
+        Ok(attachment)
+    }
+
+    pub fn route_executions(
+        &self,
+        route_id: &str,
+    ) -> Result<Vec<RouteExecutionAttachment>, PongError> {
+        let route_id = self.redactor.redact_text(route_id);
+        let mut statement = self.connection.prepare(
+            "SELECT route_id, execution_id, attached_at FROM route_executions
+             WHERE route_id = ?1 ORDER BY attached_at ASC, execution_id ASC",
+        )?;
+        let result = statement
+            .query_map([route_id], route_execution_attachment_from_row)?
             .collect::<Result<Vec<_>, _>>()
             .map_err(PongError::from);
         result
@@ -8597,6 +9079,40 @@ fn task_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<TaskRecord> {
     })
 }
 
+fn exploration_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ExplorationRecord> {
+    Ok(ExplorationRecord {
+        exploration_id: row.get(0)?,
+        task_id: row.get(1)?,
+        created_by: row.get(2)?,
+        purpose_ref: row.get(3)?,
+        created_at: row.get(4)?,
+    })
+}
+
+fn route_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<RouteRecord> {
+    Ok(RouteRecord {
+        route_id: row.get(0)?,
+        exploration_id: row.get(1)?,
+        source_kind: row.get(2)?,
+        source_id: row.get(3)?,
+        status: row.get(4)?,
+        terminal_version_id: row.get(5)?,
+        created_by: row.get(6)?,
+        purpose_ref: row.get(7)?,
+        created_at: row.get(8)?,
+    })
+}
+
+fn route_execution_attachment_from_row(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<RouteExecutionAttachment> {
+    Ok(RouteExecutionAttachment {
+        route_id: row.get(0)?,
+        execution_id: row.get(1)?,
+        attached_at: row.get(2)?,
+    })
+}
+
 fn execution_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ExecutionRecord> {
     Ok(ExecutionRecord {
         execution_id: row.get(0)?,
@@ -9189,6 +9705,107 @@ fn redact_task_creation(
         validate_non_empty(context_ref, "task context reference")?;
     }
     Ok(creation)
+}
+
+fn redact_exploration_creation(
+    redactor: &Redactor,
+    creation: &ExplorationCreation,
+) -> Result<ExplorationCreation, PongError> {
+    let creation = ExplorationCreation {
+        exploration_id: redactor.redact_text(&creation.exploration_id),
+        task_id: redactor.redact_text(&creation.task_id),
+        created_by: redactor.redact_text(&creation.created_by),
+        purpose_ref: creation
+            .purpose_ref
+            .as_deref()
+            .map(|value| redactor.redact_text(value)),
+        created_at: redactor.redact_text(&creation.created_at),
+    };
+    for (value, label) in [
+        (&creation.exploration_id, "exploration id"),
+        (&creation.task_id, "exploration task id"),
+        (&creation.created_by, "exploration creator"),
+        (&creation.created_at, "exploration created_at"),
+    ] {
+        validate_non_empty(value, label)?;
+    }
+    if let Some(purpose_ref) = creation.purpose_ref.as_deref() {
+        validate_non_empty(purpose_ref, "exploration purpose reference")?;
+    }
+    Ok(creation)
+}
+
+fn redact_route_creation(
+    redactor: &Redactor,
+    creation: &RouteCreation,
+) -> Result<RouteCreation, PongError> {
+    let creation = RouteCreation {
+        route_id: redactor.redact_text(&creation.route_id),
+        exploration_id: redactor.redact_text(&creation.exploration_id),
+        source_kind: redactor.redact_text(&creation.source_kind),
+        source_id: redactor.redact_text(&creation.source_id),
+        status: redactor.redact_text(&creation.status),
+        terminal_version_id: creation
+            .terminal_version_id
+            .as_deref()
+            .map(|value| redactor.redact_text(value)),
+        created_by: redactor.redact_text(&creation.created_by),
+        purpose_ref: creation
+            .purpose_ref
+            .as_deref()
+            .map(|value| redactor.redact_text(value)),
+        created_at: redactor.redact_text(&creation.created_at),
+    };
+    for (value, label) in [
+        (&creation.route_id, "route id"),
+        (&creation.exploration_id, "route exploration id"),
+        (&creation.source_kind, "route source kind"),
+        (&creation.source_id, "route source id"),
+        (&creation.status, "route status"),
+        (&creation.created_by, "route creator"),
+        (&creation.created_at, "route created_at"),
+    ] {
+        validate_non_empty(value, label)?;
+    }
+    if let Some(terminal_version_id) = creation.terminal_version_id.as_deref() {
+        validate_non_empty(terminal_version_id, "route terminal Version id")?;
+    }
+    if let Some(purpose_ref) = creation.purpose_ref.as_deref() {
+        validate_non_empty(purpose_ref, "route purpose reference")?;
+    }
+    Ok(creation)
+}
+
+fn redact_route_execution_attachment(
+    redactor: &Redactor,
+    attachment: &RouteExecutionAttachment,
+) -> Result<RouteExecutionAttachment, PongError> {
+    let attachment = RouteExecutionAttachment {
+        route_id: redactor.redact_text(&attachment.route_id),
+        execution_id: redactor.redact_text(&attachment.execution_id),
+        attached_at: redactor.redact_text(&attachment.attached_at),
+    };
+    for (value, label) in [
+        (&attachment.route_id, "route id"),
+        (&attachment.execution_id, "route execution id"),
+        (&attachment.attached_at, "route attached_at"),
+    ] {
+        validate_non_empty(value, label)?;
+    }
+    Ok(attachment)
+}
+
+fn validate_route_status(status: &str) -> Result<(), PongError> {
+    if matches!(
+        status,
+        "active" | "paused" | "failed" | "completed" | "abandoned"
+    ) {
+        Ok(())
+    } else {
+        Err(PongError::InvalidInput(
+            "route status is not supported".into(),
+        ))
+    }
 }
 
 fn redact_execution_creation(
