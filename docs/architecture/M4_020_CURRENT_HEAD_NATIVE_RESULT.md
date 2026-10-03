@@ -72,6 +72,41 @@ This is an environment/access blocker, not a test failure. No Docker, WSL,
 local simulation, or historical artifact is counted as Ubuntu 24.04 or macOS
 14 evidence for `56a51eb`.
 
+### Supplied Run #8 Analysis
+
+The supplied archives are real native artifacts from workflow run
+`37143141686`, but both jobs checked out `bd828fea75bf56fb02ca5a7898c84899289e7602`
+(`bd828fe`), not the requested `56a51eb`. They therefore cannot be credited as
+current-`56a51eb` evidence.
+
+Archive hashes:
+
+- Linux: `5C67725D15D3334C8F6A1A80965C4958E97B85075EE200C823EA046212977A76`
+- macOS: `F91C235C0B246AD2B7E24B0AC3F48B78C41616B0AF7669151DDA868A74593214`
+
+On both Ubuntu 24.04 and macOS 14, the actual run produced:
+
+- fmt: exit `0`
+- check: exit `0`
+- clippy: exit `0`
+- M4 focused matrix: exit `0`
+- full regression: exit `101`
+
+The full-regression failure was identical on both platforms. The first
+failure was `tests/artifact_consistency.rs`, which rejected the committed
+Windows evidence record because its `raw_log` was absolute and lacked the
+required `raw_log_sha256`. This was an evidence-package schema defect, not a
+Core, Protocol, or native runtime failure. The record has now been corrected to
+use a repository-relative log path and the actual SHA-256. Local
+`artifact_consistency` (2/2) and a subsequent full `cargo test --all --locked`
+pass confirm the correction.
+
+During the first local full rerun, two `remote_failure_semantics` assertions
+also observed an empty diagnostic deque under concurrent scheduling. The suite
+passed on immediate rerun and on 20 repeated runs; no production change was
+made. This remains a test-observability timing observation, not evidence of a
+native platform failure.
+
 The retained run `36229863325` is valid evidence for the older commit
 `07f74b3a012c49b98b1dd6aaa7baa094658679c8`. The current branch contains
 subsequent commits, including changes after that run, so its Linux and macOS

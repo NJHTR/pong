@@ -47,5 +47,6 @@
       "finished_at": "2026-10-04T00:36:29.4427878+08:00"
     }
   ],
-  "raw_log": "D:\\pong\\artifacts\\m4-development\\m4-020-windows-current-head-2026-10-04.log"
+  "raw_log": "artifacts/m4-development/m4-020-windows-current-head-2026-10-04.log",
+  "raw_log_sha256": "2E36A2B84861BCC8EFB0174020FC1552DAAFB54FD6F4340CB86A695E4EC6EE76"
 }
