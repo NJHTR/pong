@@ -4,8 +4,8 @@
 
 ## Post-M4-020 Route
 
-- **Official next Slice:** M4-021 provider-neutral external runtime interoperability.
-- **Status:** `RATIFIED / BLOCKED ON PROVIDER ENVIRONMENT`.
+- **Official next Slice:** `NONE` (awaiting explicit route decision after M4-021 closure).
+- **M4-021 Status:** `COMPLETE / PASS`.
 - **Scope:** Use the existing local JSON Lines transport and frozen External
   Agent Protocol v1.0 to capture a real Codex-to-Claude durable workflow,
   including handoff, resume, version/checkpoint completion, fresh-process
@@ -13,8 +13,10 @@
 - **Non-goals:** No provider-specific adapter, Protocol v1.0 change, Core
   schema change, Runtime Integration contract, E3, or Exploration/Route/Candidate
   expansion.
-- **Blocking condition:** The latest real Claude preflight returned HTTP 503
-  (`No available channel for model glm-5.3`); no provider PASS is claimed.
+- **Closure evidence:** [`M4_021_FINAL_ACCEPTANCE_2026-10-05.md`](../architecture/M4_021_FINAL_ACCEPTANCE_2026-10-05.md)
+  records independent user-controlled Codex and Claude sessions, durable
+  handoff/resume, fresh-process inspection, and cold reopen verification.
+- **Roadmap status:** `NEEDS_RECONCILIATION`; completion does not infer M4-022.
 
 
 ## Phase 0: Research and architecture (complete)

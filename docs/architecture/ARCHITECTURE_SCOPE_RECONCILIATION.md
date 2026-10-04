@@ -10,12 +10,11 @@ Branch: dev
 Remote: origin/dev at 2880d33
 ```
 
-M4-020 is now `PASS / COMPLETE`, and its formal checkpoint `d6e9dae` is an
-ancestor of the current HEAD. M4-021 is now the single ratified post-M4-020
-Slice, with execution blocked by provider service availability. Its scope is
-limited to provider-neutral evidence over the existing transport and frozen
-Protocol v1.0; it does not authorize provider adapters, Runtime Integration,
-or Core schema changes.
+M4-020 is `PASS / COMPLETE`. M4-021 is now `PASS / COMPLETE` after the
+current Windows-native final acceptance with independent user-controlled Codex
+and Claude sessions. Its scope remained limited to provider-neutral evidence
+over the existing transport and frozen Protocol v1.0; it did not authorize
+provider adapters, Runtime Integration, or Core schema changes.
 Exploration, Route, Candidate, Evaluation, Search, and Selection remain
 research or composition-layer concepts, not Pong Core domain entities.
 
@@ -107,8 +106,9 @@ Protocol v1.0: UNCHANGED
 ## Official next slice
 
 ```text
-Current official next Slice: M4-021
-M4-021: RATIFIED / BLOCKED ON PROVIDER ENVIRONMENT
+Current official next Slice: NONE
+M4-021: COMPLETE / PASS
+Roadmap: NEEDS_RECONCILIATION
 ```
 
 Runtime Integration is not a current implementation Slice. The existing local
@@ -117,6 +117,6 @@ adapter sessions while keeping provider `thread_id`, transport sessions, and
 incarnation separate. Protocol v1.0 is sufficient for the current
 `register_agent` boundary; no Protocol contract gap is established.
 
-This document ratifies the route only; it does not start M4-021, alter its
-provider gate, rerun M4-020, or begin E3. Provider execution remains blocked
-until the declared Claude service is available.
+This document records M4-021 closure only; it does not start M4-022 or begin
+E3. Runtime Integration remains outside the current mainline and the next
+Slice requires an explicit route decision.

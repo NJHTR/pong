@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased - Close M4-021 after final acceptance (2026-10-05)
+
+- Recorded `M4-021 = COMPLETE / PASS` after the current Windows-native final
+  acceptance using independent user-controlled Codex and Claude sessions.
+- Verified W1, C1, handoff, W2, C2, E2 completion, fresh-process inspection,
+  `Repository::open`, cold reopen, and the distinct identity rules that
+  `Workspace.head` equals `snapshot.root_digest` while Snapshot identity equals
+  `snapshot_id`.
+- Kept Protocol v1.0, production Core, provider configuration, and tests
+  unchanged. M4-020 remains complete; no M4-022 or other next Slice is
+  inferred. Roadmap status is `NEEDS_RECONCILIATION` pending an explicit route
+  decision.
+
+See [`M4_021_FINAL_ACCEPTANCE_2026-10-05.md`](../architecture/M4_021_FINAL_ACCEPTANCE_2026-10-05.md).
+
 ## Unreleased - Ratify M4-021 as the post-M4-020 route (2026-10-04)
 
 - Ratified M4-021 provider-neutral external runtime interoperability as the

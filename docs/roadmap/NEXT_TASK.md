@@ -1,6 +1,6 @@
 # Next Task
 
-**Current Phase:** M4-021 provider-neutral external runtime interoperability
+**Current Phase:** M4-021 provider-neutral external runtime interoperability (`COMPLETE / PASS`)
 
 **Completed Milestone:** M4-020 cross-platform / native runtime regression
 gate. Windows, Ubuntu 24.04, and macOS 14 are `PASS / COMPLETE`; the latest
@@ -10,21 +10,20 @@ checkpoint `d6e9dae` is already an ancestor of the current HEAD. See
 and
 [`ADR-M4-020-cross-platform-native-runtime.md`](../decisions/ADR-M4-020-cross-platform-native-runtime.md).
 
-**Current Decision:** `RATIFIED / BLOCKED ON PROVIDER ENVIRONMENT`. M4-021 is
-the single official post-M4-020 Slice. Its scope is a bounded provider-neutral
-interoperability evidence gate over the existing JSON Lines transport and
-frozen External Agent Protocol v1.0; it does not add provider adapters,
-provider-specific protocol fields, or Core entities.
+**Current Decision:** `COMPLETE / PASS`. M4-021 was closed by a current
+Windows-native, user-controlled Codex-to-Claude acceptance run. Its scope was
+the bounded provider-neutral interoperability evidence gate over the existing
+JSON Lines transport and frozen External Agent Protocol v1.0; it added no
+provider adapters, provider-specific protocol fields, or Core entities. See
+[`M4_021_FINAL_ACCEPTANCE_2026-10-05.md`](../architecture/M4_021_FINAL_ACCEPTANCE_2026-10-05.md).
 
-**Next Action:** When the declared Claude provider service is available, run
-the unchanged current-HEAD M4-021 harness and retain complete provider and
-durable-state evidence. Until then, implementation is not started and the
-slice remains blocked by the provider environment. Do not rerun M4-020 unless
-source, test, or workflow inputs change. Keep TLS
+**Next Action:** No official next Slice is ratified. Preserve the M4-021
+closure evidence and await an explicit route decision. Do not infer or start
+M4-022. Do not rerun M4-020 unless source, test, or workflow inputs change. Keep TLS
 deployment, production secret manager, Windows credential ACL, slow-client
 deadline, public Internet deployment, and MCP deferred or `NOT_PROVEN` as
 already documented. Do not implement E3, provider-specific adapters, Runtime
-Integration, or Protocol v1.0 changes while M4-021 is blocked.
+Integration, or Protocol v1.0 changes while the roadmap awaits a route decision.
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
