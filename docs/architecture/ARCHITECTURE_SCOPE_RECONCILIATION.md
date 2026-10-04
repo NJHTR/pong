@@ -11,10 +11,11 @@ Remote: origin/dev at 2880d33
 ```
 
 M4-020 is now `PASS / COMPLETE`, and its formal checkpoint `d6e9dae` is an
-ancestor of the current HEAD. The committed roadmap does not yet uniquely name
-the next implementation Slice. The untracked M4-021 provider-interoperability
-materials describe a real `BLOCKED / PROVIDER ENVIRONMENT` candidate, but they
-are not sufficient authority to promote M4-021 in the committed roadmap.
+ancestor of the current HEAD. M4-021 is now the single ratified post-M4-020
+Slice, with execution blocked by provider service availability. Its scope is
+limited to provider-neutral evidence over the existing transport and frozen
+Protocol v1.0; it does not authorize provider adapters, Runtime Integration,
+or Core schema changes.
 Exploration, Route, Candidate, Evaluation, Search, and Selection remain
 research or composition-layer concepts, not Pong Core domain entities.
 
@@ -106,8 +107,8 @@ Protocol v1.0: UNCHANGED
 ## Official next slice
 
 ```text
-Current official next Slice: NONE / NEEDS_RECONCILIATION
-M4-021: CANDIDATE / DEFERRED / BLOCKED / PROVIDER ENVIRONMENT
+Current official next Slice: M4-021
+M4-021: RATIFIED / BLOCKED ON PROVIDER ENVIRONMENT
 ```
 
 Runtime Integration is not a current implementation Slice. The existing local
@@ -116,5 +117,6 @@ adapter sessions while keeping provider `thread_id`, transport sessions, and
 incarnation separate. Protocol v1.0 is sufficient for the current
 `register_agent` boundary; no Protocol contract gap is established.
 
-This document does not start M4-021, alter its provider gate, rerun M4-020, or
-begin E3. It records the post-M4-020 state reconciliation only.
+This document ratifies the route only; it does not start M4-021, alter its
+provider gate, rerun M4-020, or begin E3. Provider execution remains blocked
+until the declared Claude service is available.

@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased - Ratify M4-021 as the post-M4-020 route (2026-10-04)
+
+- Ratified M4-021 provider-neutral external runtime interoperability as the
+  single official next Slice after M4-020. Its scope, acceptance gate, and
+  non-goals are bounded to the existing JSON Lines transport and frozen
+  External Agent Protocol v1.0; no provider adapter, Core schema, or Protocol
+  change is authorized.
+- The Slice remains `BLOCKED ON PROVIDER ENVIRONMENT`. A real Codex preflight
+  completed with `READY`; a real Claude Code `2.1.131` preflight returned HTTP
+  503: `No available channel for model glm-5.3 under group glm (distributor)`.
+  This is not a Pong Core or Protocol failure, and no M4-021 PASS is claimed.
+- Runtime Integration remains outside the current route. E1/E2 remain
+  `EXPERIMENTAL / RECONSIDERED`, E3 remains `NOT STARTED / STOPPED`, and
+  Protocol v1.0 remains frozen.
+
 ## Unreleased - Post-M4-020 roadmap / contract reconciliation (2026-10-04)
 
 - Confirmed M4-020 is `PASS / COMPLETE` for Windows, Ubuntu 24.04, and macOS

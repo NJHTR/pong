@@ -2,6 +2,21 @@
 
 **Status: Normative planning baseline.** The roadmap follows architectural dependencies, not the order of the initial idea list. Each milestone exits through tests, documentation, and an ADR when a contract changes.
 
+## Post-M4-020 Route
+
+- **Official next Slice:** M4-021 provider-neutral external runtime interoperability.
+- **Status:** `RATIFIED / BLOCKED ON PROVIDER ENVIRONMENT`.
+- **Scope:** Use the existing local JSON Lines transport and frozen External
+  Agent Protocol v1.0 to capture a real Codex-to-Claude durable workflow,
+  including handoff, resume, version/checkpoint completion, fresh-process
+  inspection, and final cold reopen.
+- **Non-goals:** No provider-specific adapter, Protocol v1.0 change, Core
+  schema change, Runtime Integration contract, E3, or Exploration/Route/Candidate
+  expansion.
+- **Blocking condition:** The latest real Claude preflight returned HTTP 503
+  (`No available channel for model glm-5.3`); no provider PASS is claimed.
+
+
 ## Phase 0: Research and architecture (complete)
 
 - Establish scope, boundaries, terminology, object relationships, and risks.
