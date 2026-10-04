@@ -5,7 +5,7 @@ Date: 2026-10-04
 ## Current state
 
 ```text
-Current HEAD: 2880d33 docs: close m4 native cross-platform gate
+Current HEAD: 1eaa15e docs: reconcile roadmap after m4-020
 Branch: dev
 Remote: origin/dev at 2880d33
 ```
