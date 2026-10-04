@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased - Post-M4-020 roadmap / contract reconciliation (2026-10-04)
+
+- Confirmed M4-020 is `PASS / COMPLETE` for Windows, Ubuntu 24.04, and macOS
+  14. Its formal checkpoint `d6e9dae` already precedes the current HEAD
+  `2880d33`; the old checkpoint-creation instruction is no longer a next task.
+- Kept E1/E2 as `EXPERIMENTAL / RECONSIDERED` compatibility surfaces and E3 as
+  `NOT STARTED / STOPPED`. Exploration, Route, Candidate, Evaluation, and
+  Selection remain Composition / Research Layer responsibilities.
+- Classified M4-021 as `CANDIDATE / DEFERRED / BLOCKED / PROVIDER ENVIRONMENT`.
+  Its current architecture/evidence files are untracked and therefore do not
+  uniquely ratify it as the committed roadmap's next implementation Slice.
+- Recorded that the Runtime Integration Gap is not a current Core or Protocol
+  v1.0 contract gap. Provider `thread_id`, provider session, runtime identity,
+  Pong `agent_id`, transport `session_id`, and incarnation remain distinct.
+- The committed roadmap remains `NEEDS_RECONCILIATION` until an explicit next
+  Slice is approved. No production code, Protocol, adapter, E3 model, or
+  external Repository was changed.
+
 ## Unreleased - Core boundary correction after exploration prototype (2026-09-26)
 
 - Reverted `66fda97` with an auditable Git revert. Exploration/Candidate/Route

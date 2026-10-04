@@ -1,20 +1,22 @@
 # Architecture Scope Reconciliation
 
-Date: 2026-10-03
+Date: 2026-10-04
 
 ## Current state
 
 ```text
-Current HEAD: d4cdbf1 feat: add exploration route fork lifecycle
+Current HEAD: 2880d33 docs: close m4 native cross-platform gate
 Branch: dev
-Remote: origin/dev at d4cdbf1
+Remote: origin/dev at 2880d33
 ```
 
-The current formal roadmap remains M4 provider-neutral runtime work. The
-authoritative `docs/roadmap/NEXT_TASK.md` names M4-020 native regression
-checkpoint finalization as the next official action and explicitly states that
-Exploration, Route, Candidate, Evaluation, Search, and Selection are research
-or composition-layer concepts, not Pong Core domain entities.
+M4-020 is now `PASS / COMPLETE`, and its formal checkpoint `d6e9dae` is an
+ancestor of the current HEAD. The committed roadmap does not yet uniquely name
+the next implementation Slice. The untracked M4-021 provider-interoperability
+materials describe a real `BLOCKED / PROVIDER ENVIRONMENT` candidate, but they
+are not sufficient authority to promote M4-021 in the committed roadmap.
+Exploration, Route, Candidate, Evaluation, Search, and Selection remain
+research or composition-layer concepts, not Pong Core domain entities.
 
 ## Commit timeline
 
@@ -104,9 +106,15 @@ Protocol v1.0: UNCHANGED
 ## Official next slice
 
 ```text
-Current official next Slice: M4-020 checkpoint / roadmap follow-up
+Current official next Slice: NONE / NEEDS_RECONCILIATION
+M4-021: CANDIDATE / DEFERRED / BLOCKED / PROVIDER ENVIRONMENT
 ```
 
-This document does not start M4-020, alter its checkpoint, rerun its native
-workflow, or begin E3. It records the scope reconciliation only.
+Runtime Integration is not a current implementation Slice. The existing local
+Runtime Identity Adapter proves stable logical `agent_id` reuse and ephemeral
+adapter sessions while keeping provider `thread_id`, transport sessions, and
+incarnation separate. Protocol v1.0 is sufficient for the current
+`register_agent` boundary; no Protocol contract gap is established.
 
+This document does not start M4-021, alter its provider gate, rerun M4-020, or
+begin E3. It records the post-M4-020 state reconciliation only.

@@ -1,28 +1,29 @@
 # Next Task
 
-**Current Phase:** M4 - provider-neutral external protocol boundary
+**Current Phase:** Post-M4-020 roadmap / contract reconciliation
 
-**Current Milestone:** Cross-platform / native runtime regression gate (M4-020)
-
-**Current Task:** M4-020 verifies that the frozen Core-owned contract is
-reproducible on native Linux and macOS: Core ownership, lifecycle, durable
-state, lease/revision/CAS, Operation recovery, Protocol v1.0, HTTP remote
-transport, authorization, reconnect, restart, and failure semantics. Native
-run `36229863325` passed format/check/clippy, the complete focused matrix, and
-the full regression on both Ubuntu 24.04 and macOS 14 with exit code `0`.
-Windows was already PASS. M4-020 is now `PASS / COMPLETE`; see
+**Completed Milestone:** M4-020 cross-platform / native runtime regression
+gate. Windows, Ubuntu 24.04, and macOS 14 are `PASS / COMPLETE`; the latest
+native evidence is Run `37185403135` at source `b300287`, and the formal
+checkpoint `d6e9dae` is already an ancestor of the current HEAD. See
 [`M4_CROSS_PLATFORM_NATIVE_RUNTIME.md`](../architecture/M4_CROSS_PLATFORM_NATIVE_RUNTIME.md)
 and
 [`ADR-M4-020-cross-platform-native-runtime.md`](../decisions/ADR-M4-020-cross-platform-native-runtime.md).
 
-**Next Action:** Finalize this slice with the formal
-`checkpoint: m4-cross-platform-native-runtime` snapshot containing the accepted
-run #7 evidence, then proceed to the next explicitly scoped task. Do not rerun
-the workflow unless source, test, or workflow inputs change. Keep TLS
+**Current Decision:** `NEEDS_RECONCILIATION`. No post-M4-020 implementation
+Slice is uniquely ratified in the committed roadmap. M4-021 provider-neutral
+interoperability exists in untracked architecture/evidence files as a
+`CANDIDATE / DEFERRED / BLOCKED / PROVIDER ENVIRONMENT` slice, but those files
+are not part of the current committed baseline and do not by themselves
+promote M4-021 to the official next task.
+
+**Next Action:** Resolve the roadmap decision for M4-021 or name another
+explicitly approved Slice, then update this file before implementation. Do not
+rerun M4-020 unless source, test, or workflow inputs change. Keep TLS
 deployment, production secret manager, Windows credential ACL, slow-client
-deadline, and public Internet deployment as `NOT_PROVEN`; MCP remains deferred.
-Historical failed run records and the supplementary Docker diagnostic remain
-retained and must not be rewritten.
+deadline, public Internet deployment, and MCP deferred or `NOT_PROVEN` as
+already documented. Do not implement E3, provider-specific adapters, Runtime
+Integration, or Protocol v1.0 changes during this reconciliation.
 
 **M1 release baseline:** `v0.1.0` at
 `2aab0aaf4c9ddb342939da17eddb11de4dfa66c1`; its tag and release evidence are
