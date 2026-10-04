@@ -1,11 +1,11 @@
 # Architecture Scope Reconciliation
 
-Date: 2026-10-04
+Date: 2026-10-05
 
 ## Current state
 
 ```text
-Current HEAD: 1eaa15e docs: reconcile roadmap after m4-020
+Current HEAD: a5c55cd docs: close m4-021 after final acceptance
 Branch: dev
 Remote: origin/dev at 2880d33
 ```
