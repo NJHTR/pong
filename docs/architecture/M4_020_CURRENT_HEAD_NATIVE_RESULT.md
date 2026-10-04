@@ -1,27 +1,28 @@
 # M4-020 Current-Head Native Runtime Result
 
 **Run date:** 2026-10-04
-**Repository HEAD:** `56a51eba4d5306a2244d7ed200a862a0bfb3c022`
+**Repository HEAD:** `3fba86aa056ed7a028e3e8fe0735621399f76977`
 **Fresh Windows source SHA:** `704d39c2f27e8399438936df18ef54eef80ba4b2`
 **Branch:** `dev`
 
-This is a current-head revalidation record. It does not rewrite the accepted
+This is a current-head revalidation record. The current source evidence is Run
+`37180210921`, which executed commit `3fba86a`. The Windows artifact was
+captured earlier at `704d39c` and remains valid because the intervening commits
+changed only evidence records. This record does not rewrite the accepted
 historical native run `36229863325`, which executed commit
 `07f74b3a012c49b98b1dd6aaa7baa094658679c8`.
 
-The fresh Windows artifact was captured before the evidence-only commit that
-moved the repository from `704d39c` to `56a51eb`. That commit changed only this
-result documentation and evidence files; no source, test, workflow, or
-Protocol input changed. Ubuntu/macOS were still not rerun for either SHA.
+The evidence-only commits after the Windows capture changed no source, test,
+workflow, or Protocol input.
 
 ## Checkpoint
 
 | Area | Status | Basis |
 | --- | --- | --- |
 | Windows native | **PASS** | Fresh current-head run on Windows x86_64 |
-| Ubuntu 24.04 native | **NOT_PROVEN** | No current-head Ubuntu runner is available in this environment |
-| macOS 14 native | **NOT_PROVEN** | No current-head macOS runner is available in this environment |
-| Cross-platform gate | **BLOCKED / ENVIRONMENT** | Current-head Linux/macOS native evidence is missing |
+| Ubuntu 24.04 native | **PASS** | Run `37180210921`, current source `3fba86a` |
+| macOS 14 native | **FAIL** | Run `37180210921`, one full-regression Core-owner conflict |
+| Cross-platform gate | **BLOCKED / NATIVE REGRESSION FAILURE** | macOS full regression is not green |
 | Protocol v1.0 | **UNCHANGED** | No Protocol change in this slice; protocol matrix passed |
 | Production code | **NO CHANGE** | This slice only ran gates and added evidence |
 | Workflow | **PRESENT** | Existing workflow declares `ubuntu-24.04` and `macos-14` jobs |
@@ -107,15 +108,43 @@ passed on immediate rerun and on 20 repeated runs; no production change was
 made. This remains a test-observability timing observation, not evidence of a
 native platform failure.
 
+### Supplied Run #9 Analysis
+
+Run `37180210921` executed the current branch head
+`3fba86aa056ed7a028e3e8fe0735621399f76977` on native Ubuntu 24.04 and macOS
+14, so it is current-source evidence.
+
+Linux passed fmt, check, clippy, the focused matrix, and the full regression,
+all with exit code `0`.
+
+macOS passed fmt, check, clippy, and the focused matrix, but its full
+regression exited `101` in one test:
+
+`http_remote_transport::malformed_version_method_path_media_and_body_limit_are_transport_safe`
+
+The failure occurred at `tests/http_remote_transport.rs:436` while opening a
+fresh temporary repository as Core owner:
+
+`Conflict("repository already has active access; Core ownership requires exclusive startup")`
+
+The same test passed in the macOS focused matrix from the same workflow run.
+This is classified as a test-fixture / Core-ownership lifecycle observation
+under full-regression scheduling, not yet as a production Core defect. It is
+not caused by the Node.js deprecation warning or the macOS capacity notice.
+The failure requires isolated and controlled-parallelism reproduction before
+any production change is considered.
+
+Run #9 evidence is retained in
+[`m4-020-github-actions-run-37180210921.json`](../../artifacts/m4-development/m4-020-github-actions-run-37180210921.json).
+
 The retained run `36229863325` is valid evidence for the older commit
 `07f74b3a012c49b98b1dd6aaa7baa094658679c8`. The current branch contains
 subsequent commits, including changes after that run, so its Linux and macOS
 results are not silently promoted to current-head results.
 
-No Ubuntu 24.04 or macOS 14 runner was available for a fresh run at the current
-HEAD. No Docker output was used as a substitute. Therefore the cross-platform
-gate remains blocked by environment evidence availability, not by a discovered
-Core or Protocol failure.
+Run #9 supplies current-head Ubuntu evidence and current-head macOS failure
+evidence. No Docker output was used as a substitute. The cross-platform gate
+remains blocked by the macOS native full-regression failure.
 
 ## Scope Boundaries
 
@@ -128,7 +157,6 @@ Core or Protocol failure.
 
 ## Next Action
 
-Run the existing workflow on Ubuntu 24.04 and macOS 14 for current HEAD
-`704d39c2f27e8399438936df18ef54eef80ba4b2`. Do not claim the M4-020
-cross-platform gate complete until both native jobs produce current-head
-artifacts with the required command and exit-code records.
+Reproduce the macOS Core-owner conflict from Run #9 in isolation and with
+controlled test parallelism. Do not claim the M4-020 cross-platform gate
+complete until macOS full regression is green.

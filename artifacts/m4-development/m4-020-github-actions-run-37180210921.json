@@ -1,0 +1,76 @@
+{
+  "record_version": "m4-020-github-actions-native-regression-0.7",
+  "slice": "M4-020",
+  "workflow": ".github/workflows/m4-cross-platform-regression.yml",
+  "run_id": 37180210921,
+  "run_number": 9,
+  "head_sha": "3fba86aa056ed7a028e3e8fe0735621399f76977",
+  "conclusion": "failure",
+  "artifacts": [
+    {
+      "platform": "linux",
+      "name": "m4-linux-native-regression",
+      "source_archive": "m4-linux-native-regression (1).zip",
+      "sha256": "5F416EDB6E187837B45B37789E80E01A778AD2657E00EE7AC2A57E0CA3A86709"
+    },
+    {
+      "platform": "macos",
+      "name": "m4-macos-native-regression",
+      "source_archive": "m4-macos-native-regression (1).zip",
+      "sha256": "0939995895D3CEEC1FECF71988EFB92A64BCB10A3459BF4E5F816811512CA94B"
+    }
+  ],
+  "platforms": {
+    "linux": {
+      "runner": "ubuntu-24.04",
+      "architecture": "x86_64",
+      "filesystem": "ext4",
+      "rustc": "1.99.0",
+      "cargo": "1.99.0",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": 0,
+      "full_regression": 0,
+      "result": "PASS"
+    },
+    "macos": {
+      "runner": "macos-14",
+      "architecture": "arm64",
+      "filesystem": "unknown / workflow inventory empty",
+      "rustc": "1.99.0",
+      "cargo": "1.99.0",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": 0,
+      "full_regression": 101,
+      "result": "FAIL",
+      "failures": [
+        {
+          "test": "http_remote_transport::malformed_version_method_path_media_and_body_limit_are_transport_safe",
+          "classification": "TEST FIXTURE / CORE OWNERSHIP LIFECYCLE OBSERVATION",
+          "error": "Conflict(\"repository already has active access; Core ownership requires exclusive startup\")",
+          "location": "tests/http_remote_transport.rs:436",
+          "focused_matrix": "PASS",
+          "full_regression": "FAIL"
+        }
+      ]
+    }
+  },
+  "interpretation": {
+    "m4_020_status": "BLOCKED / NATIVE REGRESSION FAILURE",
+    "linux": "PASS",
+    "macos": "FAIL",
+    "production_code_changed": false,
+    "protocol_changed": false,
+    "macos_failure_is_not_node_warning": true,
+    "macos_failure_is_not_runner_capacity": true,
+    "macos_failure_requires_reproduction_before_production_fix": true
+  }
+}
+
