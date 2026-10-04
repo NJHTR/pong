@@ -1,32 +1,33 @@
 # M4-020 Current-Head Native Runtime Result
 
 **Run date:** 2026-10-04
-**Repository HEAD:** `3fba86aa056ed7a028e3e8fe0735621399f76977`
+**Repository HEAD:** `b300287dacaf4ff8c4cc881e3a2e1078c267b777`
 **Fresh Windows source SHA:** `704d39c2f27e8399438936df18ef54eef80ba4b2`
 **Branch:** `dev`
 
 This is a current-head revalidation record. The current source evidence is Run
-`37180210921`, which executed commit `3fba86a`. The Windows artifact was
+`37185403135`, which executed commit `b300287`. The Windows artifact was
 captured earlier at `704d39c` and remains valid because the intervening commits
-changed only evidence records. This record does not rewrite the accepted
+changed no production or Protocol behavior. This record does not rewrite the accepted
 historical native run `36229863325`, which executed commit
 `07f74b3a012c49b98b1dd6aaa7baa094658679c8`.
 
-The evidence-only commits after the Windows capture changed no source, test,
-workflow, or Protocol input.
+The commits after the Windows capture changed no source, test, or Protocol
+input; the later `b300287` commit changed only workflow evidence-capture
+fields and did not alter the tested production or Protocol behavior.
 
 ## Checkpoint
 
 | Area | Status | Basis |
 | --- | --- | --- |
 | Windows native | **PASS** | Fresh current-head run on Windows x86_64 |
-| Ubuntu 24.04 native | **PASS** | Run `37180210921`, current source `3fba86a` |
-| macOS 14 native | **FAIL** | Run `37180210921`, one full-regression Core-owner conflict |
-| Cross-platform gate | **BLOCKED / NATIVE REGRESSION FAILURE** | macOS full regression is not green |
+| Ubuntu 24.04 native | **PASS** | Run `37185403135`, current source `b300287` |
+| macOS 14 native | **PASS** | Run `37185403135`, current source `b300287` |
+| Cross-platform gate | **PASS** | Windows, Ubuntu 24.04, and macOS 14 native gates are green |
 | Protocol v1.0 | **UNCHANGED** | No Protocol change in this slice; protocol matrix passed |
 | Production code | **NO CHANGE** | This slice only ran gates and added evidence |
 | Workflow | **PRESENT** | Existing workflow declares `ubuntu-24.04` and `macos-14` jobs |
-| Evidence | **PARTIAL** | Fresh Windows artifact plus retained historical native artifacts |
+| Evidence | **COMPLETE** | Fresh Windows, Ubuntu 24.04, and macOS 14 evidence |
 | Docker | **SUPPLEMENTARY ONLY** | Existing Docker probe is not native Ubuntu evidence |
 
 ## Windows Current-Head Run
@@ -144,7 +145,31 @@ results are not silently promoted to current-head results.
 
 Run #9 supplies current-head Ubuntu evidence and current-head macOS failure
 evidence. No Docker output was used as a substitute. The cross-platform gate
-remains blocked by the macOS native full-regression failure.
+was later closed by Run #10 after both native platforms passed all gates.
+
+### Supplied Run #10 Analysis
+
+Run `37185403135` executed source commit
+`b300287dacaf4ff8c4cc881e3a2e1078c267b777` on native Ubuntu 24.04 and macOS
+14. Both `github_sha` and the independently captured `checkout_sha` match the
+source commit, so this is valid current-head evidence.
+
+Both platforms passed with exit code `0` for:
+
+- `cargo fmt --all -- --check`
+- `cargo check --all-targets --locked`
+- `cargo clippy --all-targets --all-features --locked -- -D warnings`
+- the M4 focused native matrix
+- `cargo test --all --locked`
+
+The macOS platform inventory records `filesystem_type=/`; this is an inventory
+format limitation on the runner, not a test or runtime failure. The two
+`protocol response could not be written` diagnostics in each full log belong to
+the existing lost-response recovery tests, which passed and are intentionally
+expected to exercise a closed output pipe.
+
+Run #10 evidence is retained in
+[`m4-020-github-actions-run-37185403135.json`](../../artifacts/m4-development/m4-020-github-actions-run-37185403135.json).
 
 ## Scope Boundaries
 
@@ -157,6 +182,6 @@ remains blocked by the macOS native full-regression failure.
 
 ## Next Action
 
-Reproduce the macOS Core-owner conflict from Run #9 in isolation and with
-controlled test parallelism. Do not claim the M4-020 cross-platform gate
-complete until macOS full regression is green.
+M4-020 cross-platform native gate is complete for source commit `b300287`.
+Preserve Run #9 as historical failure evidence and do not reopen the gate
+without a new source change or new native regression.

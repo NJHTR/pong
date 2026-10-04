@@ -1,0 +1,67 @@
+{
+  "record_version": "m4-020-github-actions-native-regression-0.8",
+  "slice": "M4-020",
+  "workflow": ".github/workflows/m4-cross-platform-regression.yml",
+  "run_id": 37185403135,
+  "run_number": 10,
+  "head_sha": "b300287dacaf4ff8c4cc881e3a2e1078c267b777",
+  "conclusion": "success",
+  "artifacts": [
+    {
+      "platform": "linux",
+      "name": "m4-linux-native-regression",
+      "source_archive": "m4-linux-native-regression (2).zip",
+      "sha256": "F9079D64E57D168E6CFF441CC1F7CC094C6D575646C9BEFF889667C53A45C6EB"
+    },
+    {
+      "platform": "macos",
+      "name": "m4-macos-native-regression",
+      "source_archive": "m4-macos-native-regression (2).zip",
+      "sha256": "DF882FA2CC51503DD5B4D407FC482A25F999AC71B6D8EE97E9D9960FE037128C"
+    }
+  ],
+  "platforms": {
+    "linux": {
+      "runner": "ubuntu-24.04",
+      "architecture": "x86_64",
+      "filesystem": "ext4",
+      "rustc": "1.99.0",
+      "cargo": "1.99.0",
+      "github_sha": "b300287dacaf4ff8c4cc881e3a2e1078c267b777",
+      "checkout_sha": "b300287dacaf4ff8c4cc881e3a2e1078c267b777",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": 0,
+      "full_regression": 0,
+      "result": "PASS"
+    },
+    "macos": {
+      "runner": "macos-14",
+      "architecture": "arm64",
+      "filesystem": "/",
+      "rustc": "1.99.0",
+      "cargo": "1.99.0",
+      "github_sha": "b300287dacaf4ff8c4cc881e3a2e1078c267b777",
+      "checkout_sha": "b300287dacaf4ff8c4cc881e3a2e1078c267b777",
+      "quality_gates": {
+        "cargo_fmt": 0,
+        "cargo_check_all_targets_locked": 0,
+        "cargo_clippy_all_targets_all_features_locked": 0
+      },
+      "focused_matrix": 0,
+      "full_regression": 0,
+      "result": "PASS"
+    }
+  },
+  "interpretation": {
+    "m4_020_status": "PASS",
+    "linux": "PASS",
+    "macos": "PASS",
+    "production_code_changed": false,
+    "protocol_changed": false,
+    "run10_reproduced_run9_failure": false
+  }
+}
