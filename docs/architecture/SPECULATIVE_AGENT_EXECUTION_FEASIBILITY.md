@@ -1,7 +1,7 @@
 # Speculative Agent Execution Feasibility Study
 
 **Date:** 2026-10-05
-**Baseline:** `4ae4a7a` (`dev`)
+**Baseline:** `ef4a685` (`dev`)
 **Status:** `ARCHITECTURE STUDY / NOT RATIFIED / NOT IMPLEMENTATION`
 **Working name:** Speculative Agent Execution
 
@@ -392,6 +392,54 @@ Route B was promoted because these facts were stronger.
 The value is high for long-running investigations, migrations, performance
 work, and provider churn. It is low for ordinary single-agent edits where Git
 and CI already provide sufficient history.
+
+## 13A. Feasibility Spike Evidence
+
+The spike was evaluated against the current Core and integration suites without
+adding a fork API, changing Protocol v1.0, or starting a new implementation
+Slice. The following focused suites passed:
+
+```text
+cargo test --locked --test agent_execution
+cargo test --locked --test cross_workspace_materialization
+cargo test --locked --test external_agent_protocol
+cargo test --locked --test handoff_checkpoint_rollback
+cargo test --locked --test version_reference
+cargo fmt --all -- --check
+cargo test --locked
+```
+
+The focused results were:
+
+```text
+agent_execution: 37 passed, 6 ignored
+cross_workspace_materialization: 43 passed
+external_agent_protocol: 9 passed
+handoff_checkpoint_rollback: 48 passed
+version_reference: 31 passed
+full cargo test: passed
+```
+
+The evidence establishes the following boundary:
+
+| Capability | Result | Interpretation |
+| --- | --- | --- |
+| Fork from durable Checkpoint | **PASS as composition** | Existing Checkpoint, Version, Workspace, and Execution APIs can be composed; no named `fork_execution` API exists. |
+| Independent Executions | **PASS** | Child Executions have independent ownership and lineage. |
+| Workspace and lease isolation | **PASS** | Parallel materialization, leases, revisions, and heads remain isolated. |
+| Independent Version/Checkpoint history | **PASS** | Existing version and checkpoint chains remain distinct and durable. |
+| Failure isolation | **PASS** | Provider and execution failures do not overwrite sibling state. |
+| Fresh-process recovery | **PASS** | Execution and workspace state survives process boundaries. |
+| Repository cold reopen | **PASS** | Durable lineage and references reopen consistently. |
+| Provider-neutral resume | **PASS for linear handoff; NOT PROVEN for parallel fork** | M4-021 proves Codex-to-Claude continuation, not parallel sibling portability. |
+| Preserve unselected alternative | **PASS as existing persistence** | Independent histories remain inspectable; no promotion decision is recorded. |
+| Compare outcomes | **FACTS AVAILABLE** | Existing facts can be compared, but there is no dedicated comparison semantic. |
+| Promote one result | **NOT PROVEN / FUTURE SEMANTIC GAP** | Version-head APIs do not establish an auditable promotion decision or policy. |
+
+This is evidence of technical feasibility by composition, not evidence that a
+new Core contract or product Slice should be ratified. In particular, the
+spike does not claim that a parallel provider workflow has been executed, and
+it does not convert the future candidate into M4-022.
 
 ## 14. Differentiation
 
