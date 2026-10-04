@@ -44,14 +44,23 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p evidence/platform evidence/logs
+          filesystem_type="$(df -T "${GITHUB_WORKSPACE}" 2>/dev/null | awk 'NR==2 {print $2}')"
+          if [[ -z "${filesystem_type}" ]]; then
+            filesystem_type="$(stat -f '%T' "${GITHUB_WORKSPACE}" 2>/dev/null || true)"
+          fi
+          if [[ -z "${filesystem_type}" ]]; then
+            filesystem_type="unknown"
+          fi
+          checkout_sha="$(git rev-parse HEAD)"
           {
             printf 'runner_os=%s\n' "${RUNNER_OS}"
             printf 'runner_arch=%s\n' "${RUNNER_ARCH}"
             printf 'os_version=%s\n' "$(uname -sr)"
             printf 'architecture=%s\n' "$(uname -m)"
-            printf 'filesystem_type=%s\n' "$(df -T "${GITHUB_WORKSPACE}" 2>/dev/null | awk 'NR==2 {print $2}' || stat -f '%T' "${GITHUB_WORKSPACE}" 2>/dev/null || printf unknown)"
+            printf 'filesystem_type=%s\n' "${filesystem_type}"
             printf 'workspace=%s\n' "${GITHUB_WORKSPACE}"
-            printf 'commit=%s\n' "${GITHUB_SHA}"
+            printf 'github_sha=%s\n' "${GITHUB_SHA}"
+            printf 'checkout_sha=%s\n' "${checkout_sha}"
             printf 'run_id=%s\n' "${GITHUB_RUN_ID}"
             printf 'run_attempt=%s\n' "${GITHUB_RUN_ATTEMPT}"
           } | tee evidence/platform/platform.txt
@@ -185,7 +194,8 @@ jobs:
               "platform": identity,
               "rustc": (root / "platform" / "rustc.txt").read_text(),
               "cargo": (root / "platform" / "cargo.txt").read_text(),
-              "commit": identity.get("commit"),
+              "commit": identity.get("checkout_sha"),
+              "github_sha": identity.get("github_sha"),
               "workflow_run_id": identity.get("run_id"),
               "workflow_run_attempt": identity.get("run_attempt"),
               "commands": commands,
