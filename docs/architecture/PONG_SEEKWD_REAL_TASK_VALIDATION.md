@@ -1,7 +1,7 @@
 # Pong / seekwd Real-Task Validation
 
 **Date:** 2026-10-05
-**Validation status:** `TASK BASELINE ESTABLISHED / PAUSED`
+**Validation status:** `TASK BASELINE ESTABLISHED / ISOLATED / PAUSED`
 **Pong baseline:** `251d4d4` (`dev`)
 **seekwd baseline:** `c1f1a5b8d584a3d6e5f00e551acfe65db0edb309` (`dev`)
 
@@ -224,3 +224,44 @@ Provider launch: NONE
 No `GO`, `CONDITIONAL GO`, or `KILL` product verdict is assigned yet. The
 experiment must stop here until a safe isolated input and an operator-owned
 baseline run are available.
+
+## 10. Experiment Isolation
+
+The operator selected an explicit copy of the current dirty worktree as the
+experiment input. The original seekwd repository remains untouched.
+
+```text
+Source: D:\bs\seekwd
+Baseline Copy: D:\seekwd-pong-experiment\baseline
+Pong Copy: D:\seekwd-pong-experiment\pong
+```
+
+The source and both copies were verified read-only after isolation:
+
+```text
+HEAD: c1f1a5b8d584a3d6e5f00e551acfe65db0edb309
+Branch: dev
+Tracked modified files: 16
+Non-ignored untracked files: 0
+Git-visible initial state: MATCH
+Diff check: PASS
+```
+
+The copies were created from the Git checkout and then populated with the same
+16 tracked modifications. The source working tree was not reset, restored,
+checked out, stashed, committed, discarded, or staged. No provider, agent, or
+Pong workflow was started.
+
+The ignored/generated environment was intentionally not duplicated. The source
+contains approximately 96,227 ignored/generated files (about 13.66 GiB,
+including `target`, `references`, and `node_modules`). This is an explicit
+experiment environment gap; dependency and build setup remain separate
+preconditions for any later run.
+
+```text
+Baseline Ready: YES
+Pong Ready: YES
+A/B Started: NO
+Reason: isolation only; execution deferred to a later operator step
+Original Source Preserved: YES
+```
