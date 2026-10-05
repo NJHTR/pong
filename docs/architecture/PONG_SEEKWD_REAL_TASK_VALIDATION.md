@@ -421,3 +421,160 @@ code loss, but required manual reconstruction of the failed build context and
 one targeted Workbench fix. Fine-grained time spent separately on code
 inspection, error explanation, and reconstruction was not recorded and is not
 estimated.
+
+## 16. RECOVERY ENTRY AUDIT
+
+This audit evaluates whether a fresh Agent can discover and consume an
+existing Pong checkpoint without reading Rust internals or writing a custom
+driver. It is a read-only capability audit; no provider was started and no
+durable store was modified.
+
+### Current Recovery Surface
+
+The durable recovery surface exists in the Core/library. `Repository::open`
+and `Repository::open_as_core_owner` reopen an existing `.pong` repository.
+`AgentControl` exposes task, execution, workspace, operation, checkpoint,
+handoff, resume, and composed `state` views. `MetadataStore` exposes direct
+lookups for task, execution, workspace, checkpoint, snapshot, version, and
+resume records. These APIs preserve the distinction between a workspace head
+(`sha256:<digest>`) and a snapshot identity (`snp-<digest>`).
+
+### Existing APIs
+
+The relevant public calls are:
+
+```text
+Repository::open
+Repository::open_as_core_owner
+MetadataStore::task / list_tasks
+MetadataStore::execution / list_executions
+MetadataStore::workspace
+MetadataStore::checkpoint / list_checkpoints
+MetadataStore::snapshot_record
+MetadataStore::version_record / list_versions
+MetadataStore::list_resume_attempts
+AgentControl::state
+AgentControl::resume_from_checkpoint
+AgentControl::resume_from_version
+```
+
+Checkpoint listing requires a task ID that the caller already knows. Exact
+checkpoint lookup and the linked-record lookups are available once a caller
+has a Rust `Repository` or `AgentControl` handle.
+
+### Existing Examples
+
+`examples/m4-021-operator.rs` demonstrates the M4-021 acceptance scenario,
+including checkpoint, handoff, resume, fresh-process inspection, and cold
+reopen. It is scenario-specific and hardcodes the task/workspace/execution
+identifiers; it is not a general checkpoint discovery or recovery inspector.
+
+### Existing CLI / Operator
+
+`pong-agent-protocol --project-root PATH` and
+`pong-agent-protocol --repository PATH --workspace-root PATH` consume JSONL
+Protocol v1.0 requests and resolve bootstrap metadata. They do not expose a
+human-readable `inspect checkpoint`, `list checkpoints`, or `resume checkpoint`
+command. `README.md` describes Pong as a Rust library/core rather than a
+public CLI, and `docs/protocol/CLI_DESIGN.md` remains a proposed, unimplemented
+contract. No current binary provides a repository-independent recovery entry.
+
+### Fresh-Agent Discoverability
+
+**POOR.** A fresh Agent can find normative checkpoint/task concepts in the
+documentation and can find the Rust APIs, but cannot complete discovery from
+the documented public command surface. It must inspect source, know a task ID,
+or write a custom Rust driver.
+
+### Checkpoint Inspectability
+
+The supplied durable IDs were checked by a temporary, read-only Rust program
+outside the Pong repository, using only the existing public APIs. The
+temporary driver was required because no existing CLI or operator command can
+perform this inspection.
+
+The full chain exists in:
+
+```text
+D:\pong\.seekwd-pong-experiment-20261006-b\.pong
+```
+
+Observed records:
+
+```text
+checkpoint: checkpoint:seekwd:pong-canvas-call
+task:       task-seekwd-canvas-call-frozen-revision
+execution:  execution-seekwd-pong-20261006
+workspace:  workspace-seekwd-dirty
+version:    ver-ef4e8beb27030d1730a0754f9f6585a58e210445c5b5c584b1588d1b1389d7ac
+snapshot:   snp-15db43c213c3ed1679a5936e9ec3920d6902e631347a05915aa8e97f9766c410
+root head:  sha256:15db43c213c3ed1679a5936e9ec3920d6902e631347a05915aa8e97f9766c410
+```
+
+The linked execution is durable and interrupted at the fresh-process
+boundary; the linked workspace is `ready`; the version points to the supplied
+snapshot; and one resume attempt references the checkpoint. The sibling
+experiment store `D:\pong\.seekwd-pong-experiment-20261006\.pong` contains the
+execution and workspace IDs but does not contain the supplied checkpoint or
+snapshot, so it is not the complete recovery source.
+
+### Resume Accessibility
+
+Resume is available through `AgentControl::resume_from_checkpoint` and
+`AgentControl::resume_from_version`, and the durable resume record can be
+read after reopening the repository. It is not accessible to a fresh Agent
+through an existing CLI/operator command. The current protocol binary is a
+transport consumer, not a checkpoint recovery UI or discovery API.
+
+### Five-Minute Test
+
+**NO.** A fresh Agent cannot, within five minutes and without Rust internals or
+a custom driver, discover the checkpoint, inspect its linked task/execution/
+workspace/version/snapshot records, and request a resume. The temporary
+public-API driver used for this audit is itself evidence of the missing entry
+surface.
+
+### Exact Gap
+
+```text
+RECOVERY ENTRY GAP
+```
+
+Internal durability and recovery operations are present. The missing piece is
+the public/operator entry that discovers an existing checkpoint, projects its
+linked durable context, and makes the existing resume operation usable by a
+fresh Agent. This is larger than a documentation-only discoverability issue,
+because documentation cannot invoke the existing APIs and the current CLI has
+no recovery commands.
+
+### Minimal Proposed Entry
+
+Add the smallest provider-neutral operator surface over the existing APIs:
+
+```text
+pong recovery inspect --repository PATH --checkpoint CHECKPOINT_ID
+pong recovery resume  --repository PATH --checkpoint CHECKPOINT_ID
+```
+
+`inspect` should read and render the checkpoint plus linked task, execution,
+workspace, version, snapshot, head digest, and available resume records.
+`resume` should call the existing checkpoint-resume operation and render the
+resulting durable resume record. This proposal does not require a new
+Protocol version, provider adapter, scheduler, or Core durable entity; it is
+an operator/entry layer over the existing public APIs. Exact command naming
+and authorization remain future design work.
+
+### Whether Implementation Is Justified
+
+**YES, as a narrowly scoped recovery-entry slice.** The audit found a real
+operator usability failure, not a schema or durability failure. A minimal
+read/inspect/resume entry is justified before claiming fresh-Agent recovery is
+usable. No production implementation was made by this audit.
+
+### Product Implication
+
+Pong currently has durable recovery capability but not a product-usable fresh
+Agent recovery path. Until an entry layer is ratified and implemented, claims
+should be limited to library/API-level recovery and the scenario-specific
+M4-021 operator example. Protocol v1.0 and Core durable semantics should remain
+unchanged.
