@@ -1,7 +1,7 @@
 # Pong / seekwd Real-Task Validation
 
 **Date:** 2026-10-05
-**Validation status:** `TASK BASELINE ESTABLISHED / ISOLATED / PAUSED`
+**Validation status:** `BASELINE COMPLETE / PONG NOT EXECUTED`
 **Pong baseline:** `251d4d4` (`dev`)
 **seekwd baseline:** `c1f1a5b8d584a3d6e5f00e551acfe65db0edb309` (`dev`)
 
@@ -212,7 +212,7 @@ complexity to justify a real A/B attempt.
 ```text
 M4-020: COMPLETE / PASS
 M4-021: COMPLETE / PASS
-Real Task Validation: BASELINE ESTABLISHED / PAUSED
+Real Task Validation: BASELINE COMPLETE / PONG NOT EXECUTED
 Official Next Slice: NONE
 Roadmap: NEEDS_RECONCILIATION
 Protocol v1.0: FROZEN
@@ -303,3 +303,121 @@ Preparation commands (per copy):
 Task execution: NOT STARTED
 Provider launch: NONE
 ```
+
+## 12. Baseline Execution
+
+Baseline A used only the isolated Git worktree and ordinary build/test
+workflow. Pong Execution, Workspace, Checkpoint, Resume, and Handoff were not
+used.
+
+```text
+Repository: D:\seekwd-pong-experiment\baseline
+Task: Canvas Call + frozen Revision dependencies and legacy project-analysis workflow upgrade
+Task start: 2026-10-05T23:41:48.3763058+08:00 +08:00
+Initial HEAD: c1f1a5b8d584a3d6e5f00e551acfe65db0edb309
+Initial branch: dev
+Initial tracked modifications: 16
+Initial non-ignored untracked files: 0
+```
+
+Toolchain:
+
+```text
+Rust: rustc 1.95.0 (59807616e 2026-04-14)
+Cargo: 1.95.0 (f2d3ce0bd 2026-03-21)
+Node: v22.17.0
+pnpm: 11.1.3
+```
+
+Environment preparation was measured separately:
+
+```text
+pnpm install --frozen-lockfile: 3.595 s, exit 0
+cargo build --release -p pong-host: 37.899 s, exit 0
+```
+
+The first workspace build attempt took 60.611 s and stopped because the
+Tauri configuration required the release `pong-host.exe`. After that binary
+was prepared, the next workspace attempt took 53.095 s and stopped because
+the frontend `dist` directory did not yet exist. These are recorded as
+preparation-order findings, not recovery measurements.
+
+## 13. Baseline Interrupt Event
+
+The first real task validation reached a meaningful interrupt point after the
+existing Host/Core/schema/client changes were present and the Workbench had not
+yet been fully validated.
+
+```text
+Interrupt: 2026-10-05T23:49:49.1367219+08:00 +08:00
+HEAD: c1f1a5b8d584a3d6e5f00e551acfe65db0edb309
+Working tree: 16 tracked modifications, 0 non-ignored untracked files
+Completed: Canvas Call Host/Core/protocol/client changes and legacy workflow changes were present in the dirty task state.
+Remaining: Workbench Canvas Call entrypoint and full build validation.
+Failure: pnpm build reached apps/workbench and reported TS2367 at apps/workbench/src/main.tsx:916 and :926 because `canvas.call` was not represented by the Node Library/name mapping.
+```
+
+The provider/session was then treated as stopped. No Pong state was created,
+and no provider switch was forced.
+
+## 14. Baseline Git-only Recovery
+
+Recovery used only the existing worktree, Git status/diff, the visible build
+error, and the task's manual reconstruction. No Pong state or provider adapter
+was used.
+
+```text
+Recovery start: 2026-10-05T23:51:51.8954801+08:00 +08:00
+Recovery complete: 2026-10-06T00:00:55.0870002+08:00 +08:00
+Measured recovery time: 9m 03.191s
+Pre-recovery manual reconstruction: 2m 02.759s from interrupt to recovery start
+Provider re-explanation: NOT REQUIRED
+Provider switch: NOT REQUIRED
+```
+
+Recovery found and fixed one task-local omission in the Workbench: the Node
+Library now exposes `Canvas Call`, and `nodeKindForName` maps it to
+`canvas.call`. No Protocol or Pong code was changed.
+
+The recovered task then passed:
+
+```text
+pnpm --filter @seekwd/workbench build: PASS
+pnpm build: PASS
+pnpm typecheck: PASS
+cargo build --workspace: PASS
+cargo test --workspace: PASS (45 pong-host + 2 provider + 5 workbench tests)
+cargo fmt --all -- --check: PASS
+pnpm check:requirements: PASS (19/365 IDs traced; remaining IDs unreviewed)
+```
+
+The first post-recovery full frontend build had a transient `ui-lab` process
+exit `3221225477`; the immediate rerun passed. It was not converted into a
+task failure and no source was discarded.
+
+The recovered work was committed normally in the Baseline copy:
+
+```text
+Baseline checkpoint: c2ddf52757812d2df53ba8f3b59ef96035d7c83b
+Commit: feat: add frozen canvas call workflow
+```
+
+## 15. Baseline Result
+
+```text
+BASELINE COMPLETE
+Git-only recovery: COMPLETE
+Lost work: NONE OBSERVED
+Initial 16 dirty edits preserved: YES
+Additional task work after recovery: Canvas Call Workbench entrypoint mapping
+Pong: NOT EXECUTED
+Pong Checkpoint/Resume/Handoff: NOT USED
+Provider launch: NONE
+Original seekwd: UNCHANGED
+```
+
+The measured result is that the normal Git workflow recovered the task without
+code loss, but required manual reconstruction of the failed build context and
+one targeted Workbench fix. Fine-grained time spent separately on code
+inspection, error explanation, and reconstruction was not recorded and is not
+estimated.
