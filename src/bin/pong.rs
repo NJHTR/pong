@@ -1,6 +1,8 @@
 //! Minimal provider-neutral recovery entry point.
 
-use pong_core::recovery;
+#[path = "../recovery.rs"]
+mod recovery;
+
 use pong_core::PongError;
 use serde_json::json;
 use std::env;

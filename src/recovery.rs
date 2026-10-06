@@ -1,11 +1,11 @@
 //! Provider-neutral recovery inspection and resume projections.
 
-use crate::control::AgentControl;
-use crate::metadata::{
+use pong_core::control::AgentControl;
+use pong_core::metadata::{
     CheckpointRecord, ExecutionRecord, ResumeRecord, SnapshotRecord, TaskRecord, VersionRecord,
     WorkspaceRecord,
 };
-use crate::{PongError, Repository};
+use pong_core::{PongError, Repository};
 use serde::Serialize;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -129,7 +129,7 @@ pub fn resume(
     let execution_id = format!("recovery:execution:{token}");
     let request_id = format!("recovery:resume:{token}");
     let resumed = AgentControl::new(&mut repository).resume_from_checkpoint(
-        crate::metadata::ResumeCreation {
+        pong_core::metadata::ResumeCreation {
             execution_id: execution_id.clone(),
             task_id: task.task_id.clone(),
             agent_id,
@@ -162,7 +162,7 @@ pub fn resume(
 }
 
 fn inspection_from_records(
-    metadata: &crate::metadata::MetadataStore,
+    metadata: &pong_core::metadata::MetadataStore,
     checkpoint: CheckpointRecord,
 ) -> Result<RecoveryInspection, PongError> {
     let task = metadata
@@ -180,6 +180,19 @@ fn inspection_from_records(
     let snapshot = metadata
         .snapshot_record(&version.snapshot_id)?
         .ok_or_else(|| PongError::Integrity("checkpoint Snapshot is missing".into()))?;
+    if execution.task_id != task.task_id
+        || execution.workspace_id.as_deref() != Some(checkpoint.workspace_id.as_str())
+        || workspace.project_id != task.project_id
+        || version.workspace_id != checkpoint.workspace_id
+        || version.project_id != task.project_id
+        || snapshot.workspace_id != checkpoint.workspace_id
+        || snapshot.project_id != task.project_id
+        || snapshot.snapshot_id != version.snapshot_id
+    {
+        return Err(PongError::Integrity(
+            "checkpoint durable relationships are inconsistent".into(),
+        ));
+    }
     let attempts = metadata.list_resume_attempts(&task.task_id)?;
     Ok(RecoveryInspection {
         checkpoint: checkpoint_summary(checkpoint),

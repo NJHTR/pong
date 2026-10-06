@@ -16,7 +16,6 @@ pub mod error;
 pub mod http_transport;
 pub mod metadata;
 pub mod protocol;
-pub mod recovery;
 pub mod redaction;
 pub mod remote;
 pub mod repository;
