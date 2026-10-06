@@ -471,27 +471,39 @@ identifiers; it is not a general checkpoint discovery or recovery inspector.
 
 ### Existing CLI / Operator
 
-`pong-agent-protocol --project-root PATH` and
+Before this slice, `pong-agent-protocol --project-root PATH` and
 `pong-agent-protocol --repository PATH --workspace-root PATH` consume JSONL
 Protocol v1.0 requests and resolve bootstrap metadata. They do not expose a
 human-readable `inspect checkpoint`, `list checkpoints`, or `resume checkpoint`
 command. `README.md` describes Pong as a Rust library/core rather than a
-public CLI, and `docs/protocol/CLI_DESIGN.md` remains a proposed, unimplemented
-contract. No current binary provides a repository-independent recovery entry.
+public CLI, and `docs/protocol/CLI_DESIGN.md` remains a proposed contract.
+The recovery entry was missing at the time of the audit.
+
+After this slice, the `pong` binary provides the narrow provider-neutral
+commands:
+
+```text
+pong recovery inspect --repository PATH --checkpoint CHECKPOINT_ID [--json]
+pong recovery resume --repository PATH --checkpoint CHECKPOINT_ID [--agent-id ID] [--json]
+```
+
+The existing protocol binary remains unchanged and continues to be a transport
+consumer rather than a recovery UI.
 
 ### Fresh-Agent Discoverability
 
-**POOR.** A fresh Agent can find normative checkpoint/task concepts in the
-documentation and can find the Rust APIs, but cannot complete discovery from
-the documented public command surface. It must inspect source, know a task ID,
-or write a custom Rust driver.
+Before implementation: **POOR.** A fresh Agent had to inspect source or write
+a custom Rust driver. After implementation: **GOOD for the scoped recovery
+flow.** `pong --help` and `pong recovery --help` discover `inspect` and
+`resume`, and both commands accept only a repository path and checkpoint ID
+(with optional stable JSON output).
 
 ### Checkpoint Inspectability
 
-The supplied durable IDs were checked by a temporary, read-only Rust program
-outside the Pong repository, using only the existing public APIs. The
-temporary driver was required because no existing CLI or operator command can
-perform this inspection.
+The supplied durable IDs were first checked by a temporary, read-only Rust
+program outside the Pong repository, using only the existing public APIs. That
+temporary driver was required before the recovery entry existed. The same
+checkpoint is now inspectable through the production `pong` binary.
 
 The full chain exists in:
 
@@ -520,45 +532,45 @@ snapshot, so it is not the complete recovery source.
 
 ### Resume Accessibility
 
-Resume is available through `AgentControl::resume_from_checkpoint` and
-`AgentControl::resume_from_version`, and the durable resume record can be
-read after reopening the repository. It is not accessible to a fresh Agent
-through an existing CLI/operator command. The current protocol binary is a
-transport consumer, not a checkpoint recovery UI or discovery API.
+Resume remains available through `AgentControl::resume_from_checkpoint` and
+`AgentControl::resume_from_version`, and is now exposed by
+`pong recovery resume`. The command resolves the checkpoint and linked Task,
+uses the checkpoint actor by default (or an explicit `--agent-id`), and emits
+the newly created durable resume record. It does not start a provider.
 
 ### Five-Minute Test
 
-**NO.** A fresh Agent cannot, within five minutes and without Rust internals or
-a custom driver, discover the checkpoint, inspect its linked task/execution/
-workspace/version/snapshot records, and request a resume. The temporary
-public-API driver used for this audit is itself evidence of the missing entry
-surface.
+**YES for the scoped flow.** A fresh process can run `pong --help`,
+`pong recovery --help`, `inspect`, and `resume` without reading Rust source or
+writing a driver. The targeted CLI tests exercise this sequence and the
+invalid-input paths.
 
 ### Exact Gap
 
 ```text
-RECOVERY ENTRY GAP
+Before: RECOVERY ENTRY GAP
+After:  RECOVERY ENTRY = READY (scoped inspect/resume entry)
 ```
 
-Internal durability and recovery operations are present. The missing piece is
-the public/operator entry that discovers an existing checkpoint, projects its
-linked durable context, and makes the existing resume operation usable by a
-fresh Agent. This is larger than a documentation-only discoverability issue,
-because documentation cannot invoke the existing APIs and the current CLI has
-no recovery commands.
+Internal durability and recovery operations were already present. The missing
+piece was the public/operator entry that discovers an existing checkpoint,
+projects its linked durable context, and makes the existing resume operation
+usable by a fresh Agent. That gap is now closed for the minimal provider-
+neutral inspect/resume surface.
 
-### Minimal Proposed Entry
+### Minimal Entry Implemented
 
-Add the smallest provider-neutral operator surface over the existing APIs:
+The smallest provider-neutral operator surface over the existing APIs is now
+implemented:
 
 ```text
 pong recovery inspect --repository PATH --checkpoint CHECKPOINT_ID
 pong recovery resume  --repository PATH --checkpoint CHECKPOINT_ID
 ```
 
-`inspect` should read and render the checkpoint plus linked task, execution,
+`inspect` reads and renders the checkpoint plus linked task, execution,
 workspace, version, snapshot, head digest, and available resume records.
-`resume` should call the existing checkpoint-resume operation and render the
+`resume` calls the existing checkpoint-resume operation and renders the
 resulting durable resume record. This proposal does not require a new
 Protocol version, provider adapter, scheduler, or Core durable entity; it is
 an operator/entry layer over the existing public APIs. Exact command naming
@@ -566,15 +578,28 @@ and authorization remain future design work.
 
 ### Whether Implementation Is Justified
 
-**YES, as a narrowly scoped recovery-entry slice.** The audit found a real
-operator usability failure, not a schema or durability failure. A minimal
-read/inspect/resume entry is justified before claiming fresh-Agent recovery is
-usable. No production implementation was made by this audit.
+**YES, and implemented as a narrowly scoped recovery-entry slice.** The audit
+found a real operator usability failure, not a schema or durability failure.
+The CLI, tests, and discovery documentation now address it without changing
+Protocol v1.0 or Core durable semantics.
 
 ### Product Implication
 
-Pong currently has durable recovery capability but not a product-usable fresh
-Agent recovery path. Until an entry layer is ratified and implemented, claims
-should be limited to library/API-level recovery and the scenario-specific
-M4-021 operator example. Protocol v1.0 and Core durable semantics should remain
-unchanged.
+Pong now has a product-usable, narrowly scoped fresh-Agent recovery path for
+checkpoint inspection and resume. It is not an Agent Manager, provider
+orchestrator, or general CLI suite. Provider launch remains user-controlled;
+Protocol v1.0 and Core durable semantics remain unchanged.
+
+### Recovery Entry Verification
+
+```text
+Production command: pong recovery inspect/resume
+Targeted tests: cargo test --locked --test recovery_entry
+Help discovery: PASS
+Valid inspect: PASS
+Valid resume: PASS (isolated test fixture)
+Missing checkpoint: PASS (non-zero with NOT_FOUND)
+Invalid repository: PASS (non-zero with NOT_FOUND)
+Real experiment store mutation: NO
+Provider launch: USER CONTROLLED / NONE
+```

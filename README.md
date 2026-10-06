@@ -157,12 +157,28 @@ cargo clippy --all-targets --all-features --locked -- -D warnings
 git diff --check
 ```
 
-There is no general `pong` command suite yet. Local Repository/bootstrap
-initialization is available through the focused `pong-bootstrap` entry point:
+The focused `pong` recovery entry exposes durable checkpoint inspection and
+resume. Local Repository/bootstrap initialization remains available through
+the focused `pong-bootstrap` entry point:
 
 ```bash
 pong-bootstrap initialize <repository-root>
 ```
+
+To discover and use an existing recovery point:
+
+```bash
+pong --help
+pong recovery --help
+pong recovery inspect --repository <pong-repository> --checkpoint <checkpoint-id>
+pong recovery resume --repository <pong-repository> --checkpoint <checkpoint-id>
+```
+
+`inspect` prints the linked Task, Execution, Workspace, Version, Snapshot,
+and resume attempts. `resume` creates a new durable Execution attempt through
+the existing checkpoint-resume API. These commands do not start or configure
+any provider; provider launch remains user-controlled. Add `--json` for
+stable machine-readable output.
 
 The command creates or reopens the Pong-owned `.pong` layout, writes the
 existing v1 bootstrap descriptor when absent, and leaves existing user files
@@ -183,7 +199,7 @@ semantics.
 
 ## Explicit Limits
 
-Pong is not production-ready, enterprise-ready, fully autonomous, or a Git replacement. It does not provide a supported provider integration, public SDK/CLI/MCP endpoint, server mode, remote replication, scheduler, merge/rebase policy, shared writable Workspace policy, Candidate/Approval flow, or Agent State implementation. Credentials and external side effects remain outside Core.
+Pong is not production-ready, enterprise-ready, fully autonomous, or a Git replacement. It does not provide a supported provider integration, public SDK, general CLI suite, MCP endpoint, server mode, remote replication, scheduler, merge/rebase policy, shared writable Workspace policy, Candidate/Approval flow, or Agent State implementation. The focused recovery CLI is limited to durable checkpoint inspection and resume; credentials and external side effects remain outside Core.
 
 ## Documentation
 
@@ -195,4 +211,6 @@ Pong is not production-ready, enterprise-ready, fully autonomous, or a Git repla
 
 ## Next Step
 
-Define the M4 external Agent protocol contract over the hardened local `AgentControl` semantic boundary before selecting CLI, HTTP, MCP, SDK, or provider-specific adapters. See [NEXT_TASK.md](docs/roadmap/NEXT_TASK.md).
+Read the recovery entry documentation and route decisions before extending the
+focused CLI into additional bindings or provider-specific adapters. See
+[NEXT_TASK.md](docs/roadmap/NEXT_TASK.md).
