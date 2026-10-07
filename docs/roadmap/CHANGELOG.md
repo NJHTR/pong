@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased - Clarify user-controlled project workflow (2026-10-08)
+
+- Updated human-readable `pong start` output with the exact next steps for
+  entering the isolated Workspace, manually choosing an Agent, and completing
+  the execution with `pong finish`.
+- Kept Provider launch, Agent handoff, and Git integration outside Pong Core;
+  JSON output and durable protocol semantics are unchanged.
+
 ## Unreleased - Close M4-021 after final acceptance (2026-10-05)
 
 - Recorded `M4-021 = COMPLETE / PASS` after the current Windows-native final
