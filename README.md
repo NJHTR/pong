@@ -157,28 +157,47 @@ cargo clippy --all-targets --all-features --locked -- -D warnings
 git diff --check
 ```
 
-The focused `pong` recovery entry exposes durable checkpoint inspection and
-resume. Local Repository/bootstrap initialization remains available through
-the focused `pong-bootstrap` entry point:
+The focused `pong` command exposes project initialization, status discovery, and
+durable checkpoint recovery:
 
 ```bash
-pong-bootstrap initialize <repository-root>
+pong init
+pong init <project-root>
 ```
 
-To discover and use an existing recovery point:
+Initialization is local and does not require Git. It creates Pong-owned
+metadata under `.pong/` and leaves existing project files untouched. The
+`pong status` command searches the current directory and its ancestors for the
+nearest Pong project, or accepts an explicit project root:
 
 ```bash
 pong --help
+pong status
+pong status --project-root <project-root> --json
+pong start "describe the work to begin"
+pong start "describe the work to begin" --json
+pong start "import the existing project" --from-project --json
 pong recovery --help
 pong recovery inspect --repository <pong-repository> --checkpoint <checkpoint-id>
 pong recovery resume --repository <pong-repository> --checkpoint <checkpoint-id>
 ```
 
-`inspect` prints the linked Task, Execution, Workspace, Version, Snapshot,
-and resume attempts. `resume` creates a new durable Execution attempt through
-the existing checkpoint-resume API. These commands do not start or configure
-any provider; provider launch remains user-controlled. Add `--json` for
-stable machine-readable output.
+`inspect` prints the linked Task, Execution, Workspace, Version, Snapshot, and
+resume attempts. `resume` creates a new durable Execution attempt through the
+existing checkpoint-resume API. These commands do not start or configure any
+Agent tool; launch and selection remain user-controlled. Add `--json` for
+machine-readable output.
+
+`pong start` creates a durable Task, an isolated local Workspace outside the
+project's `.pong` control directory, and a running Execution. It does not
+launch Codex, Claude Code, or another provider. The returned IDs and workspace
+path are the context to give to whichever Agent session you start yourself.
+
+Use `--from-project` when the new execution should begin with a copy of the
+existing project tree. Pong copies ordinary files into the isolated Workspace,
+skips the project's top-level `.pong` control directory, publishes an initial
+Snapshot and Version, and records that Version on the Execution. The source
+project is not modified and Git is not required.
 
 The command creates or reopens the Pong-owned `.pong` layout, writes the
 existing v1 bootstrap descriptor when absent, and leaves existing user files
@@ -199,7 +218,7 @@ semantics.
 
 ## Explicit Limits
 
-Pong is not production-ready, enterprise-ready, fully autonomous, or a Git replacement. It does not provide a supported provider integration, public SDK, general CLI suite, MCP endpoint, server mode, remote replication, scheduler, merge/rebase policy, shared writable Workspace policy, Candidate/Approval flow, or Agent State implementation. The focused recovery CLI is limited to durable checkpoint inspection and resume; credentials and external side effects remain outside Core.
+Pong is not production-ready, enterprise-ready, fully autonomous, or a Git replacement. It does not provide a supported provider integration, public SDK, general CLI suite, MCP endpoint, server mode, remote replication, scheduler, merge/rebase policy, shared writable Workspace policy, Candidate/Approval flow, or Agent State implementation. The focused CLI is limited to local initialization, status discovery, durable checkpoint inspection, and resume; credentials and external side effects remain outside Core.
 
 ## Documentation
 
@@ -211,6 +230,6 @@ Pong is not production-ready, enterprise-ready, fully autonomous, or a Git repla
 
 ## Next Step
 
-Read the recovery entry documentation and route decisions before extending the
-focused CLI into additional bindings or provider-specific adapters. See
+Read the project workflow and recovery documentation before extending the
+focused CLI into additional bindings or Agent-specific adapters. See
 [NEXT_TASK.md](docs/roadmap/NEXT_TASK.md).
