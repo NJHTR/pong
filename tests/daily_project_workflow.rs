@@ -72,6 +72,7 @@ fn help_discloses_the_daily_project_commands() {
     let root = String::from_utf8(root.stdout).expect("root help");
     assert!(root.contains("init"));
     assert!(root.contains("start"));
+    assert!(root.contains("finish"));
     assert!(root.contains("status"));
     assert!(root.contains("recovery"));
 
@@ -85,6 +86,11 @@ fn help_discloses_the_daily_project_commands() {
     assert!(String::from_utf8(status.stdout)
         .unwrap()
         .contains("--project-root"));
+    let finish = run(&["finish", "--help"], project.path());
+    assert!(finish.status.success());
+    assert!(String::from_utf8(finish.stdout)
+        .unwrap()
+        .contains("pong finish"));
 }
 
 #[test]
@@ -204,6 +210,96 @@ fn start_from_project_copies_source_and_publishes_initial_version() {
 
     let workspace_namespace = workspace.parent().expect("workspace namespace");
     fs::remove_dir_all(workspace_namespace).expect("cleanup workspace namespace");
+}
+
+#[test]
+fn finish_publishes_workspace_changes_and_completes_execution() {
+    let project = tempdir().expect("project");
+    fs::write(project.path().join("README.md"), b"initial").expect("source README");
+    assert!(run(&["init"], project.path()).status.success());
+
+    let started = run(
+        &["start", "finish workflow", "--from-project", "--json"],
+        project.path(),
+    );
+    assert!(started.status.success(), "{started:?}");
+    let report: Value = serde_json::from_slice(&started.stdout).expect("start JSON");
+    let workspace = Path::new(report["workspace_root"].as_str().unwrap());
+    fs::write(workspace.join("README.md"), b"updated by agent").expect("workspace change");
+
+    let finished = run(
+        &[
+            "finish",
+            "--execution-id",
+            report["execution_id"].as_str().unwrap(),
+            "--project-root",
+            &project.path().to_string_lossy(),
+            "--json",
+        ],
+        project.path(),
+    );
+    assert!(finished.status.success(), "{finished:?}");
+    let finished: Value = serde_json::from_slice(&finished.stdout).expect("finish JSON");
+    assert_eq!(finished["status"], "finished");
+    assert_eq!(finished["execution_state"], "completed");
+    assert!(finished["version_id"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
+    assert!(finished["snapshot_id"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
+    assert!(finished["root_digest"]
+        .as_str()
+        .is_some_and(|value| value.starts_with("sha256:")));
+
+    let status = run(&["status", "--json"], project.path());
+    assert!(status.status.success(), "{status:?}");
+    let status: Value = serde_json::from_slice(&status.stdout).expect("status JSON");
+    let project_status = &status["projects"][0];
+    assert!(project_status["active_executions"]
+        .as_array()
+        .unwrap()
+        .is_empty());
+    assert_eq!(project_status["tasks"][0]["state"], "running");
+    assert_eq!(
+        project_status["workspaces"][0]["version_head_id"],
+        finished["version_id"]
+    );
+    assert_eq!(
+        project_status["workspaces"][0]["snapshot_id"],
+        finished["snapshot_id"]
+    );
+}
+
+#[test]
+fn finish_reuses_initial_version_when_workspace_is_unchanged() {
+    let project = tempdir().expect("project");
+    fs::write(project.path().join("README.md"), b"initial").expect("source README");
+    assert!(run(&["init"], project.path()).status.success());
+
+    let started = run(
+        &["start", "unchanged workflow", "--from-project", "--json"],
+        project.path(),
+    );
+    assert!(started.status.success(), "{started:?}");
+    let report: Value = serde_json::from_slice(&started.stdout).expect("start JSON");
+
+    let finished = run(
+        &[
+            "finish",
+            "--execution-id",
+            report["execution_id"].as_str().unwrap(),
+            "--project-root",
+            &project.path().to_string_lossy(),
+            "--json",
+        ],
+        project.path(),
+    );
+    assert!(finished.status.success(), "{finished:?}");
+    let finished: Value = serde_json::from_slice(&finished.stdout).expect("finish JSON");
+    assert_eq!(finished["execution_state"], "completed");
+    assert_eq!(finished["version_id"], report["initial_version_id"]);
+    assert_eq!(finished["snapshot_id"], report["initial_snapshot_id"]);
 }
 
 #[test]
