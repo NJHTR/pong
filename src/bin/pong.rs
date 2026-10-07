@@ -1,5 +1,7 @@
 //! Minimal provider-neutral recovery entry point.
 
+#[path = "../cli_diff.rs"]
+mod cli_diff;
 #[path = "../cli_finish.rs"]
 mod cli_finish;
 #[path = "../cli_start.rs"]
@@ -16,10 +18,11 @@ use std::env;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-const ROOT_HELP: &str = "usage: pong <init|start|finish|status|recovery> [OPTIONS]";
+const ROOT_HELP: &str = "usage: pong <init|start|finish|diff|status|recovery> [OPTIONS]";
 const INIT_HELP: &str = "usage: pong init [PROJECT_ROOT]";
 const START_HELP: &str = "usage: pong start <GOAL> [--project-root PATH] [--from-project] [--json]";
 const FINISH_HELP: &str = "usage: pong finish --execution-id ID [--project-root PATH] [--state completed|failed|interrupted] [--outcome TEXT] [--json]";
+const DIFF_HELP: &str = "usage: pong diff --execution-id ID [--project-root PATH] [--json]";
 const STATUS_HELP: &str = "usage: pong status [--project-root PATH] [--json]";
 const RECOVERY_HELP: &str = "usage: pong recovery <inspect|resume> --repository PATH --checkpoint ID [--agent-id ID] [--json]";
 
@@ -40,6 +43,11 @@ enum Command {
         project_root: Option<PathBuf>,
         state: String,
         outcome: Option<String>,
+        json: bool,
+    },
+    Diff {
+        execution_id: String,
+        project_root: Option<PathBuf>,
         json: bool,
     },
     Status {
@@ -66,10 +74,42 @@ fn parse(args: impl IntoIterator<Item = String>) -> Result<Command, String> {
         Some("init") => parse_init(args),
         Some("start") => parse_start(args),
         Some("finish") => parse_finish(args),
+        Some("diff") => parse_diff(args),
         Some("status") => parse_status(args),
         Some("recovery") => parse_recovery(args),
         Some(_) => Err(ROOT_HELP.into()),
     }
+}
+
+fn parse_diff(mut args: impl Iterator<Item = String>) -> Result<Command, String> {
+    let mut execution_id = None;
+    let mut project_root = None;
+    let mut json = false;
+    while let Some(argument) = args.next() {
+        match argument.as_str() {
+            "--execution-id" => {
+                execution_id = Some(
+                    args.next()
+                        .ok_or_else(|| "--execution-id requires an id".to_string())?,
+                )
+            }
+            "--project-root" => {
+                project_root = Some(
+                    args.next()
+                        .ok_or_else(|| "--project-root requires a path".to_string())?
+                        .into(),
+                )
+            }
+            "--json" => json = true,
+            "--help" | "-h" => return Ok(Command::Help(DIFF_HELP)),
+            _ => return Err(DIFF_HELP.into()),
+        }
+    }
+    Ok(Command::Diff {
+        execution_id: execution_id.ok_or_else(|| "--execution-id is required".to_string())?,
+        project_root,
+        json,
+    })
 }
 
 fn parse_finish(mut args: impl Iterator<Item = String>) -> Result<Command, String> {
@@ -303,7 +343,12 @@ fn run(command: Command) -> Result<(), CliFailure> {
                     println!();
                     println!("Next steps:");
                     println!("  1. Start your chosen Agent manually in the workspace above.");
-                    println!("  2. When the work is complete, run:");
+                    println!("  2. Before finishing, inspect changes with:");
+                    println!(
+                        "     pong diff --project-root \"{}\" --execution-id {}",
+                        value.project_root, value.execution_id
+                    );
+                    println!("  3. When the work is complete, run:");
                     println!(
                         "     pong finish --project-root \"{}\" --execution-id {} --state completed",
                         value.project_root, value.execution_id
@@ -347,6 +392,33 @@ fn run(command: Command) -> Result<(), CliFailure> {
         .map_err(|message| CliFailure {
             status: 1,
             code: "FINISH_ERROR",
+            message,
+            }),
+        Command::Diff {
+            execution_id,
+            project_root,
+            json,
+        } => cli_diff::diff(project_root.as_deref(), &execution_id).and_then(|value| {
+            if json {
+                serde_json::to_string_pretty(&value)
+                    .map(|output| println!("{output}"))
+                    .map_err(|error| format!("diff serialization failed: {error}"))
+            } else {
+                println!("status: {}", value.status);
+                println!("execution_id: {}", value.execution_id);
+                println!("workspace_id: {}", value.workspace_id);
+                println!("reference_snapshot_id: {}", value.reference_snapshot_id);
+                println!("observation_stability: {}", value.observation_stability);
+                println!("changes: {}", value.changes.len());
+                for change in value.changes {
+                    println!("  {} {}", diff_change_type(change.change_type), change.path);
+                }
+                Ok(())
+            }
+        })
+        .map_err(|message| CliFailure {
+            status: 1,
+            code: "DIFF_ERROR",
             message,
         }),
         Command::Status { project_root, json } => cli_status::inspect(project_root.as_deref())
@@ -486,6 +558,7 @@ fn main() -> ExitCode {
                 &command,
                 Command::Start { json: true, .. }
                     | Command::Finish { json: true, .. }
+                    | Command::Diff { json: true, .. }
                     | Command::Inspect { json: true, .. }
                     | Command::Resume { json: true, .. }
             );
@@ -508,5 +581,14 @@ fn main() -> ExitCode {
             eprintln!("pong: {message}");
             ExitCode::from(2)
         }
+    }
+}
+
+fn diff_change_type(change_type: pong_core::workspace::SnapshotChangeType) -> &'static str {
+    match change_type {
+        pong_core::workspace::SnapshotChangeType::Added => "ADDED",
+        pong_core::workspace::SnapshotChangeType::Removed => "REMOVED",
+        pong_core::workspace::SnapshotChangeType::Modified => "MODIFIED",
+        pong_core::workspace::SnapshotChangeType::TypeChanged => "TYPE_CHANGED",
     }
 }
