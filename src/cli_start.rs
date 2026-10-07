@@ -56,25 +56,20 @@ pub fn start(
     let identity = RuntimeIdentityAdapter::open(identity_path, "local").map_err(format_pong)?;
 
     let mut repository = Repository::open(&root).map_err(format_pong)?;
-    let environment_id = if from_project {
-        let environment_id = stable_environment_id(&root);
-        repository
-            .metadata_mut()
-            .record_environment(
-                &environment_id,
-                &project_id,
-                &json!({
-                    "os": std::env::consts::OS,
-                    "arch": std::env::consts::ARCH,
-                    "family": std::env::consts::FAMILY,
-                }),
-                &format!("unix-ms:{now}"),
-            )
-            .map_err(format_pong)?;
-        Some(environment_id)
-    } else {
-        None
-    };
+    let environment_id = stable_environment_id(&root);
+    repository
+        .metadata_mut()
+        .record_environment(
+            &environment_id,
+            &project_id,
+            &json!({
+                "os": std::env::consts::OS,
+                "arch": std::env::consts::ARCH,
+                "family": std::env::consts::FAMILY,
+            }),
+            &format!("unix-ms:{now}"),
+        )
+        .map_err(format_pong)?;
     let mut control = AgentControl::new(&mut repository);
     control
         .register_agent(RegisterAgentRequest {
@@ -99,7 +94,7 @@ pub fn start(
             project_id: project_id.clone(),
             path: workspace_root.clone(),
             branch_ref: None,
-            environment_id,
+            environment_id: Some(environment_id),
             now: format!("unix-ms:{now}"),
         })
         .map_err(format_pong)?;

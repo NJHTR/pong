@@ -1,5 +1,7 @@
 //! Minimal provider-neutral recovery entry point.
 
+#[path = "../cli_finish.rs"]
+mod cli_finish;
 #[path = "../cli_start.rs"]
 mod cli_start;
 #[path = "../cli_status.rs"]
@@ -14,9 +16,10 @@ use std::env;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-const ROOT_HELP: &str = "usage: pong <init|start|status|recovery> [OPTIONS]";
+const ROOT_HELP: &str = "usage: pong <init|start|finish|status|recovery> [OPTIONS]";
 const INIT_HELP: &str = "usage: pong init [PROJECT_ROOT]";
 const START_HELP: &str = "usage: pong start <GOAL> [--project-root PATH] [--from-project] [--json]";
+const FINISH_HELP: &str = "usage: pong finish --execution-id ID [--project-root PATH] [--state completed|failed|interrupted] [--outcome TEXT] [--json]";
 const STATUS_HELP: &str = "usage: pong status [--project-root PATH] [--json]";
 const RECOVERY_HELP: &str = "usage: pong recovery <inspect|resume> --repository PATH --checkpoint ID [--agent-id ID] [--json]";
 
@@ -30,6 +33,13 @@ enum Command {
         goal: String,
         project_root: Option<PathBuf>,
         from_project: bool,
+        json: bool,
+    },
+    Finish {
+        execution_id: String,
+        project_root: Option<PathBuf>,
+        state: String,
+        outcome: Option<String>,
         json: bool,
     },
     Status {
@@ -55,10 +65,57 @@ fn parse(args: impl IntoIterator<Item = String>) -> Result<Command, String> {
         None | Some("--help") | Some("-h") => Ok(Command::Help(ROOT_HELP)),
         Some("init") => parse_init(args),
         Some("start") => parse_start(args),
+        Some("finish") => parse_finish(args),
         Some("status") => parse_status(args),
         Some("recovery") => parse_recovery(args),
         Some(_) => Err(ROOT_HELP.into()),
     }
+}
+
+fn parse_finish(mut args: impl Iterator<Item = String>) -> Result<Command, String> {
+    let mut execution_id = None;
+    let mut project_root = None;
+    let mut state = "completed".to_string();
+    let mut outcome = None;
+    let mut json = false;
+    while let Some(argument) = args.next() {
+        match argument.as_str() {
+            "--execution-id" => {
+                execution_id = Some(
+                    args.next()
+                        .ok_or_else(|| "--execution-id requires an id".to_string())?,
+                )
+            }
+            "--project-root" => {
+                project_root = Some(
+                    args.next()
+                        .ok_or_else(|| "--project-root requires a path".to_string())?
+                        .into(),
+                )
+            }
+            "--state" => {
+                state = args
+                    .next()
+                    .ok_or_else(|| "--state requires a value".to_string())?
+            }
+            "--outcome" => {
+                outcome = Some(
+                    args.next()
+                        .ok_or_else(|| "--outcome requires text".to_string())?,
+                )
+            }
+            "--json" => json = true,
+            "--help" | "-h" => return Ok(Command::Help(FINISH_HELP)),
+            _ => return Err(FINISH_HELP.into()),
+        }
+    }
+    Ok(Command::Finish {
+        execution_id: execution_id.ok_or_else(|| "--execution-id is required".to_string())?,
+        project_root,
+        state,
+        outcome,
+        json,
+    })
 }
 
 fn parse_start(mut args: impl Iterator<Item = String>) -> Result<Command, String> {
@@ -251,6 +308,39 @@ fn run(command: Command) -> Result<(), CliFailure> {
                 code: "START_ERROR",
                 message,
             }),
+        Command::Finish {
+            execution_id,
+            project_root,
+            state,
+            outcome,
+            json,
+        } => cli_finish::finish(
+            project_root.as_deref(),
+            &execution_id,
+            &state,
+            outcome.as_deref(),
+        )
+        .and_then(|value| {
+            if json {
+                serde_json::to_string_pretty(&value)
+                    .map(|output| println!("{output}"))
+                    .map_err(|error| format!("finish serialization failed: {error}"))
+            } else {
+                println!("status: {}", value.status);
+                println!("execution_id: {}", value.execution_id);
+                println!("workspace_id: {}", value.workspace_id);
+                println!("version_id: {}", value.version_id);
+                println!("snapshot_id: {}", value.snapshot_id);
+                println!("root_digest: {}", value.root_digest);
+                println!("execution_state: {}", value.execution_state);
+                Ok(())
+            }
+        })
+        .map_err(|message| CliFailure {
+            status: 1,
+            code: "FINISH_ERROR",
+            message,
+        }),
         Command::Status { project_root, json } => cli_status::inspect(project_root.as_deref())
             .and_then(|value| {
                 if json {
@@ -387,6 +477,7 @@ fn main() -> ExitCode {
             let json_output = matches!(
                 &command,
                 Command::Start { json: true, .. }
+                    | Command::Finish { json: true, .. }
                     | Command::Inspect { json: true, .. }
                     | Command::Resume { json: true, .. }
             );
