@@ -300,6 +300,14 @@ fn run(command: Command) -> Result<(), CliFailure> {
                     if let Some(snapshot_id) = value.initial_snapshot_id {
                         println!("initial_snapshot_id: {snapshot_id}");
                     }
+                    println!();
+                    println!("Next steps:");
+                    println!("  1. Start your chosen Agent manually in the workspace above.");
+                    println!("  2. When the work is complete, run:");
+                    println!(
+                        "     pong finish --project-root \"{}\" --execution-id {} --state completed",
+                        value.project_root, value.execution_id
+                    );
                     Ok(())
                 }
             })
