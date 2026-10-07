@@ -144,6 +144,31 @@ fn start_creates_durable_task_workspace_and_running_execution() {
 }
 
 #[test]
+fn human_start_output_explains_user_controlled_agent_workflow() {
+    let project = tempdir().expect("project");
+    assert!(run(&["init"], project.path()).status.success());
+
+    let started = run(&["start", "human workflow"], project.path());
+    assert!(started.status.success(), "{started:?}");
+    let stdout = String::from_utf8(started.stdout).expect("start output");
+    assert!(
+        stdout.contains("Start your chosen Agent manually"),
+        "{stdout}"
+    );
+    assert!(stdout.contains("pong finish --project-root"), "{stdout}");
+    assert!(stdout.contains("--state completed"), "{stdout}");
+
+    let workspace_root = stdout
+        .lines()
+        .find_map(|line| line.strip_prefix("workspace_root: "))
+        .expect("workspace root");
+    let workspace_namespace = Path::new(workspace_root)
+        .parent()
+        .expect("workspace namespace");
+    fs::remove_dir_all(workspace_namespace).expect("cleanup workspace namespace");
+}
+
+#[test]
 fn start_from_project_copies_source_and_publishes_initial_version() {
     let project = tempdir().expect("project");
     let readme = project.path().join("README.md");
