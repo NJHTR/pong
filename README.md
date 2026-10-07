@@ -158,6 +158,7 @@ git diff --check
 ```
 
 The focused `pong` command exposes project initialization, status discovery, and
+a local project workflow for starting and finishing agent executions, alongside
 durable checkpoint recovery:
 
 ```bash
@@ -227,7 +228,7 @@ semantics.
 
 ## Explicit Limits
 
-Pong is not production-ready, enterprise-ready, fully autonomous, or a Git replacement. It does not provide a supported provider integration, public SDK, general CLI suite, MCP endpoint, server mode, remote replication, scheduler, merge/rebase policy, shared writable Workspace policy, Candidate/Approval flow, or Agent State implementation. The focused CLI is limited to local initialization, status discovery, durable checkpoint inspection, and resume; credentials and external side effects remain outside Core.
+Pong is not production-ready, enterprise-ready, fully autonomous, or a Git replacement. It does not provide a supported provider integration, public SDK, general CLI suite, MCP endpoint, server mode, remote replication, scheduler, merge/rebase policy, shared writable Workspace policy, Candidate/Approval flow, or Agent State implementation. The focused CLI is limited to local initialization, status discovery, project-backed start/finish lifecycle management, and durable checkpoint inspection and resume; credentials and external side effects remain outside Core.
 
 ## Documentation
 
