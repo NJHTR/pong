@@ -177,6 +177,7 @@ pong status --project-root <project-root> --json
 pong start "describe the work to begin"
 pong start "describe the work to begin" --json
 pong start "import the existing project" --from-project --json
+pong finish --execution-id <execution-id> --project-root <project-root> --json
 pong recovery --help
 pong recovery inspect --repository <pong-repository> --checkpoint <checkpoint-id>
 pong recovery resume --repository <pong-repository> --checkpoint <checkpoint-id>
@@ -198,6 +199,14 @@ existing project tree. Pong copies ordinary files into the isolated Workspace,
 skips the project's top-level `.pong` control directory, publishes an initial
 Snapshot and Version, and records that Version on the Execution. The source
 project is not modified and Git is not required.
+
+After the Agent has finished working in the returned Workspace, use
+`pong finish` to publish the Workspace and complete the Execution. When files
+changed, it creates a new Version and Snapshot; when the Workspace is unchanged,
+it reuses the existing Version instead of publishing a duplicate Snapshot.
+The command releases the Workspace lease and accepts `completed`, `failed`, or
+`interrupted` execution states. Pong still does not launch an Agent provider;
+the user controls which tool works in the Workspace.
 
 The command creates or reopens the Pong-owned `.pong` layout, writes the
 existing v1 bootstrap descriptor when absent, and leaves existing user files
