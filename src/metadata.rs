@@ -2974,6 +2974,32 @@ impl MetadataStore {
         result
     }
 
+    /// Return the project identities currently represented in durable state.
+    ///
+    /// Repository initialization deliberately does not invent a project
+    /// identity, so an empty repository has no project ids to report.  This
+    /// read-only projection lets a CLI discover existing projects without
+    /// opening the SQLite connection outside the metadata boundary.
+    pub fn list_project_ids(&self) -> Result<Vec<String>, PongError> {
+        let mut statement = self.connection.prepare(
+            "SELECT project_id FROM (
+                 SELECT project_id FROM tasks
+                 UNION SELECT project_id FROM workspaces
+                 UNION SELECT project_id FROM operations
+                 UNION SELECT project_id FROM operation_journal
+                 UNION SELECT project_id FROM environments
+                 UNION SELECT project_id FROM snapshots
+                 UNION SELECT project_id FROM versions
+                 UNION SELECT project_id FROM event_envelopes
+             ) ORDER BY project_id ASC",
+        )?;
+        let project_ids = statement
+            .query_map([], |row| row.get::<_, String>(0))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(PongError::from)?;
+        Ok(project_ids)
+    }
+
     pub fn create_exploration(
         &mut self,
         creation: &ExplorationCreation,
@@ -5499,6 +5525,22 @@ impl MetadataStore {
             )
             .optional()
             .map_err(PongError::from)
+    }
+
+    /// List all durable workspaces belonging to one project.
+    pub fn list_workspaces(&self, project_id: &str) -> Result<Vec<WorkspaceRecord>, PongError> {
+        let project_id = self.redactor.redact_text(project_id);
+        let mut statement = self.connection.prepare(
+            "SELECT workspace_id, project_id, driver, locator, branch_ref, head,
+                    version_head_id, environment_id, status, revision, created_at, updated_at
+             FROM workspaces WHERE project_id = ?1
+             ORDER BY created_at ASC, workspace_id ASC",
+        )?;
+        let workspaces = statement
+            .query_map([project_id], workspace_from_row)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(PongError::from)?;
+        Ok(workspaces)
     }
 
     /// Read the explicitly selected logical Version for one workspace.

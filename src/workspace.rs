@@ -592,6 +592,27 @@ impl LocalWorkspace {
         )
     }
 
+    /// Copy an existing ordinary project tree into this empty workspace.
+    ///
+    /// The source is never modified. Reparse points and non-regular entries
+    /// are rejected instead of followed, and the named top-level control
+    /// directory is intentionally omitted from the copy.
+    pub fn copy_from_directory(
+        &self,
+        source: impl AsRef<Path>,
+        excluded_top_level: &str,
+    ) -> Result<(), PongError> {
+        let source = source.as_ref();
+        ensure_no_reparse_ancestors(source)?;
+        let metadata = fs::symlink_metadata(source)?;
+        if !metadata.is_dir() || is_reparse_point(&metadata) {
+            return Err(PongError::InvalidInput(
+                "project source must be a safe directory".into(),
+            ));
+        }
+        copy_project_tree(source, &self.root, Path::new(""), excluded_top_level)
+    }
+
     /// Open a local workspace with an explicit deterministic fault plan.
     /// This constructor exists for fault-injection tests; normal callers
     /// should use [`LocalWorkspace::open`].
@@ -3310,6 +3331,50 @@ fn collect_entries(
         } else {
             return Err(PongError::Integrity(
                 "workspace contains a non-regular filesystem entry".into(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn copy_project_tree(
+    source: &Path,
+    destination: &Path,
+    relative: &Path,
+    excluded_top_level: &str,
+) -> Result<(), PongError> {
+    let mut children = fs::read_dir(source)
+        .map_err(PongError::from_protected_io)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(PongError::from_protected_io)?;
+    children.sort_by_key(|entry| entry.file_name());
+    for child in children {
+        let name = child.file_name();
+        if relative.as_os_str().is_empty() && name == excluded_top_level {
+            continue;
+        }
+        let source_path = child.path();
+        let target_relative = relative.join(&name);
+        let target_path = destination.join(&target_relative);
+        let metadata = fs::symlink_metadata(&source_path).map_err(PongError::from_protected_io)?;
+        if is_reparse_point(&metadata) {
+            return Err(PongError::Integrity(
+                "project source contains a symlink or reparse point".into(),
+            ));
+        }
+        if metadata.is_dir() {
+            fs::create_dir(&target_path).map_err(PongError::from_protected_io)?;
+            copy_project_tree(
+                &source_path,
+                destination,
+                &target_relative,
+                excluded_top_level,
+            )?;
+        } else if metadata.is_file() {
+            fs::copy(&source_path, &target_path).map_err(PongError::from_protected_io)?;
+        } else {
+            return Err(PongError::Integrity(
+                "project source contains a non-regular filesystem entry".into(),
             ));
         }
     }
