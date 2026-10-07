@@ -73,6 +73,7 @@ fn help_discloses_the_daily_project_commands() {
     assert!(root.contains("init"));
     assert!(root.contains("start"));
     assert!(root.contains("finish"));
+    assert!(root.contains("diff"));
     assert!(root.contains("status"));
     assert!(root.contains("recovery"));
 
@@ -91,6 +92,11 @@ fn help_discloses_the_daily_project_commands() {
     assert!(String::from_utf8(finish.stdout)
         .unwrap()
         .contains("pong finish"));
+    let diff = run(&["diff", "--help"], project.path());
+    assert!(diff.status.success());
+    assert!(String::from_utf8(diff.stdout)
+        .unwrap()
+        .contains("pong diff"));
 }
 
 #[test]
@@ -165,6 +171,58 @@ fn human_start_output_explains_user_controlled_agent_workflow() {
     let workspace_namespace = Path::new(workspace_root)
         .parent()
         .expect("workspace namespace");
+    fs::remove_dir_all(workspace_namespace).expect("cleanup workspace namespace");
+}
+
+#[test]
+fn diff_reports_workspace_changes_without_finishing_execution() {
+    let project = tempdir().expect("project");
+    fs::write(project.path().join("README.md"), b"initial").expect("source README");
+    assert!(run(&["init"], project.path()).status.success());
+
+    let started = run(
+        &["start", "inspect workflow", "--from-project", "--json"],
+        project.path(),
+    );
+    assert!(started.status.success(), "{started:?}");
+    let report: Value = serde_json::from_slice(&started.stdout).expect("start JSON");
+    let workspace = Path::new(report["workspace_root"].as_str().unwrap());
+    fs::write(workspace.join("new.txt"), b"new content").expect("workspace change");
+
+    let diff = run(
+        &[
+            "diff",
+            "--project-root",
+            &project.path().to_string_lossy(),
+            "--execution-id",
+            report["execution_id"].as_str().unwrap(),
+            "--json",
+        ],
+        project.path(),
+    );
+    assert!(diff.status.success(), "{diff:?}");
+    let value: Value = serde_json::from_slice(&diff.stdout).expect("diff JSON");
+    assert_eq!(value["status"], "changed");
+    assert_eq!(value["changes"][0]["path"], "new.txt");
+    assert_eq!(value["changes"][0]["change_type"], "ADDED");
+
+    let status = run(
+        &[
+            "status",
+            "--project-root",
+            &project.path().to_string_lossy(),
+            "--json",
+        ],
+        project.path(),
+    );
+    assert!(status.status.success(), "{status:?}");
+    let status: Value = serde_json::from_slice(&status.stdout).expect("status JSON");
+    assert_eq!(
+        status["projects"][0]["active_executions"][0]["state"],
+        "running"
+    );
+
+    let workspace_namespace = workspace.parent().expect("workspace namespace");
     fs::remove_dir_all(workspace_namespace).expect("cleanup workspace namespace");
 }
 
