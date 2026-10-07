@@ -178,6 +178,7 @@ pong status --project-root <project-root> --json
 pong start "describe the work to begin"
 pong start "describe the work to begin" --json
 pong start "import the existing project" --from-project --json
+pong diff --execution-id <execution-id> --project-root <project-root> --json
 pong finish --execution-id <execution-id> --project-root <project-root> --json
 pong recovery --help
 pong recovery inspect --repository <pong-repository> --checkpoint <checkpoint-id>
@@ -202,9 +203,12 @@ Snapshot and Version, and records that Version on the Execution. The source
 project is not modified and Git is not required.
 
 After the Agent has finished working in the returned Workspace, use
-`pong finish` to publish the Workspace and complete the Execution. When files
-changed, it creates a new Version and Snapshot; when the Workspace is unchanged,
-it reuses the existing Version instead of publishing a duplicate Snapshot.
+`pong diff` to inspect the read-only path-level changes against the current
+Workspace Snapshot. Then use `pong finish` to publish the Workspace and
+complete the Execution. When files changed, it creates a new Version and
+Snapshot; when the Workspace is unchanged, it reuses the existing Version
+instead of publishing a duplicate Snapshot. `pong diff` never writes durable
+state and does not finish the Execution.
 The command releases the Workspace lease and accepts `completed`, `failed`, or
 `interrupted` execution states. Pong still does not launch an Agent provider;
 the user controls which tool works in the Workspace.
@@ -228,7 +232,7 @@ semantics.
 
 ## Explicit Limits
 
-Pong is not production-ready, enterprise-ready, fully autonomous, or a Git replacement. It does not provide a supported provider integration, public SDK, general CLI suite, MCP endpoint, server mode, remote replication, scheduler, merge/rebase policy, shared writable Workspace policy, Candidate/Approval flow, or Agent State implementation. The focused CLI is limited to local initialization, status discovery, project-backed start/finish lifecycle management, and durable checkpoint inspection and resume; credentials and external side effects remain outside Core.
+Pong is not production-ready, enterprise-ready, fully autonomous, or a Git replacement. It does not provide a supported provider integration, public SDK, general CLI suite, MCP endpoint, server mode, remote replication, scheduler, merge/rebase policy, shared writable Workspace policy, Candidate/Approval flow, or Agent State implementation. The focused CLI is limited to local initialization, status discovery, project-backed start/diff/finish lifecycle management, and durable checkpoint inspection and resume; credentials and external side effects remain outside Core.
 
 ## Documentation
 

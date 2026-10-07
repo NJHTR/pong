@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased - Add read-only project diff command (2026-10-08)
+
+- Exposed the existing Workspace diff observation through
+  `pong diff --execution-id`, with human-readable and JSON output.
+- Kept diff read-only: it does not publish a Snapshot, finish an Execution,
+  modify Git, or change the Protocol contract.
+
 ## Unreleased - Clarify user-controlled project workflow (2026-10-08)
 
 - Updated human-readable `pong start` output with the exact next steps for
